@@ -144,24 +144,19 @@ export default async function DetailBeritaPage({ params }: PageProps) {
             </h1>
 
             {/* Author & Publish Info Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-2 text-xs text-slate-500">
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold border border-emerald-100">
-                  <User className="w-4 h-4 text-emerald-700" />
+            <div className="flex items-center space-x-3 pt-2 text-xs text-slate-500">
+              <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold border border-emerald-100">
+                <User className="w-4 h-4 text-emerald-700" />
+              </div>
+              <div>
+                <div className="font-bold text-slate-800">
+                  {berita.penulis || "Pemerintah Desa Bogem"}
                 </div>
-                <div>
-                  <div className="font-bold text-slate-800">
-                    {berita.penulis || "Pemerintah Desa Bogem"}
-                  </div>
-                  <div className="text-[11px] text-slate-400 flex items-center space-x-1">
-                    <Calendar className="w-3 h-3" />
-                    <span>{formatDateIndonesian(berita.created_at)}</span>
-                  </div>
+                <div className="text-[11px] text-slate-400 flex items-center space-x-1">
+                  <Calendar className="w-3 h-3" />
+                  <span>{formatDateIndonesian(berita.created_at)}</span>
                 </div>
               </div>
-
-              {/* Share actions */}
-              <ShareButtons title={berita.judul} />
             </div>
           </header>
 
