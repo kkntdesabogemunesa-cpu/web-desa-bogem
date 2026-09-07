@@ -201,7 +201,7 @@ export default async function DetailBeritaPage({ params }: PageProps) {
               Kategori: <strong className="text-slate-800">{berita.kategori || "Pengumuman Resmi"}</strong>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
               <span className="text-xs font-semibold text-slate-600">Bagikan Warta Ini:</span>
               <ShareButtons title={berita.judul} />
             </div>
