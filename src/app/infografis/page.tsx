@@ -237,7 +237,11 @@ export default function InfografisPage() {
                   <div key={item.nama} className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold text-slate-700">
                       <span>{item.nama}</span>
-                      <span>{item.count} ({item.persen}%)</span>
+                      <span>
+                        {(item.count || "").trim() === "-"
+                          ? "-"
+                          : `${item.count} (${item.persen}%)`}
+                      </span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-2.5 sm:h-3 overflow-hidden">
                       <div
@@ -267,7 +271,11 @@ export default function InfografisPage() {
                   <div key={item.tingkat} className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold text-slate-700">
                       <span>{item.tingkat}</span>
-                      <span>{item.count} ({item.persen}%)</span>
+                      <span>
+                        {(item.count || "").trim() === "-"
+                          ? "-"
+                          : `${item.count} (${item.persen}%)`}
+                      </span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-2.5 sm:h-3 overflow-hidden">
                       <div

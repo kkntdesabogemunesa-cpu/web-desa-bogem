@@ -176,24 +176,22 @@ export default function KelolaInfografisAdmin() {
     return pendidikanList.reduce((acc, item) => acc + parseNumber(item.count), 0);
   }, [pendidikanList]);
 
-  // Handler for Pekerjaan count change (auto updates persen)
+  // Handler for Pekerjaan count change (accepts numbers and symbols like -)
   const handlePekerjaanCountChange = (idx: number, rawCount: string) => {
-    const num = parseNumber(rawCount);
     const updated = [...pekerjaanList];
     updated[idx] = {
       ...updated[idx],
-      count: num > 0 ? `${num.toLocaleString("id-ID")} Warga` : "0 Warga",
+      count: rawCount,
     };
     setPekerjaanList(updated);
   };
 
-  // Handler for Pendidikan count change (auto updates persen)
+  // Handler for Pendidikan count change (accepts numbers and symbols like -)
   const handlePendidikanCountChange = (idx: number, rawCount: string) => {
-    const num = parseNumber(rawCount);
     const updated = [...pendidikanList];
     updated[idx] = {
       ...updated[idx],
-      count: num > 0 ? `${num.toLocaleString("id-ID")} Warga` : "0 Warga",
+      count: rawCount,
     };
     setPendidikanList(updated);
   };
@@ -277,22 +275,52 @@ export default function KelolaInfografisAdmin() {
 
     // Compute automatic percentage for each item based on current counts
     const finalPekerjaan = pekerjaanList.map((item) => {
-      const countNum = parseNumber(item.count);
+      const rawTrimmed = (item.count || "").trim();
+      const countNum = parseNumber(rawTrimmed);
       const calculatedPersen = totalWargaPekerja > 0 ? Math.round((countNum / totalWargaPekerja) * 1000) / 10 : 0;
+
+      let finalCount = rawTrimmed;
+      if (rawTrimmed === "-" || rawTrimmed === "") {
+        finalCount = "-";
+      } else if (rawTrimmed.toLowerCase().endsWith("warga")) {
+        finalCount = rawTrimmed;
+      } else if (/^\d+$/.test(rawTrimmed)) {
+        finalCount = `${countNum.toLocaleString("id-ID")} Warga`;
+      } else if (countNum > 0 && !/[a-zA-Z]/.test(rawTrimmed)) {
+        finalCount = `${rawTrimmed} Warga`;
+      } else {
+        finalCount = rawTrimmed;
+      }
+
       return {
         ...item,
-        persen: calculatedPersen,
-        count: countNum > 0 ? `${countNum.toLocaleString("id-ID")} Warga` : "0 Warga",
+        persen: rawTrimmed === "-" ? 0 : calculatedPersen,
+        count: finalCount,
       };
     });
 
     const finalPendidikan = pendidikanList.map((item) => {
-      const countNum = parseNumber(item.count);
+      const rawTrimmed = (item.count || "").trim();
+      const countNum = parseNumber(rawTrimmed);
       const calculatedPersen = totalWargaPendidikan > 0 ? Math.round((countNum / totalWargaPendidikan) * 1000) / 10 : 0;
+
+      let finalCount = rawTrimmed;
+      if (rawTrimmed === "-" || rawTrimmed === "") {
+        finalCount = "-";
+      } else if (rawTrimmed.toLowerCase().endsWith("warga")) {
+        finalCount = rawTrimmed;
+      } else if (/^\d+$/.test(rawTrimmed)) {
+        finalCount = `${countNum.toLocaleString("id-ID")} Warga`;
+      } else if (countNum > 0 && !/[a-zA-Z]/.test(rawTrimmed)) {
+        finalCount = `${rawTrimmed} Warga`;
+      } else {
+        finalCount = rawTrimmed;
+      }
+
       return {
         ...item,
-        persen: calculatedPersen,
-        count: countNum > 0 ? `${countNum.toLocaleString("id-ID")} Warga` : "0 Warga",
+        persen: rawTrimmed === "-" ? 0 : calculatedPersen,
+        count: finalCount,
       };
     });
 
@@ -739,7 +767,9 @@ export default function KelolaInfografisAdmin() {
               <div className="space-y-3">
                 {pekerjaanList.map((item, idx) => {
                   const countNum = parseNumber(item.count);
+                  const isDash = (item.count || "").trim() === "-";
                   const autoPersen = totalWargaPekerja > 0 ? ((countNum / totalWargaPekerja) * 100).toFixed(1) : "0";
+                  const displayCount = (item.count || "").replace(/\s*Warga$/i, "");
 
                   return (
                     <div
@@ -763,21 +793,22 @@ export default function KelolaInfografisAdmin() {
                       <div className="flex items-center gap-2">
                         <div className="flex items-center bg-white rounded-xl border border-slate-200 px-3 py-2">
                           <input
-                            type="number"
-                            min="0"
-                            placeholder="Jumlah"
-                            value={countNum || ""}
+                            type="text"
+                            placeholder="Jumlah / -"
+                            value={displayCount}
                             onChange={(e) => handlePekerjaanCountChange(idx, e.target.value)}
                             className="w-24 sm:w-28 text-xs font-extrabold text-slate-900 focus:outline-none"
                           />
-                          <span className="text-[11px] text-slate-400 font-semibold ml-1">Warga</span>
+                          {!isDash && (
+                            <span className="text-[11px] text-slate-400 font-semibold ml-1">Warga</span>
+                          )}
                         </div>
 
                         {/* Auto-Calculated Percentage Pill */}
                         <div className="w-24 px-2.5 py-2 rounded-xl bg-emerald-100/80 border border-emerald-300 text-center flex items-center justify-center space-x-1 flex-shrink-0">
                           <Percent className="w-3 h-3 text-[#004329]" />
                           <span className="text-xs font-extrabold text-[#004329]">
-                            {autoPersen}%
+                            {isDash ? "-" : `${autoPersen}%`}
                           </span>
                         </div>
 
@@ -808,7 +839,7 @@ export default function KelolaInfografisAdmin() {
                     </h3>
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Ketik jumlah warga tamatan tiap jenjang, persentase (%) akan langsung terhitung otomatis. Total terdata: <strong>{totalWargaPendidikan.toLocaleString("id-ID")} Warga</strong>.
+                    Ketik jumlah warga tamatan tiap jenjang (atau simbol - jika kosong), persentase (%) akan langsung terhitung otomatis. Total terdata: <strong>{totalWargaPendidikan.toLocaleString("id-ID")} Warga</strong>.
                   </p>
                 </div>
                 <button
@@ -824,7 +855,9 @@ export default function KelolaInfografisAdmin() {
               <div className="space-y-3">
                 {pendidikanList.map((item, idx) => {
                   const countNum = parseNumber(item.count);
+                  const isDash = (item.count || "").trim() === "-";
                   const autoPersen = totalWargaPendidikan > 0 ? ((countNum / totalWargaPendidikan) * 100).toFixed(1) : "0";
+                  const displayCount = (item.count || "").replace(/\s*Warga$/i, "");
 
                   return (
                     <div
@@ -848,21 +881,22 @@ export default function KelolaInfografisAdmin() {
                       <div className="flex items-center gap-2">
                         <div className="flex items-center bg-white rounded-xl border border-slate-200 px-3 py-2">
                           <input
-                            type="number"
-                            min="0"
-                            placeholder="Jumlah"
-                            value={countNum || ""}
+                            type="text"
+                            placeholder="Jumlah / -"
+                            value={displayCount}
                             onChange={(e) => handlePendidikanCountChange(idx, e.target.value)}
                             className="w-24 sm:w-28 text-xs font-extrabold text-slate-900 focus:outline-none"
                           />
-                          <span className="text-[11px] text-slate-400 font-semibold ml-1">Warga</span>
+                          {!isDash && (
+                            <span className="text-[11px] text-slate-400 font-semibold ml-1">Warga</span>
+                          )}
                         </div>
 
                         {/* Auto-Calculated Percentage Pill */}
                         <div className="w-24 px-2.5 py-2 rounded-xl bg-emerald-100/80 border border-emerald-300 text-center flex items-center justify-center space-x-1 flex-shrink-0">
                           <Percent className="w-3 h-3 text-[#004329]" />
                           <span className="text-xs font-extrabold text-[#004329]">
-                            {autoPersen}%
+                            {isDash ? "-" : `${autoPersen}%`}
                           </span>
                         </div>
 
