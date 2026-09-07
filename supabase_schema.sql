@@ -191,15 +191,87 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO public.opsi_surat (id, nama_surat, deskripsi, syarat)
+INSERT INTO public.opsi_surat (id, nama_surat, deskripsi, syarat, custom_fields)
 VALUES
-  ('opsi-1', 'Surat Keterangan Usaha (SKU)', 'Untuk legalitas pembukaan rekening usaha, pengajuan pinjaman/KUR, atau verifikasi UMKM.', 'Fotokopi KTP & KK, Nama Usaha, Jenis Usaha, dan Alamat Lokasi Usaha.'),
-  ('opsi-2', 'Surat Keterangan Domisili', 'Surat bukti keterangan tempat tinggal resmi pemohon di wilayah Desa Bogem.', 'Fotokopi KTP, KK, dan Alamat Tempat Tinggal Saat Ini.'),
-  ('opsi-3', 'Surat Keterangan Tidak Mampu (SKTM)', 'Untuk permohonan beasiswa pendidikan, keringanan biaya rumah sakit, atau bansos.', 'Fotokopi KTP, KK, dan Keterangan Keperluan Khusus.'),
-  ('opsi-4', 'Surat Pengantar SKCK', 'Surat rekomendasi pengantar dari desa untuk pembuatan SKCK di Polsek Kawedanan/Polres.', 'Fotokopi KTP, KK, dan Pas Foto Berwarna.'),
-  ('opsi-5', 'Surat Keterangan Belum Menikah', 'Keterangan status lajang/belum pernah menikah untuk persyaratan kerja atau pernikahan.', 'Fotokopi KTP dan KK.'),
-  ('opsi-6', 'Surat Keterangan Kelahiran / Kematian', 'Surat pengantar pelaporan kelahiran atau kematian untuk pencatatan kependudukan.', 'Surat Keterangan Bidan/RS, KTP & KK.')
-ON CONFLICT (id) DO NOTHING;
+  (
+    'opsi-1',
+    'Surat Keterangan Usaha (SKU)',
+    'Untuk legalitas pembukaan rekening usaha, pengajuan pinjaman/KUR, atau verifikasi UMKM.',
+    'Fotokopi KTP & KK, Nama Usaha, Jenis Usaha, dan Alamat Lokasi Usaha.',
+    '[
+      {"id": "nama_usaha", "label": "Nama Usaha / Toko", "tipe": "text", "placeholder": "Contoh: Warung Makan Berkah", "wajib": true},
+      {"id": "jenis_usaha", "label": "Bidang / Jenis Usaha", "tipe": "text", "placeholder": "Contoh: Kuliner / Perdagangan / Jasa", "wajib": true},
+      {"id": "alamat_usaha", "label": "Alamat Tempat Usaha", "tipe": "text", "placeholder": "Contoh: Jl. Raya Bogem No. 12, RT 02/01", "wajib": true},
+      {"id": "tahun_berdiri", "label": "Mulai Usaha Sejak Tahun", "tipe": "text", "placeholder": "Contoh: 2021", "wajib": false},
+      {"id": "keperluan", "label": "Keperluan Pengajuan SKU", "tipe": "textarea", "placeholder": "Contoh: Persyaratan Pengajuan KUR Bank BRI", "wajib": true}
+    ]'::jsonb
+  ),
+  (
+    'opsi-2',
+    'Surat Keterangan Domisili',
+    'Surat bukti keterangan tempat tinggal resmi pemohon di wilayah Desa Bogem.',
+    'Fotokopi KTP, KK, dan Alamat Tempat Tinggal Saat Ini.',
+    '[
+      {"id": "dusun", "label": "Dusun / Lingkungan", "tipe": "text", "placeholder": "Contoh: Dusun Krajan", "wajib": true},
+      {"id": "rt_rw", "label": "RT / RW", "tipe": "text", "placeholder": "Contoh: RT 02 / RW 01", "wajib": true},
+      {"id": "alamat_domisili", "label": "Alamat Lengkap Tempat Tinggal", "tipe": "textarea", "placeholder": "Nama jalan / nomor rumah saat ini", "wajib": true},
+      {"id": "keperluan", "label": "Keperluan Surat Domisili", "tipe": "textarea", "placeholder": "Contoh: Persyaratan melamar pekerjaan / pembukaan rekening bank", "wajib": true}
+    ]'::jsonb
+  ),
+  (
+    'opsi-3',
+    'Surat Keterangan Tidak Mampu (SKTM)',
+    'Untuk permohonan beasiswa pendidikan, keringanan biaya rumah sakit, atau bansos.',
+    'Fotokopi KTP, KK, dan Keterangan Keperluan Khusus.',
+    '[
+      {"id": "nama_kepala_keluarga", "label": "Nama Kepala Keluarga / Orang Tua", "tipe": "text", "placeholder": "Nama kepala keluarga sesuai KK", "wajib": true},
+      {"id": "tujuan_sktm", "label": "Tujuan Pengajuan SKTM", "tipe": "text", "placeholder": "Contoh: Beasiswa Pendidikan Anak / Keringanan Biaya Rumah Sakit", "wajib": true},
+      {"id": "penghasilan_per_bulan", "label": "Rata-Rata Penghasilan per Bulan", "tipe": "text", "placeholder": "Contoh: Rp 800.000 / bulan", "wajib": true},
+      {"id": "keperluan", "label": "Keterangan Tambahan", "tipe": "textarea", "placeholder": "Keterangan kondisi ekonomi atau keperluan khusus", "wajib": true}
+    ]'::jsonb
+  ),
+  (
+    'opsi-4',
+    'Surat Pengantar SKCK',
+    'Surat rekomendasi pengantar dari desa untuk pembuatan SKCK di Polsek Kawedanan/Polres.',
+    'Fotokopi KTP, KK, dan Pas Foto Berwarna.',
+    '[
+      {"id": "tempat_tgl_lahir", "label": "Tempat, Tanggal Lahir", "tipe": "text", "placeholder": "Contoh: Magetan, 15 Mei 1998", "wajib": true},
+      {"id": "pekerjaan", "label": "Pekerjaan Saat Ini", "tipe": "text", "placeholder": "Contoh: Wiraswasta / Belum Bekerja", "wajib": true},
+      {"id": "keperluan", "label": "Keperluan Pembuatan SKCK", "tipe": "textarea", "placeholder": "Contoh: Melamar Pekerjaan di PT XYZ / Pendaftaran CPNS", "wajib": true}
+    ]'::jsonb
+  ),
+  (
+    'opsi-5',
+    'Surat Keterangan Belum Menikah',
+    'Keterangan status lajang/belum pernah menikah untuk persyaratan kerja atau pernikahan.',
+    'Fotokopi KTP dan KK.',
+    '[
+      {"id": "tempat_tgl_lahir", "label": "Tempat, Tanggal Lahir", "tipe": "text", "placeholder": "Contoh: Magetan, 20 Januari 2000", "wajib": true},
+      {"id": "agama", "label": "Agama", "tipe": "text", "placeholder": "Contoh: Islam", "wajib": true},
+      {"id": "pekerjaan", "label": "Pekerjaan", "tipe": "text", "placeholder": "Contoh: Karyawan Swasta", "wajib": true},
+      {"id": "keperluan", "label": "Keperluan Pembuatan Surat", "tipe": "textarea", "placeholder": "Contoh: Persyaratan administrasi pernikahan / persyaratan kerja", "wajib": true}
+    ]'::jsonb
+  ),
+  (
+    'opsi-6',
+    'Surat Keterangan Kematian',
+    'Surat pengantar pelaporan kematian untuk pencatatan kependudukan.',
+    'Surat Keterangan Bidan/RS, KTP & KK.',
+    '[
+      {"id": "nama_almarhum", "label": "Nama Lengkap Almarhum/Almarhumah", "tipe": "text", "placeholder": "Nama almarhum sesuai KTP/KK", "wajib": true},
+      {"id": "nik_almarhum", "label": "NIK Almarhum", "tipe": "text", "placeholder": "16 digit NIK almarhum", "wajib": true},
+      {"id": "tanggal_meninggal", "label": "Tanggal Meninggal Dunia", "tipe": "date", "wajib": true},
+      {"id": "tempat_meninggal", "label": "Tempat Meninggal", "tipe": "text", "placeholder": "Contoh: Rumah Duka Desa Bogem / RSUD Sayidiman", "wajib": true},
+      {"id": "sebab_kematian", "label": "Penyebab Meninggal Dunia", "tipe": "text", "placeholder": "Contoh: Sakit / Usia Lanjut", "wajib": true},
+      {"id": "hubungan_pelapor", "label": "Hubungan Pemohon dengan Jenazah", "tipe": "text", "placeholder": "Contoh: Anak Kandung / Suami / Istri", "wajib": true}
+    ]'::jsonb
+  )
+ON CONFLICT (id) DO UPDATE SET
+  nama_surat = EXCLUDED.nama_surat,
+  deskripsi = EXCLUDED.deskripsi,
+  syarat = EXCLUDED.syarat,
+  custom_fields = EXCLUDED.custom_fields;
 
 INSERT INTO public.profil_desa (id, visi, misi, nama_kades, sambutan_kades, updated_at)
 VALUES (
@@ -221,7 +293,11 @@ ON CONFLICT (id) DO NOTHING;
 -- TRIGGER OTOMATIS: SINKRONISASI USER DARI auth.users KE public.profiles
 -- ==============================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+SECURITY DEFINER
+SET search_path = public
+LANGUAGE plpgsql
+AS $$
 BEGIN
   INSERT INTO public.profiles (id, email, nama, nik, no_hp, avatar_url, role)
   VALUES (
@@ -233,7 +309,7 @@ BEGIN
       new.raw_user_meta_data->>'nama',
       split_part(new.email, '@', 1)
     ),
-    new.raw_user_meta_data->>'nik',
+    NULLIF(TRIM(new.raw_user_meta_data->>'nik'), ''),
     COALESCE(new.raw_user_meta_data->>'phone', new.raw_user_meta_data->>'no_hp'),
     COALESCE(new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'picture'),
     COALESCE(new.raw_user_meta_data->>'role', 'warga')
@@ -246,7 +322,7 @@ BEGIN
     updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
@@ -259,14 +335,18 @@ CREATE TRIGGER on_auth_user_created
 
 -- 1. Fungsi Pembantu: Mengecek apakah user adalah Admin Desa
 CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS BOOLEAN AS $$
+RETURNS BOOLEAN 
+SECURITY DEFINER
+SET search_path = public
+LANGUAGE plpgsql
+AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM public.profiles
     WHERE id = auth.uid() AND role = 'admin'
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- 2. Aktifkan RLS pada seluruh tabel
 ALTER TABLE public.infografis ENABLE ROW LEVEL SECURITY;
@@ -403,3 +483,14 @@ FOR UPDATE USING (bucket_id = 'public-images' AND public.is_admin());
 
 CREATE POLICY "Admin delete images" ON storage.objects
 FOR DELETE USING (bucket_id = 'public-images' AND public.is_admin());
+
+-- ==============================================================================
+-- CARA MENETAPKAN AKUN ADMIN PERTAMA
+-- ==============================================================================
+-- Setelah Anda mendaftar atau login pertama kali di aplikasi website,
+-- jalankan query berikut di SQL Editor Supabase untuk mengangkat akun Anda menjadi Admin Desa:
+--
+-- UPDATE public.profiles
+-- SET role = 'admin'
+-- WHERE email = 'email_admin_anda@gmail.com';
+-- ==============================================================================
