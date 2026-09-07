@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   nama TEXT NOT NULL,
   no_hp TEXT,
   email TEXT,
-  alamat TEXT,
   role TEXT DEFAULT 'warga', -- 'admin' | 'warga'
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -23,7 +22,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS nik TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS no_hp TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS alamat TEXT;
 
 -- 2. TABEL 'infografis' (Demografi Kependudukan, Pekerjaan, Pendidikan, APBDes & Status IDM)
 CREATE TABLE IF NOT EXISTS public.infografis (
@@ -417,11 +415,12 @@ CREATE POLICY "Public read profil_desa" ON public.profil_desa FOR SELECT USING (
 CREATE POLICY "Admin write profil_desa" ON public.profil_desa FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- 5. Kebijakan Tabel Sensitif: Permohonan Surat
--- Warga hanya boleh melihat surat milik mereka sendiri; Admin bisa melihat semua
-CREATE POLICY "Warga view own surat" ON public.permohonan_surat
-FOR SELECT USING (
-  (auth.uid() IS NOT NULL AND auth.uid() = user_id) OR public.is_admin()
-);
+DROP POLICY IF EXISTS "Warga view own surat" ON public.permohonan_surat;
+DROP POLICY IF EXISTS "Public select permohonan_surat" ON public.permohonan_surat;
+
+-- Izinkan publik/warga membaca data permohonan surat (untuk pelacakan Kode Tiket, NIK, dan unduh berkas surat)
+CREATE POLICY "Public select permohonan_surat" ON public.permohonan_surat
+FOR SELECT USING (true);
 
 -- Siapapun (Warga login / Pengunjung yang mengajukan permohonan) boleh memasukkan pengajuan
 CREATE POLICY "Public insert surat" ON public.permohonan_surat

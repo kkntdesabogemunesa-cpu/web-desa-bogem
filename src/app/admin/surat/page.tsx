@@ -128,13 +128,20 @@ export default function AdminKelolaSuratPage() {
     if (!selectedSurat) return;
 
     setProcessing(true);
-    await updateStatusDanFileSurat(selectedSurat.id, {
+    const res = await updateStatusDanFileSurat(selectedSurat.id, {
       status: statusInput,
       file_surat_selesai: uploadedFileBase64 || undefined,
       nama_file_selesai: uploadedFileName || undefined,
       catatan_admin: catatanInput,
     });
     setProcessing(false);
+
+    if (!res.success) {
+      alert(`Gagal memperbarui permohonan surat: ${res.error || "Akses ditolak atau terjadi kesalahan database."}`);
+      return;
+    }
+
+    alert("Status permohonan dan berkas surat berhasil disimpan!");
     setSelectedSurat(null);
     loadData();
   };

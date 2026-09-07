@@ -162,6 +162,8 @@ export default function LayananSuratPage() {
 
     setSubmitting(true);
     const input: CreatePermohonanInput = {
+      user_id: user?.id || undefined,
+      opsi_surat_id: selectedOpsi.id,
       nik,
       nama_lengkap: namaLengkap,
       no_whatsapp: noWhatsapp,
@@ -200,11 +202,19 @@ export default function LayananSuratPage() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
+    const clean = searchQuery.trim();
+    if (!clean) return;
 
     setSearching(true);
-    const res = await searchSuratByTicket(searchQuery);
-    setSearchResult(res ? [res] : []);
+    // Jika input 16 digit NIK, cari semua surat milik NIK tersebut
+    if (/^[0-9]{16}$/.test(clean)) {
+      const list = await fetchUserSuratList(undefined, clean);
+      setSearchResult(list);
+    } else {
+      // Cari berdasarkan Kode Tiket spesifik (misal: SRT-202509-xxxx)
+      const res = await searchSuratByTicket(clean);
+      setSearchResult(res ? [res] : []);
+    }
     setSearching(false);
   };
 
