@@ -102,11 +102,7 @@ export default function Navbar() {
                   )}
                   <div className="flex items-center space-x-2 bg-emerald-950/70 px-3 py-1.5 rounded-xl border border-emerald-800/70 text-xs">
                     <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[10px] overflow-hidden">
-                      {user.avatar_url ? (
-                        <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
-                      ) : (
-                        user.name.charAt(0)
-                      )}
+                      {user.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex flex-col">
                       <span className="font-bold text-white max-w-[100px] truncate leading-tight">{user.name}</span>
@@ -173,11 +169,7 @@ export default function Navbar() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3 text-xs">
                   <div className="w-9 h-9 rounded-xl bg-emerald-800 text-white flex items-center justify-center font-bold text-sm overflow-hidden">
-                    {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
-                    ) : (
-                      user.name.charAt(0)
-                    )}
+                    {user.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <span className="font-bold text-white block">{user.name}</span>

@@ -13,7 +13,6 @@ export interface UserProfile {
   email: string;
   role: UserRole;
   phone?: string;
-  avatar_url?: string;
   isProfileComplete?: boolean;
 }
 
@@ -68,7 +67,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       "Warga Desa";
     let nik: string = meta.nik || "";
     let phone: string = meta.phone || meta.no_hp || "";
-    let avatar_url: string = meta.avatar_url || meta.picture || "";
 
     try {
       if (supabase) {
@@ -85,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (profile.nama) name = profile.nama;
           if (profile.nik) nik = profile.nik;
           if (profile.no_hp) phone = profile.no_hp;
-          if (profile.avatar_url) avatar_url = profile.avatar_url;
         }
       }
     } catch (err) {
@@ -103,7 +100,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       name,
       role,
       phone,
-      avatar_url,
       isProfileComplete,
     };
   };

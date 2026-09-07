@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   no_hp TEXT,
   email TEXT,
   alamat TEXT,
-  avatar_url TEXT,
   role TEXT DEFAULT 'warga', -- 'admin' | 'warga'
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -25,7 +24,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS nik TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS no_hp TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS alamat TEXT;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
 -- 2. TABEL 'infografis' (Demografi Kependudukan, Pekerjaan, Pendidikan, APBDes & Status IDM)
 CREATE TABLE IF NOT EXISTS public.infografis (
@@ -299,7 +297,7 @@ SET search_path = public
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, nama, nik, no_hp, avatar_url, role)
+  INSERT INTO public.profiles (id, email, nama, nik, no_hp, role)
   VALUES (
     new.id,
     new.email,
@@ -311,14 +309,12 @@ BEGIN
     ),
     NULLIF(TRIM(new.raw_user_meta_data->>'nik'), ''),
     COALESCE(new.raw_user_meta_data->>'phone', new.raw_user_meta_data->>'no_hp'),
-    COALESCE(new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'picture'),
     COALESCE(new.raw_user_meta_data->>'role', 'warga')
   )
   ON CONFLICT (id) DO UPDATE SET
     nama = COALESCE(EXCLUDED.nama, profiles.nama),
     nik = COALESCE(EXCLUDED.nik, profiles.nik),
     no_hp = COALESCE(EXCLUDED.no_hp, profiles.no_hp),
-    avatar_url = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url),
     updated_at = NOW();
   RETURN NEW;
 END;

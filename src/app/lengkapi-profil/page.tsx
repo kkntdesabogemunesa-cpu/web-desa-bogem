@@ -28,7 +28,6 @@ function LengkapiProfilForm() {
     id: string;
     email: string;
     name: string;
-    avatar_url?: string;
   } | null>(null);
 
   const [checkingSession, setCheckingSession] = useState(true);
@@ -70,14 +69,11 @@ function LengkapiProfilForm() {
           meta.nama ||
           activeUser.email?.split("@")[0] ||
           "Warga Desa";
-        const avatarUrl = meta.avatar_url || meta.picture || "";
-
         if (isMounted) {
           setCurrentUser({
             id: activeUser.id,
             email: activeUser.email || "",
             name: googleName,
-            avatar_url: avatarUrl,
           });
         }
 
@@ -131,7 +127,6 @@ function LengkapiProfilForm() {
           id: user.id || "",
           email: user.email,
           name: user.name,
-          avatar_url: user.avatar_url,
         });
       }
       if (!nama && user.name && user.name !== "Warga Desa" && user.name !== "User Desa") {
@@ -198,7 +193,6 @@ function LengkapiProfilForm() {
 
   const activeEmail = currentUser?.email || user?.email || "";
   const activeName = currentUser?.name || user?.name || "Akun Google";
-  const activeAvatar = currentUser?.avatar_url || user?.avatar_url || "";
 
   return (
     <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 py-12">
@@ -230,12 +224,8 @@ function LengkapiProfilForm() {
           {/* Email Verified Badge Card */}
           <div className="bg-emerald-50/80 border border-emerald-200/80 p-3.5 rounded-2xl flex items-center justify-between text-xs">
             <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 rounded-xl bg-white border border-emerald-200 text-emerald-800 flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden flex-shrink-0">
-                {activeAvatar ? (
-                  <img src={activeAvatar} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <span>{activeName.charAt(0)}</span>
-                )}
+              <div className="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden flex-shrink-0">
+                <span>{activeName.charAt(0).toUpperCase()}</span>
               </div>
               <div className="min-w-0">
                 <span className="font-bold text-emerald-950 block truncate">{activeName}</span>
