@@ -88,7 +88,7 @@ export default function AdminDashboard() {
                 Infografis, APBDes & IDM
               </h2>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Ubah jumlah penduduk, rasio gender, mata pencaharian, tingkat pendidikan, APBDes, dan Skor Status IDM desa.
+                Ubah jumlah penduduk, rasio gender, kelembagaan organisasi desa, APBDes, dan Skor Status IDM desa.
               </p>
             </div>
             <div className="pt-4 flex items-center text-xs font-bold text-emerald-800 group-hover:translate-x-1 transition">

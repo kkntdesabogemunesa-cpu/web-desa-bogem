@@ -23,16 +23,19 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS nik TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS no_hp TEXT;
 
--- 2. TABEL 'infografis' (Demografi Kependudukan, Pekerjaan, Pendidikan, APBDes & Status IDM)
+-- 2. TABEL 'infografis' (Demografi Kependudukan, Organisasi Desa, APBDes & Status IDM)
 CREATE TABLE IF NOT EXISTS public.infografis (
   id TEXT PRIMARY KEY DEFAULT 'main',
   demografi JSONB DEFAULT '{}'::jsonb,
   pekerjaan JSONB DEFAULT '[]'::jsonb,
   pendidikan JSONB DEFAULT '[]'::jsonb,
+  organisasi JSONB DEFAULT '[]'::jsonb,
   apbdes JSONB DEFAULT '{}'::jsonb,
   idm JSONB DEFAULT '{}'::jsonb,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.infografis ADD COLUMN IF NOT EXISTS organisasi JSONB DEFAULT '[]'::jsonb;
 
 -- 3. TABEL 'opsi_surat' (Pilihan Jenis Surat & Form Builder Dinamis yang Dikelola Admin)
 CREATE TABLE IF NOT EXISTS public.opsi_surat (

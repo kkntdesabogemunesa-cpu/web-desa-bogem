@@ -23,16 +23,19 @@ import {
   TrendingUp,
   Calculator,
   Percent,
+  Building2,
 } from "lucide-react";
 import {
   fetchInfografisData,
   updateInfografisData,
   defaultInfografisData,
+  defaultOrganisasiList,
 } from "@/services/infografisService";
 import {
   StatDemografi,
   ItemPekerjaan,
   ItemPendidikan,
+  ItemOrganisasi,
   ItemRincianAnggaran,
   StatIDM,
 } from "@/types/infografis";
@@ -96,15 +99,14 @@ const getSubIndexLabel = (score: number) => {
 };
 
 export default function KelolaInfografisAdmin() {
-  const [activeTab, setActiveTab] = useState<"demografi" | "pekerjaan" | "apbdes" | "idm">("demografi");
+  const [activeTab, setActiveTab] = useState<"demografi" | "organisasi" | "apbdes" | "idm">("demografi");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // States
   const [demografi, setDemografi] = useState<StatDemografi>(defaultInfografisData.demografi);
-  const [pekerjaanList, setPekerjaanList] = useState<ItemPekerjaan[]>(defaultInfografisData.pekerjaan);
-  const [pendidikanList, setPendidikanList] = useState<ItemPendidikan[]>(defaultInfografisData.pendidikan);
+  const [organisasiList, setOrganisasiList] = useState<ItemOrganisasi[]>(defaultOrganisasiList);
   
   // APBDes States
   const [tahunAnggaran, setTahunAnggaran] = useState(defaultInfografisData.apbdes.tahun_anggaran);
@@ -119,8 +121,7 @@ export default function KelolaInfografisAdmin() {
     try {
       const data = await fetchInfografisData();
       setDemografi(data.demografi || defaultInfografisData.demografi);
-      setPekerjaanList(data.pekerjaan || defaultInfografisData.pekerjaan);
-      setPendidikanList(data.pendidikan || defaultInfografisData.pendidikan);
+      setOrganisasiList(data.organisasi && data.organisasi.length > 0 ? data.organisasi : defaultOrganisasiList);
       setTahunAnggaran(data.apbdes?.tahun_anggaran || "2024");
       setPendapatanRincian(data.apbdes?.pendapatan_rincian || defaultInfografisData.apbdes.pendapatan_rincian);
       setBelanjaRincian(data.apbdes?.belanja_rincian || defaultInfografisData.apbdes.belanja_rincian);
@@ -166,34 +167,36 @@ export default function KelolaInfografisAdmin() {
   };
 
   // ============================================================================
-  // 2. OTOMATISASI PEKERJAAN & PENDIDIKAN
+  // 2. KELOLA ORGANISASI & KELEMBAGAAN DESA
   // ============================================================================
-  const totalWargaPekerja = useMemo(() => {
-    return pekerjaanList.reduce((acc, item) => acc + parseNumber(item.count), 0);
-  }, [pekerjaanList]);
-
-  const totalWargaPendidikan = useMemo(() => {
-    return pendidikanList.reduce((acc, item) => acc + parseNumber(item.count), 0);
-  }, [pendidikanList]);
-
-  // Handler for Pekerjaan count change (accepts numbers and symbols like -)
-  const handlePekerjaanCountChange = (idx: number, rawCount: string) => {
-    const updated = [...pekerjaanList];
+  const handleOrganisasiChange = (idx: number, field: keyof ItemOrganisasi, val: string) => {
+    const updated = [...organisasiList];
     updated[idx] = {
       ...updated[idx],
-      count: rawCount,
+      [field]: val,
     };
-    setPekerjaanList(updated);
+    setOrganisasiList(updated);
   };
 
-  // Handler for Pendidikan count change (accepts numbers and symbols like -)
-  const handlePendidikanCountChange = (idx: number, rawCount: string) => {
-    const updated = [...pendidikanList];
-    updated[idx] = {
-      ...updated[idx],
-      count: rawCount,
-    };
-    setPendidikanList(updated);
+  const addOrganisasiRow = () => {
+    const newId = `org-${Date.now()}`;
+    setOrganisasiList([
+      ...organisasiList,
+      {
+        id: newId,
+        nama: "",
+        singkatan: "",
+        ketua: "",
+        jumlah_anggota: "-",
+        kategori: "Pemberdayaan Masyarakat",
+        deskripsi: "",
+        kontak: "-",
+      },
+    ]);
+  };
+
+  const removeOrganisasiRow = (idx: number) => {
+    setOrganisasiList(organisasiList.filter((_, i) => i !== idx));
   };
 
   // ============================================================================
@@ -268,75 +271,21 @@ export default function KelolaInfografisAdmin() {
     }
   };
 
-  const handleSavePekerjaanPendidikan = async (e: React.FormEvent) => {
+  const handleSaveOrganisasi = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setFeedback(null);
 
-    // Compute automatic percentage for each item based on current counts
-    const finalPekerjaan = pekerjaanList.map((item) => {
-      const rawTrimmed = (item.count || "").trim();
-      const countNum = parseNumber(rawTrimmed);
-      const calculatedPersen = totalWargaPekerja > 0 ? Math.round((countNum / totalWargaPekerja) * 1000) / 10 : 0;
-
-      let finalCount = rawTrimmed;
-      if (rawTrimmed === "-" || rawTrimmed === "") {
-        finalCount = "-";
-      } else if (rawTrimmed.toLowerCase().endsWith("warga")) {
-        finalCount = rawTrimmed;
-      } else if (/^\d+$/.test(rawTrimmed)) {
-        finalCount = `${countNum.toLocaleString("id-ID")} Warga`;
-      } else if (countNum > 0 && !/[a-zA-Z]/.test(rawTrimmed)) {
-        finalCount = `${rawTrimmed} Warga`;
-      } else {
-        finalCount = rawTrimmed;
-      }
-
-      return {
-        ...item,
-        persen: rawTrimmed === "-" ? 0 : calculatedPersen,
-        count: finalCount,
-      };
-    });
-
-    const finalPendidikan = pendidikanList.map((item) => {
-      const rawTrimmed = (item.count || "").trim();
-      const countNum = parseNumber(rawTrimmed);
-      const calculatedPersen = totalWargaPendidikan > 0 ? Math.round((countNum / totalWargaPendidikan) * 1000) / 10 : 0;
-
-      let finalCount = rawTrimmed;
-      if (rawTrimmed === "-" || rawTrimmed === "") {
-        finalCount = "-";
-      } else if (rawTrimmed.toLowerCase().endsWith("warga")) {
-        finalCount = rawTrimmed;
-      } else if (/^\d+$/.test(rawTrimmed)) {
-        finalCount = `${countNum.toLocaleString("id-ID")} Warga`;
-      } else if (countNum > 0 && !/[a-zA-Z]/.test(rawTrimmed)) {
-        finalCount = `${rawTrimmed} Warga`;
-      } else {
-        finalCount = rawTrimmed;
-      }
-
-      return {
-        ...item,
-        persen: rawTrimmed === "-" ? 0 : calculatedPersen,
-        count: finalCount,
-      };
-    });
-
     const res = await updateInfografisData({
-      pekerjaan: finalPekerjaan,
-      pendidikan: finalPendidikan,
+      organisasi: organisasiList,
     });
 
     setSaving(false);
     if (res.success) {
-      setPekerjaanList(finalPekerjaan);
-      setPendidikanList(finalPendidikan);
-      setFeedback({ type: "success", text: "Persentase & data Pekerjaan/Pendidikan berhasil dihitung & disimpan otomatis!" });
+      setFeedback({ type: "success", text: "Data Organisasi & Kelembagaan Desa berhasil disimpan!" });
       setTimeout(() => setFeedback(null), 4000);
     } else {
-      setFeedback({ type: "error", text: "Gagal menyimpan data pekerjaan & pendidikan." });
+      setFeedback({ type: "error", text: "Gagal menyimpan data organisasi desa." });
     }
   };
 
@@ -388,26 +337,6 @@ export default function KelolaInfografisAdmin() {
   };
 
   // Helper row handlers
-  const addPekerjaanRow = () => {
-    setPekerjaanList([
-      ...pekerjaanList,
-      { nama: "Sektor Baru", persen: 0, count: "100 Warga", color: "bg-emerald-600" },
-    ]);
-  };
-  const removePekerjaanRow = (idx: number) => {
-    setPekerjaanList(pekerjaanList.filter((_, i) => i !== idx));
-  };
-
-  const addPendidikanRow = () => {
-    setPendidikanList([
-      ...pendidikanList,
-      { tingkat: "Jenjang Baru", persen: 0, count: "100 Warga" },
-    ]);
-  };
-  const removePendidikanRow = (idx: number) => {
-    setPendidikanList(pendidikanList.filter((_, i) => i !== idx));
-  };
-
   const addPendapatanRow = () => {
     setPendapatanRincian([...pendapatanRincian, { nama: "Pos Pendapatan Baru", nominal: 50000000 }]);
   };
@@ -540,15 +469,15 @@ export default function KelolaInfografisAdmin() {
             <span>1. Demografi Penduduk</span>
           </button>
           <button
-            onClick={() => setActiveTab("pekerjaan")}
+            onClick={() => setActiveTab("organisasi")}
             className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap active:scale-95 ${
-              activeTab === "pekerjaan"
+              activeTab === "organisasi"
                 ? "bg-[#004329] text-white shadow-md"
                 : "text-slate-600 hover:bg-slate-100"
             }`}
           >
-            <Briefcase className="w-4 h-4" />
-            <span>2. Pekerjaan & Pendidikan</span>
+            <Building2 className="w-4 h-4" />
+            <span>2. Kelembagaan & Organisasi</span>
           </button>
           <button
             onClick={() => setActiveTab("apbdes")}
@@ -735,184 +664,171 @@ export default function KelolaInfografisAdmin() {
         )}
 
         {/* ====================================================================== */}
-        {/* TAB 2: PEKERJAAN & PENDIDIKAN (AUTO PERSENTASE DARI JUMLAH WARGA) */}
+        {/* TAB 2: ORGANISASI & KELEMBAGAAN DESA (CRUD LENGKAP) */}
         {/* ====================================================================== */}
-        {activeTab === "pekerjaan" && (
-          <form onSubmit={handleSavePekerjaanPendidikan} className="space-y-6">
-            
-            {/* Bagian Mata Pencaharian */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-4">
+        {activeTab === "organisasi" && (
+          <form onSubmit={handleSaveOrganisasi} className="space-y-6">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                 <div>
                   <div className="flex items-center space-x-2">
-                    <Briefcase className="w-5 h-5 text-emerald-700" />
+                    <Building2 className="w-5 h-5 text-emerald-700" />
                     <h3 className="text-base font-bold text-slate-900">
-                      Mata Pencaharian Warga (Persentase Otomatis)
+                      Kelola Organisasi & Lembaga Desa (LKD)
                     </h3>
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Cukup ketik jumlah warga di setiap sektor, persentase (%) akan otomatis dihitung. Total terdata: <strong>{totalWargaPekerja.toLocaleString("id-ID")} Warga</strong>.
+                    Kelola data lembaga desa (BPD, LPMD, PKK, Karang Taruna, Satlinmas, dll.). Total terdaftar: <strong>{organisasiList.length} Lembaga</strong>.
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={addPekerjaanRow}
+                  onClick={addOrganisasiRow}
                   className="inline-flex items-center space-x-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs px-3.5 py-2 rounded-xl transition border border-emerald-200 active:scale-95 self-start sm:self-auto"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Tambah Sektor</span>
+                  <span>Tambah Lembaga</span>
                 </button>
               </div>
 
-              <div className="space-y-3">
-                {pekerjaanList.map((item, idx) => {
-                  const countNum = parseNumber(item.count);
-                  const isDash = (item.count || "").trim() === "-";
-                  const autoPersen = totalWargaPekerja > 0 ? ((countNum / totalWargaPekerja) * 100).toFixed(1) : "0";
-                  const displayCount = (item.count || "").replace(/\s*Warga$/i, "");
+              {/* List of Organizations */}
+              <div className="space-y-4">
+                {organisasiList.map((org, idx) => (
+                  <div
+                    key={org.id || idx}
+                    className="p-4 sm:p-5 bg-slate-50 rounded-2xl border border-slate-200/80 hover:border-emerald-300 transition space-y-3"
+                  >
+                    {/* Top Row: Index Badge & Delete Button */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="w-6 h-6 rounded-lg bg-[#004329] text-white text-[11px] font-extrabold flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                        <span className="text-xs font-bold text-slate-700">
+                          {org.singkatan || org.nama || `Lembaga #${idx + 1}`}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeOrganisasiRow(idx)}
+                        className="p-1.5 text-rose-600 hover:bg-rose-100/60 rounded-xl transition"
+                        title="Hapus lembaga ini"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
 
-                  return (
-                    <div
-                      key={idx}
-                      className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 hover:border-emerald-300 transition"
-                    >
-                      {/* Sektor Name Input */}
-                      <input
-                        type="text"
-                        placeholder="Nama Sektor Pekerjaan (Contoh: Petani / Pertanian)"
-                        value={item.nama}
-                        onChange={(e) => {
-                          const copy = [...pekerjaanList];
-                          copy[idx].nama = e.target.value;
-                          setPekerjaanList(copy);
-                        }}
-                        className="flex-grow px-3.5 py-2.5 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      />
-
-                      {/* Number of People Input */}
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center bg-white rounded-xl border border-slate-200 px-3 py-2">
-                          <input
-                            type="text"
-                            placeholder="Jumlah / -"
-                            value={displayCount}
-                            onChange={(e) => handlePekerjaanCountChange(idx, e.target.value)}
-                            className="w-24 sm:w-28 text-xs font-extrabold text-slate-900 focus:outline-none"
-                          />
-                          {!isDash && (
-                            <span className="text-[11px] text-slate-400 font-semibold ml-1">Warga</span>
-                          )}
-                        </div>
-
-                        {/* Auto-Calculated Percentage Pill */}
-                        <div className="w-24 px-2.5 py-2 rounded-xl bg-emerald-100/80 border border-emerald-300 text-center flex items-center justify-center space-x-1 flex-shrink-0">
-                          <Percent className="w-3 h-3 text-[#004329]" />
-                          <span className="text-xs font-extrabold text-[#004329]">
-                            {isDash ? "-" : `${autoPersen}%`}
-                          </span>
-                        </div>
-
-                        {/* Delete Button */}
-                        <button
-                          type="button"
-                          onClick={() => removePekerjaanRow(idx)}
-                          className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition"
-                          title="Hapus baris"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                    {/* Inputs Grid: Nama, Singkatan, Kategori */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Nama Lembaga / Organisasi
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Contoh: Badan Permusyawaratan Desa"
+                          value={org.nama}
+                          onChange={(e) => handleOrganisasiChange(idx, "nama", e.target.value)}
+                          className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Singkatan / Akronim
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Contoh: BPD / PKK"
+                          value={org.singkatan}
+                          onChange={(e) => handleOrganisasiChange(idx, "singkatan", e.target.value)}
+                          className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Kategori / Bidang
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Contoh: Pengawasan & Musyawarah"
+                          value={org.kategori}
+                          onChange={(e) => handleOrganisasiChange(idx, "kategori", e.target.value)}
+                          className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
 
-            {/* Bagian Tingkat Pendidikan */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <GraduationCap className="w-5 h-5 text-emerald-700" />
-                    <h3 className="text-base font-bold text-slate-900">
-                      Tingkat Pendidikan Warga (Persentase Otomatis)
-                    </h3>
+                    {/* Inputs Grid: Ketua, Jumlah Anggota, Kontak */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Nama Ketua / Pimpinan
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Contoh: Bpk. Bambang Sutrisno"
+                          value={org.ketua}
+                          onChange={(e) => handleOrganisasiChange(idx, "ketua", e.target.value)}
+                          className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Jumlah Pengurus / Kader (bisa angka atau -)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Contoh: 9 Orang atau -"
+                          value={org.jumlah_anggota || ""}
+                          onChange={(e) => handleOrganisasiChange(idx, "jumlah_anggota", e.target.value)}
+                          className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Kontak / Sekretariat (Opsional)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Contoh: 0812... atau Kantor Desa / -"
+                          value={org.kontak || ""}
+                          onChange={(e) => handleOrganisasiChange(idx, "kontak", e.target.value)}
+                          className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                        Deskripsi Peran & Tugas Pokok
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Uraikan singkat peran dan fungsi organisasi di desa..."
+                        value={org.deskripsi}
+                        onChange={(e) => handleOrganisasiChange(idx, "deskripsi", e.target.value)}
+                        className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Ketik jumlah warga tamatan tiap jenjang (atau simbol - jika kosong), persentase (%) akan langsung terhitung otomatis. Total terdata: <strong>{totalWargaPendidikan.toLocaleString("id-ID")} Warga</strong>.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={addPendidikanRow}
-                  className="inline-flex items-center space-x-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs px-3.5 py-2 rounded-xl transition border border-emerald-200 active:scale-95 self-start sm:self-auto"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Tambah Jenjang</span>
-                </button>
-              </div>
+                ))}
 
-              <div className="space-y-3">
-                {pendidikanList.map((item, idx) => {
-                  const countNum = parseNumber(item.count);
-                  const isDash = (item.count || "").trim() === "-";
-                  const autoPersen = totalWargaPendidikan > 0 ? ((countNum / totalWargaPendidikan) * 100).toFixed(1) : "0";
-                  const displayCount = (item.count || "").replace(/\s*Warga$/i, "");
-
-                  return (
-                    <div
-                      key={idx}
-                      className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 hover:border-emerald-300 transition"
+                {organisasiList.length === 0 && (
+                  <div className="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+                    <p className="text-xs text-slate-500 font-medium">Belum ada data organisasi desa.</p>
+                    <button
+                      type="button"
+                      onClick={addOrganisasiRow}
+                      className="mt-2 text-xs text-emerald-800 font-bold hover:underline"
                     >
-                      {/* Education Level Input */}
-                      <input
-                        type="text"
-                        placeholder="Tingkat Jenjang (Contoh: SMA / SMK Sederajat)"
-                        value={item.tingkat}
-                        onChange={(e) => {
-                          const copy = [...pendidikanList];
-                          copy[idx].tingkat = e.target.value;
-                          setPendidikanList(copy);
-                        }}
-                        className="flex-grow px-3.5 py-2.5 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      />
-
-                      {/* Number of People Input */}
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center bg-white rounded-xl border border-slate-200 px-3 py-2">
-                          <input
-                            type="text"
-                            placeholder="Jumlah / -"
-                            value={displayCount}
-                            onChange={(e) => handlePendidikanCountChange(idx, e.target.value)}
-                            className="w-24 sm:w-28 text-xs font-extrabold text-slate-900 focus:outline-none"
-                          />
-                          {!isDash && (
-                            <span className="text-[11px] text-slate-400 font-semibold ml-1">Warga</span>
-                          )}
-                        </div>
-
-                        {/* Auto-Calculated Percentage Pill */}
-                        <div className="w-24 px-2.5 py-2 rounded-xl bg-emerald-100/80 border border-emerald-300 text-center flex items-center justify-center space-x-1 flex-shrink-0">
-                          <Percent className="w-3 h-3 text-[#004329]" />
-                          <span className="text-xs font-extrabold text-[#004329]">
-                            {isDash ? "-" : `${autoPersen}%`}
-                          </span>
-                        </div>
-
-                        {/* Delete Button */}
-                        <button
-                          type="button"
-                          onClick={() => removePendidikanRow(idx)}
-                          className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition"
-                          title="Hapus baris"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                      + Tambah Lembaga Pertama
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -923,7 +839,7 @@ export default function KelolaInfografisAdmin() {
                 className="bg-[#004329] hover:bg-[#00321F] text-white font-bold text-xs sm:text-sm py-3 px-6 rounded-xl transition shadow-md active:scale-95 disabled:opacity-50 flex items-center space-x-2"
               >
                 <Save className="w-4 h-4" />
-                <span>{saving ? "Menghitung & Menyimpan..." : "Simpan Pekerjaan & Pendidikan"}</span>
+                <span>{saving ? "Menyimpan Data..." : "Simpan Data Organisasi Desa"}</span>
               </button>
             </div>
           </form>

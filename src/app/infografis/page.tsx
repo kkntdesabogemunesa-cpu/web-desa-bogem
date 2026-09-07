@@ -6,8 +6,8 @@ import {
   PieChart,
   Wallet,
   MapPin,
-  Briefcase,
-  GraduationCap,
+  Building2,
+  User,
   ArrowUpRight,
   TrendingUp,
   ArrowLeft,
@@ -22,7 +22,7 @@ import {
 import { InfografisData } from "@/types/infografis";
 
 export default function InfografisPage() {
-  const [activeTab, setActiveTab] = useState<"penduduk" | "pekerjaan" | "apbd">("penduduk");
+  const [activeTab, setActiveTab] = useState<"penduduk" | "organisasi" | "apbd">("penduduk");
   
   // Safe initial state matches SSR
   const [data, setData] = useState<InfografisData>(defaultInfografisData);
@@ -39,7 +39,8 @@ export default function InfografisPage() {
     loadData();
   }, []);
 
-  const { demografi, pekerjaan, pendidikan, apbdes } = data;
+  const { demografi, apbdes } = data;
+  const organisasi = data.organisasi || [];
 
   // Calculate sex ratio percentages
   const totalWarga = demografi.total_penduduk || (demografi.pria + demografi.wanita) || 1;
@@ -71,7 +72,7 @@ export default function InfografisPage() {
               Infografis Desa Bogem
             </h1>
             <p className="text-emerald-100/85 text-xs sm:text-sm lg:text-base leading-relaxed">
-              Sajian statistik transparan mengenai demografi kependudukan, mata pencaharian, tingkat pendidikan, dan struktur keuangan APBDes Pemerintah Desa Bogem.
+              Sajian statistik transparan mengenai demografi kependudukan, kelembagaan & organisasi desa, dan struktur keuangan APBDes Pemerintah Desa Bogem.
             </p>
 
             <div className="flex flex-wrap gap-3 pt-1">
@@ -100,15 +101,15 @@ export default function InfografisPage() {
             <span>Demografi Penduduk</span>
           </button>
           <button
-            onClick={() => setActiveTab("pekerjaan")}
+            onClick={() => setActiveTab("organisasi")}
             className={`flex items-center space-x-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap active:scale-95 shadow-sm ${
-              activeTab === "pekerjaan"
+              activeTab === "organisasi"
                 ? "bg-[#063321] text-white"
                 : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/80"
             }`}
           >
-            <Briefcase className="w-4 h-4" />
-            <span>Pekerjaan & Pendidikan</span>
+            <Building2 className="w-4 h-4" />
+            <span>Kelembagaan & Organisasi</span>
           </button>
           <button
             onClick={() => setActiveTab("apbd")}
@@ -217,75 +218,90 @@ export default function InfografisPage() {
           </div>
         )}
 
-        {/* Tab 2: Pekerjaan & Pendidikan */}
-        {activeTab === "pekerjaan" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            {/* Mata Pencaharian */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-4 sm:space-y-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
-                  <Briefcase className="w-5 h-5" />
+        {/* Tab 2: Kelembagaan & Organisasi Desa */}
+        {activeTab === "organisasi" && (
+          <div className="space-y-6">
+            {/* Header info & Stats banner */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1 max-w-2xl">
+                <div className="inline-flex items-center space-x-2 text-emerald-800 text-xs font-bold uppercase tracking-wider bg-emerald-50 border border-emerald-200/60 px-3 py-1 rounded-full">
+                  <Building2 className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>Lembaga Kemasyarakatan Desa (LKD)</span>
                 </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900">Mata Pencaharian Utama</h3>
-                  <p className="text-xs text-slate-500">Distribusi sektor pekerjaan warga</p>
-                </div>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                  Organisasi & Kelembagaan Desa Bogem
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Wadah partisipasi aktif masyarakat desa dalam permusyawaratan, perencanaan pembangunan, pemberdayaan wanita, kepemudaan, ketertiban umum, dan pelayanan sosial.
+                </p>
               </div>
 
-              <div className="space-y-3 sm:space-y-4">
-                {pekerjaan.map((item) => (
-                  <div key={item.nama} className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-bold text-slate-700">
-                      <span>{item.nama}</span>
-                      <span>
-                        {(item.count || "").trim() === "-"
-                          ? "-"
-                          : `${item.count} (${item.persen}%)`}
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 sm:h-3 overflow-hidden">
-                      <div
-                        className={`${item.color || "bg-emerald-600"} h-full rounded-full transition-all duration-1000`}
-                        style={{ width: `${item.persen}%` }}
-                      />
-                    </div>
+              <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+                <div className="bg-emerald-50/80 border border-emerald-100 rounded-2xl px-4 py-3 text-center min-w-[110px]">
+                  <div className="text-xl sm:text-2xl font-extrabold text-emerald-900">
+                    {organisasi.length}
                   </div>
-                ))}
+                  <div className="text-[11px] font-bold text-emerald-700">Lembaga Aktif</div>
+                </div>
               </div>
             </div>
 
-            {/* Tingkat Pendidikan */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-4 sm:space-y-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
-                  <GraduationCap className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900">Tingkat Pendidikan</h3>
-                  <p className="text-xs text-slate-500">Kualifikasi jenjang pendidikan warga</p>
-                </div>
-              </div>
-
-              <div className="space-y-3 sm:space-y-4">
-                {pendidikan.map((item) => (
-                  <div key={item.tingkat} className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-bold text-slate-700">
-                      <span>{item.tingkat}</span>
-                      <span>
-                        {(item.count || "").trim() === "-"
-                          ? "-"
-                          : `${item.count} (${item.persen}%)`}
+            {/* Organizations Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {organisasi.map((org) => (
+                <div
+                  key={org.id || org.nama}
+                  className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/80 hover:border-emerald-300 hover:shadow-md transition-all flex flex-col justify-between space-y-4 group"
+                >
+                  <div className="space-y-3">
+                    {/* Header: Singkatan Badge & Kategori */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center px-3 py-1 rounded-xl bg-[#004329] text-white font-extrabold text-xs shadow-sm">
+                        {org.singkatan || "Lembaga"}
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg truncate max-w-[160px]">
+                        {org.kategori}
                       </span>
                     </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 sm:h-3 overflow-hidden">
-                      <div
-                        className="bg-emerald-600 h-full rounded-full transition-all duration-1000"
-                        style={{ width: `${item.persen}%` }}
-                      />
+
+                    {/* Nama Organisasi */}
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900 group-hover:text-emerald-800 transition">
+                        {org.nama}
+                      </h3>
+                      <p className="text-xs text-slate-600 leading-relaxed mt-1.5 line-clamp-3">
+                        {org.deskripsi}
+                      </p>
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  {/* Footer Meta: Ketua & Anggota */}
+                  <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
+                    <div className="flex items-center justify-between text-slate-700">
+                      <span className="text-slate-400 font-medium flex items-center space-x-1.5">
+                        <User className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>Ketua / Pimpinan:</span>
+                      </span>
+                      <strong className="text-slate-800 font-bold truncate max-w-[140px]">{org.ketua}</strong>
+                    </div>
+
+                    <div className="flex items-center justify-between text-slate-700">
+                      <span className="text-slate-400 font-medium flex items-center space-x-1.5">
+                        <Users className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>Pengurus/Kader:</span>
+                      </span>
+                      <strong className="text-slate-800 font-bold">{org.jumlah_anggota || "-"}</strong>
+                    </div>
+
+                    {org.kontak && org.kontak !== "-" && (
+                      <div className="flex items-center justify-between text-slate-700">
+                        <span className="text-slate-400 font-medium">Kontak/Sekretariat:</span>
+                        <strong className="text-emerald-800 font-bold truncate max-w-[140px]">{org.kontak}</strong>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

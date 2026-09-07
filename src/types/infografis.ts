@@ -22,6 +22,17 @@ export interface ItemPendidikan {
   count: string;
 }
 
+export interface ItemOrganisasi {
+  id: string;
+  nama: string;
+  singkatan: string;
+  ketua: string;
+  jumlah_anggota: string;
+  kategori: string;
+  deskripsi: string;
+  kontak?: string;
+}
+
 export interface ItemRincianAnggaran {
   nama: string;
   nominal: number;
@@ -56,8 +67,9 @@ export interface StatIDM {
 
 export interface InfografisData {
   demografi: StatDemografi;
-  pekerjaan: ItemPekerjaan[];
-  pendidikan: ItemPendidikan[];
+  pekerjaan?: ItemPekerjaan[];
+  pendidikan?: ItemPendidikan[];
+  organisasi?: ItemOrganisasi[];
   apbdes: StatAPBDes;
   idm: StatIDM;
   updated_at?: string;

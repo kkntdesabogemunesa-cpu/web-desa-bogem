@@ -1,5 +1,68 @@
 import { supabase } from "@/lib/supabase";
-import { InfografisData } from "@/types/infografis";
+import { InfografisData, ItemOrganisasi } from "@/types/infografis";
+
+export const defaultOrganisasiList: ItemOrganisasi[] = [
+  {
+    id: "bpd",
+    nama: "Badan Permusyawaratan Desa",
+    singkatan: "BPD",
+    ketua: "Bpk. Bambang Sutrisno",
+    jumlah_anggota: "9 Orang",
+    kategori: "Permusyawaratan & Pengawasan",
+    deskripsi: "Menampung dan menyalurkan aspirasi masyarakat desa serta mengawasi pelaksanaan APBDes dan kinerja Pemdes.",
+    kontak: "-",
+  },
+  {
+    id: "lpmd",
+    nama: "Lembaga Pemberdayaan Masyarakat Desa",
+    singkatan: "LPMD",
+    ketua: "Bpk. Sukarman",
+    jumlah_anggota: "12 Orang",
+    kategori: "Pembangunan & Partisipasi",
+    deskripsi: "Membantu pemerintah desa menyusun rencana dan menggerakkan partisipasi swadaya gotong royong masyarakat.",
+    kontak: "-",
+  },
+  {
+    id: "pkk",
+    nama: "Tim Penggerak PKK Desa Bogem",
+    singkatan: "PKK",
+    ketua: "Ibu Sri Wahyuni",
+    jumlah_anggota: "35 Kader",
+    kategori: "Pemberdayaan Keluarga",
+    deskripsi: "Menggerakkan 10 program pokok PKK, pembinaan keluarga sejahtera, posyandu balita-lansia, dan ketahanan pangan keluarga.",
+    kontak: "-",
+  },
+  {
+    id: "karang-taruna",
+    nama: "Karang Taruna Satria Muda",
+    singkatan: "Karang Taruna",
+    ketua: "Dimas Anggara",
+    jumlah_anggota: "28 Pemuda",
+    kategori: "Kepemudaan & Olahraga",
+    deskripsi: "Wadah pengembangan potensi pemuda desa dalam olahraga, kepemimpinan, kepedulian sosial, serta kegiatan desa.",
+    kontak: "-",
+  },
+  {
+    id: "satlinmas",
+    nama: "Satuan Perlindungan Masyarakat",
+    singkatan: "Satlinmas",
+    ketua: "Bpk. Suparno",
+    jumlah_anggota: "20 Anggota",
+    kategori: "Ketertiban & Keamanan",
+    deskripsi: "Membantu menjaga ketenteraman, ketertiban umum masyarakat desa, serta kesiapsiagaan penanggulangan bencana.",
+    kontak: "-",
+  },
+  {
+    id: "posyandu",
+    nama: "Kader Posyandu & Kesehatan Desa",
+    singkatan: "Posyandu",
+    ketua: "Ibu Endang Sulistyo",
+    jumlah_anggota: "24 Kader",
+    kategori: "Kesehatan Masyarakat",
+    deskripsi: "Layanan rutin penimbangan balita, pemantauan gizi pencegahan stunting, imunisasi, dan pemeriksaan kesehatan lansia.",
+    kontak: "-",
+  },
+];
 
 export const defaultInfografisData: InfografisData = {
   demografi: {
@@ -25,6 +88,7 @@ export const defaultInfografisData: InfografisData = {
     { tingkat: "SMA / SMK", persen: 32, count: "1.158 Warga" },
     { tingkat: "Diploma / Sarjana (S1/S2)", persen: 11, count: "399 Warga" },
   ],
+  organisasi: defaultOrganisasiList,
   apbdes: {
     tahun_anggaran: "2024",
     pendapatan_total: 1520400000,
@@ -85,6 +149,9 @@ export async function fetchInfografisData(): Promise<InfografisData> {
       demografi: data.demografi || defaultInfografisData.demografi,
       pekerjaan: data.pekerjaan || defaultInfografisData.pekerjaan,
       pendidikan: data.pendidikan || defaultInfografisData.pendidikan,
+      organisasi: data.organisasi && Array.isArray(data.organisasi) && data.organisasi.length > 0
+        ? data.organisasi
+        : defaultOrganisasiList,
       apbdes: data.apbdes || defaultInfografisData.apbdes,
       idm: data.idm || defaultInfografisData.idm,
       updated_at: data.updated_at || defaultInfografisData.updated_at,
@@ -105,8 +172,9 @@ export async function updateInfografisData(
     const updatedPayload = {
       id: "main",
       demografi: newData.demografi || current.demografi,
-      pekerjaan: newData.pekerjaan || current.pekerjaan,
-      pendidikan: newData.pendidikan || current.pendidikan,
+      pekerjaan: newData.pekerjaan !== undefined ? newData.pekerjaan : current.pekerjaan,
+      pendidikan: newData.pendidikan !== undefined ? newData.pendidikan : current.pendidikan,
+      organisasi: newData.organisasi !== undefined ? newData.organisasi : (current.organisasi || defaultOrganisasiList),
       apbdes: newData.apbdes || current.apbdes,
       idm: newData.idm || current.idm,
       updated_at: new Date().toISOString(),
