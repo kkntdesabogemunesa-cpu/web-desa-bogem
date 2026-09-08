@@ -18,6 +18,8 @@ import Link from "next/link";
 import {
   fetchInfografisData,
   defaultInfografisData,
+  parseNominal,
+  formatRupiah,
 } from "@/services/infografisService";
 import { InfografisData } from "@/types/infografis";
 
@@ -317,112 +319,291 @@ export default function InfografisPage() {
         )}
 
         {/* Tab 3: APBDes Transparansi */}
-        {activeTab === "apbd" && (
-          <div className="space-y-6">
-            {/* 3 Top Financial Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-6">
-              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm border border-slate-100 space-y-1.5 sm:space-y-2">
-                <div className="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center justify-between">
-                  <span>Pendapatan Desa</span>
-                  <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-                    TA {apbdes.tahun_anggaran}
-                  </span>
+        {activeTab === "apbd" && (() => {
+          const totalPendapatan = apbdes.pendapatan_total || 0;
+          const totalBelanja = apbdes.belanja_total || 0;
+          const surplusDefisit = apbdes.surplus_defisit !== undefined ? apbdes.surplus_defisit : (totalPendapatan - totalBelanja);
+          const penerimaanRincian = apbdes.pembiayaan_penerimaan_rincian || [];
+          const pengeluaranRincian = apbdes.pembiayaan_pengeluaran_rincian || [];
+          const totalPenerimaanPembiayaan = apbdes.pembiayaan_penerimaan !== undefined
+            ? apbdes.pembiayaan_penerimaan
+            : penerimaanRincian.reduce((acc, c) => acc + parseNominal(c.nominal), 0);
+          const totalPengeluaranPembiayaan = apbdes.pembiayaan_pengeluaran !== undefined
+            ? apbdes.pembiayaan_pengeluaran
+            : pengeluaranRincian.reduce((acc, c) => acc + parseNominal(c.nominal), 0);
+          const pembiayaanNetto = apbdes.pembiayaan_netto !== undefined
+            ? apbdes.pembiayaan_netto
+            : (totalPenerimaanPembiayaan - totalPengeluaranPembiayaan);
+          const silpaTahunBerjalan = apbdes.silpa !== undefined
+            ? apbdes.silpa
+            : (surplusDefisit + pembiayaanNetto);
+
+          return (
+            <div className="space-y-6">
+              {/* 5 Financial Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
+                {/* 1. Pendapatan */}
+                <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-100 space-y-1.5">
+                  <div className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center justify-between">
+                    <span>1. Pendapatan</span>
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+                      TA {apbdes.tahun_anggaran}
+                    </span>
+                  </div>
+                  <div className="text-base sm:text-xl font-extrabold text-emerald-700 break-words">
+                    Rp {formatRupiah(totalPendapatan)}
+                  </div>
+                  <p className="text-[11px] text-slate-500">{apbdes.pendapatan_rincian?.length || 0} Pos Penerimaan Desa</p>
                 </div>
-                <div className="text-lg sm:text-2xl font-extrabold text-emerald-700 break-words">
-                  Rp {apbdes.pendapatan_total.toLocaleString("id-ID")}
+
+                {/* 2. Belanja */}
+                <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-100 space-y-1.5">
+                  <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                    <span>2. Belanja</span>
+                    <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-200">
+                      TA {apbdes.tahun_anggaran}
+                    </span>
+                  </div>
+                  <div className="text-base sm:text-xl font-extrabold text-slate-900 break-words">
+                    Rp {formatRupiah(totalBelanja)}
+                  </div>
+                  <p className="text-[11px] text-slate-500">{apbdes.belanja_rincian?.length || 0} Bidang Pengeluaran</p>
                 </div>
-                <p className="text-[11px] sm:text-xs text-slate-500">Dana Desa, ADD, PADes, Bagi Hasil Pajak</p>
+
+                {/* 3. Surplus / Defisit */}
+                <div
+                  className={`rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border space-y-1.5 ${
+                    surplusDefisit >= 0
+                      ? "bg-white border-teal-100"
+                      : "bg-white border-rose-100"
+                  }`}
+                >
+                  <div
+                    className={`text-[11px] font-bold uppercase tracking-wider flex items-center justify-between ${
+                      surplusDefisit >= 0 ? "text-teal-800" : "text-rose-800"
+                    }`}
+                  >
+                    <span>3. {surplusDefisit >= 0 ? "Surplus" : "Defisit"}</span>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full border ${
+                        surplusDefisit >= 0
+                          ? "bg-teal-50 text-teal-700 border-teal-200"
+                          : "bg-rose-50 text-rose-700 border-rose-200"
+                      }`}
+                    >
+                      {surplusDefisit >= 0 ? "Surplus" : "Defisit"}
+                    </span>
+                  </div>
+                  <div
+                    className={`text-base sm:text-xl font-extrabold break-words ${
+                      surplusDefisit >= 0 ? "text-teal-700" : "text-rose-600"
+                    }`}
+                  >
+                    {surplusDefisit < 0 ? "-" : ""}Rp {formatRupiah(Math.abs(surplusDefisit))}
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    {surplusDefisit >= 0 ? "Pendapatan > Belanja" : "Ditutup dari Pembiayaan"}
+                  </p>
+                </div>
+
+                {/* 4. Pembiayaan Netto */}
+                <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border border-blue-100 space-y-1.5">
+                  <div className="text-[11px] font-bold text-blue-900 uppercase tracking-wider flex items-center justify-between">
+                    <span>4. Pembiayaan Netto</span>
+                    <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">
+                      SiLPA Lalu
+                    </span>
+                  </div>
+                  <div className="text-base sm:text-xl font-extrabold text-blue-800 break-words">
+                    {pembiayaanNetto < 0 ? "-" : ""}Rp {formatRupiah(Math.abs(pembiayaanNetto))}
+                  </div>
+                  <p className="text-[11px] text-slate-500">Penerimaan - Pengeluaran</p>
+                </div>
+
+                {/* 5. SiLPA Tahun Berjalan */}
+                <div
+                  className={`rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border space-y-1.5 sm:col-span-2 lg:col-span-1 ${
+                    Math.abs(silpaTahunBerjalan) < 0.01
+                      ? "bg-emerald-50/70 border-emerald-300"
+                      : silpaTahunBerjalan > 0
+                      ? "bg-white border-teal-100"
+                      : "bg-white border-amber-200"
+                  }`}
+                >
+                  <div className="text-[11px] font-bold text-emerald-950 uppercase tracking-wider flex items-center justify-between">
+                    <span>5. Sisa (SiLPA)</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-extrabold">
+                      {Math.abs(silpaTahunBerjalan) < 0.01 ? "Nihil" : "Aktif"}
+                    </span>
+                  </div>
+                  <div className="text-base sm:text-xl font-extrabold text-emerald-900 break-words">
+                    {silpaTahunBerjalan < 0 ? "-" : ""}Rp {formatRupiah(Math.abs(silpaTahunBerjalan))}
+                  </div>
+                  <p className="text-[11px] text-emerald-800 font-semibold">
+                    {Math.abs(silpaTahunBerjalan) < 0.01
+                      ? "✓ Anggaran Berimbang"
+                      : silpaTahunBerjalan > 0
+                      ? "Sisa Lebih Anggaran"
+                      : "Defisit Belum Tertutup"}
+                  </p>
+                </div>
               </div>
 
-              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm border border-slate-100 space-y-1.5 sm:space-y-2">
-                <div className="text-xs font-bold text-[#004329] uppercase tracking-wider flex items-center justify-between">
-                  <span>Belanja Desa</span>
-                  <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-200">
-                    TA {apbdes.tahun_anggaran}
-                  </span>
+              {/* Rincian Pendapatan & Belanja 2 Columns */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                {/* Rincian Pendapatan */}
+                <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-sm border border-slate-200/80 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                      <h3 className="text-xs sm:text-base font-bold text-emerald-900">
+                        Rincian Sumber Pendapatan Desa
+                      </h3>
+                      <p className="text-[11px] text-slate-500">Pos penerimaan APBDes</p>
+                    </div>
+                    <span className="text-xs sm:text-sm font-extrabold text-emerald-700">
+                      Rp {formatRupiah(totalPendapatan)}
+                    </span>
+                  </div>
+                  <div className="space-y-2.5">
+                    {apbdes.pendapatan_rincian.map((item, idx) => {
+                      const persen = totalPendapatan > 0 ? ((parseNominal(item.nominal) / totalPendapatan) * 100).toFixed(1) : "0";
+                      return (
+                        <div key={idx} className="flex justify-between items-center gap-2 text-xs py-2 border-b border-slate-50 last:border-0">
+                          <div className="flex items-center space-x-2 min-w-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 flex-shrink-0" />
+                            <span className="font-semibold text-slate-700 truncate">{item.nama}</span>
+                          </div>
+                          <div className="flex items-center space-x-2 flex-shrink-0">
+                            <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-800 rounded-lg">
+                              {persen}%
+                            </span>
+                            <span className="font-bold text-emerald-800 text-right whitespace-nowrap">
+                              Rp {formatRupiah(item.nominal)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="text-lg sm:text-2xl font-extrabold text-slate-900 break-words">
-                  Rp {apbdes.belanja_total.toLocaleString("id-ID")}
+
+                {/* Rincian Belanja */}
+                <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-sm border border-slate-200/80 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                      <h3 className="text-xs sm:text-base font-bold text-slate-900">
+                        Rincian Bidang Belanja Desa
+                      </h3>
+                      <p className="text-[11px] text-slate-500">Alokasi bidang pengeluaran</p>
+                    </div>
+                    <span className="text-xs sm:text-sm font-extrabold text-slate-900">
+                      Rp {formatRupiah(totalBelanja)}
+                    </span>
+                  </div>
+                  <div className="space-y-2.5">
+                    {apbdes.belanja_rincian.map((item, idx) => {
+                      const persen = totalBelanja > 0 ? ((parseNominal(item.nominal) / totalBelanja) * 100).toFixed(1) : "0";
+                      return (
+                        <div key={idx} className="flex justify-between items-center gap-2 text-xs py-2 border-b border-slate-50 last:border-0">
+                          <div className="flex items-center space-x-2 min-w-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-600 flex-shrink-0" />
+                            <span className="font-semibold text-slate-700 truncate">{item.nama}</span>
+                          </div>
+                          <div className="flex items-center space-x-2 flex-shrink-0">
+                            <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-lg">
+                              {persen}%
+                            </span>
+                            <span className="font-bold text-slate-900 text-right whitespace-nowrap">
+                              Rp {formatRupiah(item.nominal)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <p className="text-[11px] sm:text-xs text-slate-500">Infrastruktur, Penyelenggaraan & Pemberdayaan</p>
               </div>
 
-              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm border border-slate-100 space-y-1.5 sm:space-y-2 sm:col-span-2 md:col-span-1">
-                <div className="text-xs font-bold text-teal-800 uppercase tracking-wider flex items-center justify-between">
-                  <span>Surplus / SiLPA</span>
-                  <span className="text-[10px] bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full border border-teal-200">
-                    TA {apbdes.tahun_anggaran}
-                  </span>
-                </div>
-                <div className="text-lg sm:text-2xl font-extrabold text-teal-700 break-words">
-                  Rp {apbdes.surplus_defisit.toLocaleString("id-ID")}
-                </div>
-                <p className="text-[11px] sm:text-xs text-slate-500">Sisa Lebih Perhitungan Anggaran Tahun Berjalan</p>
-              </div>
-            </div>
-
-            {/* Rincian Pendapatan & Belanja 2 Columns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              {/* Rincian Pendapatan */}
-              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-sm border border-slate-200/80 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <h3 className="text-xs sm:text-base font-bold text-emerald-900">
-                    Rincian Sumber Pendapatan
-                  </h3>
-                  <span className="text-xs sm:text-sm font-extrabold text-emerald-700">
-                    Rp {apbdes.pendapatan_total.toLocaleString("id-ID")}
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {apbdes.pendapatan_rincian.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-start gap-2 text-xs py-1.5 border-b border-slate-50 last:border-0">
-                      <span className="font-semibold text-slate-700 flex-grow break-words">{item.nama}</span>
-                      <span className="font-bold text-emerald-800 flex-shrink-0 text-right whitespace-nowrap">
-                        Rp {item.nominal.toLocaleString("id-ID")}
+              {/* Rincian Pembiayaan Desa (Penerimaan & Pengeluaran Pembiayaan) */}
+              {(penerimaanRincian.length > 0 || pengeluaranRincian.length > 0) && (
+                <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-sm border border-slate-200/80 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                      <h3 className="text-xs sm:text-base font-bold text-blue-950">
+                        Pembiayaan Desa (SiLPA Tahun Lalu & Penyertaan Modal)
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Pos penyeimbang anggaran untuk mencapai anggaran berimbang sesuai Permendagri No. 20/2018
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2 self-start sm:self-auto">
+                      <span className="text-[11px] font-bold text-slate-600">Pembiayaan Netto:</span>
+                      <span className="text-xs sm:text-sm font-extrabold text-blue-900 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-xl">
+                        {pembiayaanNetto < 0 ? "-" : ""}Rp {formatRupiah(Math.abs(pembiayaanNetto))}
                       </span>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
 
-              {/* Rincian Belanja */}
-              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-sm border border-slate-200/80 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <h3 className="text-xs sm:text-base font-bold text-slate-900">
-                    Rincian Bidang Belanja
-                  </h3>
-                  <span className="text-xs sm:text-sm font-extrabold text-slate-900">
-                    Rp {apbdes.belanja_total.toLocaleString("id-ID")}
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {apbdes.belanja_rincian.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-start gap-2 text-xs py-1.5 border-b border-slate-50 last:border-0">
-                      <span className="font-semibold text-slate-700 flex-grow break-words">{item.nama}</span>
-                      <span className="font-bold text-slate-900 flex-shrink-0 text-right whitespace-nowrap">
-                        Rp {item.nominal.toLocaleString("id-ID")}
-                      </span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                    {/* Penerimaan Pembiayaan */}
+                    <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <span className="text-xs font-bold text-blue-950">Penerimaan Pembiayaan</span>
+                        <span className="text-xs font-extrabold text-blue-900">
+                          Rp {formatRupiah(totalPenerimaanPembiayaan)}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {penerimaanRincian.map((p, idx) => (
+                          <div key={idx} className="flex justify-between items-center text-xs py-1">
+                            <span className="font-semibold text-slate-700 truncate">{p.nama}</span>
+                            <span className="font-bold text-blue-900 ml-2 whitespace-nowrap">
+                              Rp {formatRupiah(p.nominal)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
 
-            {/* Banner Transparansi */}
-            <div className="bg-emerald-900 text-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
-              <div className="space-y-2 text-center sm:text-left">
-                <div className="inline-flex items-center space-x-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-bold">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  <span>Transparansi Keuangan Publik</span>
+                    {/* Pengeluaran Pembiayaan */}
+                    <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <span className="text-xs font-bold text-slate-900">Pengeluaran Pembiayaan</span>
+                        <span className="text-xs font-extrabold text-slate-900">
+                          Rp {formatRupiah(totalPengeluaranPembiayaan)}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {pengeluaranRincian.map((p, idx) => (
+                          <div key={idx} className="flex justify-between items-center text-xs py-1">
+                            <span className="font-semibold text-slate-700 truncate">{p.nama}</span>
+                            <span className="font-bold text-slate-900 ml-2 whitespace-nowrap">
+                              Rp {formatRupiah(p.nominal)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <h4 className="text-base sm:text-xl font-bold">Laporan Realisasi APBDes Tahun {apbdes.tahun_anggaran}</h4>
-                <p className="text-xs text-emerald-200/80 leading-relaxed">
-                  Seluruh penerimaan dan belanja keuangan desa dikelola secara akuntabel, transparan, dan dapat dipertanggungjawabkan kepada seluruh warga Desa Bogem.
-                </p>
+              )}
+
+              {/* Banner Transparansi */}
+              <div className="bg-emerald-900 text-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
+                <div className="space-y-2 text-center sm:text-left">
+                  <div className="inline-flex items-center space-x-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-bold">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span>Transparansi Keuangan Publik</span>
+                  </div>
+                  <h4 className="text-base sm:text-xl font-bold">Laporan Realisasi APBDes Tahun {apbdes.tahun_anggaran}</h4>
+                  <p className="text-xs text-emerald-200/80 leading-relaxed">
+                    Seluruh penerimaan, belanja, dan pembiayaan keuangan desa dikelola secara akuntabel, transparan, dan dapat dipertanggungjawabkan kepada seluruh warga Desa Bogem.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
       </div>
     </main>

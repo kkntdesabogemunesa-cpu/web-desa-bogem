@@ -30,6 +30,8 @@ import {
   updateInfografisData,
   defaultInfografisData,
   defaultOrganisasiList,
+  parseNominal,
+  formatRupiah,
 } from "@/services/infografisService";
 import {
   StatDemografi,
@@ -112,6 +114,12 @@ export default function KelolaInfografisAdmin() {
   const [tahunAnggaran, setTahunAnggaran] = useState(defaultInfografisData.apbdes.tahun_anggaran);
   const [pendapatanRincian, setPendapatanRincian] = useState<ItemRincianAnggaran[]>(defaultInfografisData.apbdes.pendapatan_rincian);
   const [belanjaRincian, setBelanjaRincian] = useState<ItemRincianAnggaran[]>(defaultInfografisData.apbdes.belanja_rincian);
+  const [pembiayaanPenerimaanRincian, setPembiayaanPenerimaanRincian] = useState<ItemRincianAnggaran[]>(
+    defaultInfografisData.apbdes.pembiayaan_penerimaan_rincian || [{ nama: "SiLPA Tahun Anggaran Sebelumnya", nominal: 0 }]
+  );
+  const [pembiayaanPengeluaranRincian, setPembiayaanPengeluaranRincian] = useState<ItemRincianAnggaran[]>(
+    defaultInfografisData.apbdes.pembiayaan_pengeluaran_rincian || [{ nama: "Penyertaan Modal Desa (BUMDes)", nominal: 0 }]
+  );
 
   // IDM States
   const [idmData, setIdmData] = useState<StatIDM>(defaultInfografisData.idm);
@@ -125,6 +133,16 @@ export default function KelolaInfografisAdmin() {
       setTahunAnggaran(data.apbdes?.tahun_anggaran || "2024");
       setPendapatanRincian(data.apbdes?.pendapatan_rincian || defaultInfografisData.apbdes.pendapatan_rincian);
       setBelanjaRincian(data.apbdes?.belanja_rincian || defaultInfografisData.apbdes.belanja_rincian);
+      setPembiayaanPenerimaanRincian(
+        data.apbdes?.pembiayaan_penerimaan_rincian && data.apbdes.pembiayaan_penerimaan_rincian.length > 0
+          ? data.apbdes.pembiayaan_penerimaan_rincian
+          : [{ nama: "SiLPA Tahun Anggaran Sebelumnya", nominal: 0 }]
+      );
+      setPembiayaanPengeluaranRincian(
+        data.apbdes?.pembiayaan_pengeluaran_rincian && data.apbdes.pembiayaan_pengeluaran_rincian.length > 0
+          ? data.apbdes.pembiayaan_pengeluaran_rincian
+          : [{ nama: "Penyertaan Modal Desa (BUMDes)", nominal: 0 }]
+      );
       setIdmData(data.idm || defaultInfografisData.idm);
     } catch {
       // ignore
@@ -200,17 +218,30 @@ export default function KelolaInfografisAdmin() {
   };
 
   // ============================================================================
-  // 3. OTOMATISASI APBDES (TOTAL, SURPLUS/DEFISIT, PERSENTASE PER POS)
+  // 3. OTOMATISASI APBDES (TOTAL, SURPLUS/DEFISIT, PEMBIAYAAN, SILPA TAHUN BERJALAN)
   // ============================================================================
   const totalPendapatan = useMemo(() => {
-    return pendapatanRincian.reduce((acc, curr) => acc + (Number(curr.nominal) || 0), 0);
+    return pendapatanRincian.reduce((acc, curr) => acc + parseNominal(curr.nominal), 0);
   }, [pendapatanRincian]);
 
   const totalBelanja = useMemo(() => {
-    return belanjaRincian.reduce((acc, curr) => acc + (Number(curr.nominal) || 0), 0);
+    return belanjaRincian.reduce((acc, curr) => acc + parseNominal(curr.nominal), 0);
   }, [belanjaRincian]);
 
   const surplusDefisit = totalPendapatan - totalBelanja;
+
+  const totalPenerimaanPembiayaan = useMemo(() => {
+    return pembiayaanPenerimaanRincian.reduce((acc, curr) => acc + parseNominal(curr.nominal), 0);
+  }, [pembiayaanPenerimaanRincian]);
+
+  const totalPengeluaranPembiayaan = useMemo(() => {
+    return pembiayaanPengeluaranRincian.reduce((acc, curr) => acc + parseNominal(curr.nominal), 0);
+  }, [pembiayaanPengeluaranRincian]);
+
+  const pembiayaanNetto = totalPenerimaanPembiayaan - totalPengeluaranPembiayaan;
+
+  // SiLPA Tahun Berjalan = Surplus/Defisit + Pembiayaan Netto
+  const silpaTahunBerjalan = surplusDefisit + pembiayaanNetto;
 
   // ============================================================================
   // 4. OTOMATISASI IDM (SKOR TOTAL & KATEGORI STATUS DARI SUB-INDEKS)
@@ -298,19 +329,42 @@ export default function KelolaInfografisAdmin() {
       apbdes: {
         tahun_anggaran: tahunAnggaran,
         pendapatan_total: totalPendapatan,
-        pendapatan_rincian: pendapatanRincian,
+        pendapatan_rincian: pendapatanRincian.map((p) => ({
+          nama: p.nama,
+          nominal: parseNominal(p.nominal),
+        })),
         belanja_total: totalBelanja,
-        belanja_rincian: belanjaRincian,
+        belanja_rincian: belanjaRincian.map((b) => ({
+          nama: b.nama,
+          nominal: parseNominal(b.nominal),
+        })),
         surplus_defisit: surplusDefisit,
-        silpa: surplusDefisit,
+        pembiayaan_penerimaan: totalPenerimaanPembiayaan,
+        pembiayaan_penerimaan_rincian: pembiayaanPenerimaanRincian.map((p) => ({
+          nama: p.nama,
+          nominal: parseNominal(p.nominal),
+        })),
+        pembiayaan_pengeluaran: totalPengeluaranPembiayaan,
+        pembiayaan_pengeluaran_rincian: pembiayaanPengeluaranRincian.map((p) => ({
+          nama: p.nama,
+          nominal: parseNominal(p.nominal),
+        })),
+        pembiayaan_netto: pembiayaanNetto,
+        silpa: silpaTahunBerjalan,
       },
     });
     setSaving(false);
     if (res.success) {
-      setFeedback({ type: "success", text: "Kalkulasi APBDes & Transparansi Keuangan berhasil diperbarui otomatis!" });
+      setFeedback({
+        type: "success",
+        text: "Kalkulasi APBDes, Pembiayaan, dan SiLPA berhasil disimpan otomatis!",
+      });
       setTimeout(() => setFeedback(null), 4000);
     } else {
-      setFeedback({ type: "error", text: "Gagal menyimpan data APBDes." });
+      setFeedback({
+        type: "error",
+        text: res.error ? `Gagal menyimpan data APBDes: ${res.error}` : "Gagal menyimpan data APBDes.",
+      });
     }
   };
 
@@ -332,23 +386,43 @@ export default function KelolaInfografisAdmin() {
       setFeedback({ type: "success", text: "Skor & Status IDM berhasil dihitung dan disimpan otomatis!" });
       setTimeout(() => setFeedback(null), 4000);
     } else {
-      setFeedback({ type: "error", text: "Gagal menyimpan data IDM." });
+      setFeedback({ type: "error", text: res.error ? `Gagal menyimpan data IDM: ${res.error}` : "Gagal menyimpan data IDM." });
     }
   };
 
   // Helper row handlers
   const addPendapatanRow = () => {
-    setPendapatanRincian([...pendapatanRincian, { nama: "Pos Pendapatan Baru", nominal: 50000000 }]);
+    setPendapatanRincian([...pendapatanRincian, { nama: "Pos Pendapatan Baru", nominal: 0 }]);
   };
   const removePendapatanRow = (idx: number) => {
     setPendapatanRincian(pendapatanRincian.filter((_, i) => i !== idx));
   };
 
   const addBelanjaRow = () => {
-    setBelanjaRincian([...belanjaRincian, { nama: "Bidang Belanja Baru", nominal: 50000000 }]);
+    setBelanjaRincian([...belanjaRincian, { nama: "Bidang Belanja Baru", nominal: 0 }]);
   };
   const removeBelanjaRow = (idx: number) => {
     setBelanjaRincian(belanjaRincian.filter((_, i) => i !== idx));
+  };
+
+  const addPembiayaanPenerimaanRow = () => {
+    setPembiayaanPenerimaanRincian([
+      ...pembiayaanPenerimaanRincian,
+      { nama: "Penerimaan Pembiayaan Baru", nominal: 0 },
+    ]);
+  };
+  const removePembiayaanPenerimaanRow = (idx: number) => {
+    setPembiayaanPenerimaanRincian(pembiayaanPenerimaanRincian.filter((_, i) => i !== idx));
+  };
+
+  const addPembiayaanPengeluaranRow = () => {
+    setPembiayaanPengeluaranRincian([
+      ...pembiayaanPengeluaranRincian,
+      { nama: "Pengeluaran Pembiayaan Baru", nominal: 0 },
+    ]);
+  };
+  const removePembiayaanPengeluaranRow = (idx: number) => {
+    setPembiayaanPengeluaranRincian(pembiayaanPengeluaranRincian.filter((_, i) => i !== idx));
   };
 
   const addRiwayatIDMRow = () => {
@@ -877,14 +951,14 @@ export default function KelolaInfografisAdmin() {
                 </div>
               </div>
 
-              {/* Live Summary Card */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Live Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
                 <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 block">
-                    Total Pendapatan Desa
+                    1. Total Pendapatan
                   </span>
-                  <span className="text-lg sm:text-xl font-extrabold text-[#004329] block pt-1">
-                    Rp {totalPendapatan.toLocaleString("id-ID")}
+                  <span className="text-base sm:text-lg font-extrabold text-[#004329] block pt-1 break-words">
+                    Rp {formatRupiah(totalPendapatan)}
                   </span>
                   <span className="text-[10px] text-emerald-700 font-semibold block pt-0.5">
                     {pendapatanRincian.length} Pos Penerimaan
@@ -893,10 +967,10 @@ export default function KelolaInfografisAdmin() {
 
                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-700 block">
-                    Total Belanja Desa
+                    2. Total Belanja
                   </span>
-                  <span className="text-lg sm:text-xl font-extrabold text-slate-900 block pt-1">
-                    Rp {totalBelanja.toLocaleString("id-ID")}
+                  <span className="text-base sm:text-lg font-extrabold text-slate-900 block pt-1 break-words">
+                    Rp {formatRupiah(totalBelanja)}
                   </span>
                   <span className="text-[10px] text-slate-500 font-semibold block pt-0.5">
                     {belanjaRincian.length} Bidang Pengeluaran
@@ -911,27 +985,78 @@ export default function KelolaInfografisAdmin() {
                   }`}
                 >
                   <span className="text-[10px] font-extrabold uppercase tracking-wider block">
-                    {surplusDefisit >= 0 ? "Surplus Anggaran / SiLPA" : "Defisit Anggaran"}
+                    3. {surplusDefisit >= 0 ? "Surplus Anggaran" : "Defisit Anggaran"}
                   </span>
-                  <span className="text-lg sm:text-xl font-extrabold block pt-1">
-                    Rp {Math.abs(surplusDefisit).toLocaleString("id-ID")}
+                  <span className="text-base sm:text-lg font-extrabold block pt-1 break-words">
+                    {surplusDefisit < 0 ? "-" : ""}Rp {formatRupiah(Math.abs(surplusDefisit))}
                   </span>
                   <span className="text-[10px] font-semibold block pt-0.5">
-                    {surplusDefisit >= 0 ? "Kondisi Keuangan Sehat" : "Pengeluaran Melebihi Pendapatan"}
+                    {surplusDefisit >= 0 ? "Pendapatan > Belanja" : "Pengeluaran Melebihi Pendapatan"}
                   </span>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl text-blue-900">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider block">
+                    4. Pembiayaan Netto
+                  </span>
+                  <span className="text-base sm:text-lg font-extrabold block pt-1 break-words">
+                    {pembiayaanNetto < 0 ? "-" : ""}Rp {formatRupiah(Math.abs(pembiayaanNetto))}
+                  </span>
+                  <span className="text-[10px] font-semibold block pt-0.5 text-blue-700">
+                    Penerimaan (SiLPA Lalu) - Pengeluaran
+                  </span>
+                </div>
+
+                <div
+                  className={`p-4 rounded-2xl border ${
+                    Math.abs(silpaTahunBerjalan) < 0.01
+                      ? "bg-emerald-50 border-emerald-300 text-emerald-950"
+                      : silpaTahunBerjalan > 0
+                      ? "bg-teal-50 border-teal-200 text-teal-900"
+                      : "bg-amber-50 border-amber-300 text-amber-900"
+                  }`}
+                >
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider block">
+                    5. SiLPA Tahun Berjalan
+                  </span>
+                  <span className="text-base sm:text-lg font-extrabold block pt-1 break-words">
+                    {silpaTahunBerjalan < 0 ? "-" : ""}Rp {formatRupiah(Math.abs(silpaTahunBerjalan))}
+                  </span>
+                  <span className="text-[10px] font-semibold block pt-0.5">
+                    {Math.abs(silpaTahunBerjalan) < 0.01
+                      ? "✓ Anggaran Berimbang (Nihil)"
+                      : silpaTahunBerjalan > 0
+                      ? "Sisa Lebih Anggaran"
+                      : "Defisit Belum Tertutup"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Accounting Guidance Note */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs text-slate-600 flex items-start space-x-2.5">
+                <AlertCircle className="w-4 h-4 text-emerald-700 flex-shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-slate-800">
+                    Standar APBDes Berimbang (Permendagri No. 20 Tahun 2018):
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-slate-600">
+                    Bila Belanja lebih besar daripada Pendapatan (Defisit Anggaran), masukkan nominal penutup pada{" "}
+                    <strong>Penerimaan Pembiayaan (SiLPA Tahun Anggaran Sebelumnya)</strong>. Dengan demikian, Defisit + Pembiayaan Netto akan menghasilkan{" "}
+                    <strong className="text-emerald-800">SiLPA Tahun Berjalan = Rp 0 (Anggaran Berimbang Nihil)</strong>.
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Pos Pendapatan Desa */}
+            {/* 1. Pos Pendapatan Desa */}
             <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
                   <h4 className="text-sm sm:text-base font-bold text-emerald-950">
-                    Rincian Pendapatan Desa (Penerimaan)
+                    1. Rincian Pendapatan Desa (Penerimaan)
                   </h4>
                   <p className="text-xs text-slate-500">
-                    Persentase kontribusi per pos pendapatan dihitung otomatis terhadap total pendapatan.
+                    Total: <strong className="text-[#004329]">Rp {formatRupiah(totalPendapatan)}</strong>. Persentase kontribusi per pos dihitung otomatis.
                   </p>
                 </div>
                 <button
@@ -946,7 +1071,7 @@ export default function KelolaInfografisAdmin() {
 
               <div className="space-y-3">
                 {pendapatanRincian.map((item, idx) => {
-                  const posPersen = totalPendapatan > 0 ? ((Number(item.nominal) / totalPendapatan) * 100).toFixed(1) : "0";
+                  const posPersen = totalPendapatan > 0 ? ((parseNominal(item.nominal) / totalPendapatan) * 100).toFixed(1) : "0";
 
                   return (
                     <div
@@ -955,7 +1080,7 @@ export default function KelolaInfografisAdmin() {
                     >
                       <input
                         type="text"
-                        placeholder="Nama Pos Pendapatan (Contoh: Dana Desa / PAD)"
+                        placeholder="Nama Pos Pendapatan (Contoh: Dana Desa / PAD / Bagi Hasil Pajak)"
                         value={item.nama}
                         onChange={(e) => {
                           const copy = [...pendapatanRincian];
@@ -969,15 +1094,16 @@ export default function KelolaInfografisAdmin() {
                         <div className="flex items-center bg-white rounded-xl border border-slate-200 px-3 py-2">
                           <span className="text-xs text-slate-400 font-bold mr-1">Rp</span>
                           <input
-                            type="number"
-                            placeholder="Nominal (Angka)"
-                            value={item.nominal || ""}
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="0"
+                            value={item.nominal !== undefined && item.nominal !== null ? item.nominal : ""}
                             onChange={(e) => {
                               const copy = [...pendapatanRincian];
-                              copy[idx].nominal = Number(e.target.value);
+                              copy[idx].nominal = e.target.value;
                               setPendapatanRincian(copy);
                             }}
-                            className="w-32 sm:w-44 text-xs font-bold text-slate-900 focus:outline-none"
+                            className="w-32 sm:w-44 text-xs font-bold text-slate-900 focus:outline-none bg-transparent"
                           />
                         </div>
 
@@ -1003,15 +1129,15 @@ export default function KelolaInfografisAdmin() {
               </div>
             </div>
 
-            {/* Pos Belanja Desa */}
+            {/* 2. Pos Belanja Desa */}
             <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
                   <h4 className="text-sm sm:text-base font-bold text-slate-900">
-                    Rincian Belanja Desa (Pengeluaran)
+                    2. Rincian Belanja Desa (Pengeluaran)
                   </h4>
                   <p className="text-xs text-slate-500">
-                    Persentase alokasi belanja per bidang dihitung otomatis terhadap total belanja.
+                    Total: <strong className="text-slate-900">Rp {formatRupiah(totalBelanja)}</strong>. Persentase alokasi belanja per bidang dihitung otomatis.
                   </p>
                 </div>
                 <button
@@ -1026,7 +1152,7 @@ export default function KelolaInfografisAdmin() {
 
               <div className="space-y-3">
                 {belanjaRincian.map((item, idx) => {
-                  const bidangPersen = totalBelanja > 0 ? ((Number(item.nominal) / totalBelanja) * 100).toFixed(1) : "0";
+                  const bidangPersen = totalBelanja > 0 ? ((parseNominal(item.nominal) / totalBelanja) * 100).toFixed(1) : "0";
 
                   return (
                     <div
@@ -1035,7 +1161,7 @@ export default function KelolaInfografisAdmin() {
                     >
                       <input
                         type="text"
-                        placeholder="Nama Bidang Belanja (Contoh: Bidang Pembangunan Desa)"
+                        placeholder="Nama Bidang Belanja (Contoh: Bidang Pelaksanaan Pembangunan Desa)"
                         value={item.nama}
                         onChange={(e) => {
                           const copy = [...belanjaRincian];
@@ -1049,15 +1175,16 @@ export default function KelolaInfografisAdmin() {
                         <div className="flex items-center bg-white rounded-xl border border-slate-200 px-3 py-2">
                           <span className="text-xs text-slate-400 font-bold mr-1">Rp</span>
                           <input
-                            type="number"
-                            placeholder="Nominal (Angka)"
-                            value={item.nominal || ""}
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="0"
+                            value={item.nominal !== undefined && item.nominal !== null ? item.nominal : ""}
                             onChange={(e) => {
                               const copy = [...belanjaRincian];
-                              copy[idx].nominal = Number(e.target.value);
+                              copy[idx].nominal = e.target.value;
                               setBelanjaRincian(copy);
                             }}
-                            className="w-32 sm:w-44 text-xs font-bold text-slate-900 focus:outline-none"
+                            className="w-32 sm:w-44 text-xs font-bold text-slate-900 focus:outline-none bg-transparent"
                           />
                         </div>
 
@@ -1083,6 +1210,146 @@ export default function KelolaInfografisAdmin() {
               </div>
             </div>
 
+            {/* 3. Penerimaan Pembiayaan Desa (SiLPA Tahun Lalu & Sumber Lain) */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div>
+                  <h4 className="text-sm sm:text-base font-bold text-blue-950">
+                    3. Penerimaan Pembiayaan Desa
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Sisa Lebih Perhitungan Anggaran (SiLPA) Tahun Lalu, Pencairan Dana Cadangan, dsb. Total: <strong className="text-blue-900">Rp {formatRupiah(totalPenerimaanPembiayaan)}</strong>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addPembiayaanPenerimaanRow}
+                  className="inline-flex items-center space-x-1 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-xs px-3 py-1.5 rounded-xl transition border border-blue-200 active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Tambah Pos Penerimaan</span>
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {pembiayaanPenerimaanRincian.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-200 hover:border-blue-300 transition"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Nama Pos (Contoh: SiLPA Tahun Anggaran Sebelumnya)"
+                      value={item.nama}
+                      onChange={(e) => {
+                        const copy = [...pembiayaanPenerimaanRincian];
+                        copy[idx].nama = e.target.value;
+                        setPembiayaanPenerimaanRincian(copy);
+                      }}
+                      className="flex-grow px-3.5 py-2 bg-white rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none"
+                    />
+
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center bg-white rounded-xl border border-slate-200 px-3 py-2">
+                        <span className="text-xs text-slate-400 font-bold mr-1">Rp</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="0"
+                          value={item.nominal !== undefined && item.nominal !== null ? item.nominal : ""}
+                          onChange={(e) => {
+                            const copy = [...pembiayaanPenerimaanRincian];
+                            copy[idx].nominal = e.target.value;
+                            setPembiayaanPenerimaanRincian(copy);
+                          }}
+                          className="w-32 sm:w-44 text-xs font-bold text-slate-900 focus:outline-none bg-transparent"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removePembiayaanPenerimaanRow(idx)}
+                        className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                        title="Hapus baris penerimaan pembiayaan"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 4. Pengeluaran Pembiayaan Desa (Penyertaan Modal Desa / BUMDes) */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div>
+                  <h4 className="text-sm sm:text-base font-bold text-slate-900">
+                    4. Pengeluaran Pembiayaan Desa
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Penyertaan modal desa ke BUMDes atau pembentukan dana cadangan. Total: <strong className="text-slate-900">Rp {formatRupiah(totalPengeluaranPembiayaan)}</strong>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addPembiayaanPengeluaranRow}
+                  className="inline-flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs px-3 py-1.5 rounded-xl transition border border-slate-300 active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Tambah Pos Pengeluaran</span>
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {pembiayaanPengeluaranRincian.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-200 hover:border-slate-300 transition"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Nama Pos (Contoh: Penyertaan Modal Desa / BUMDes)"
+                      value={item.nama}
+                      onChange={(e) => {
+                        const copy = [...pembiayaanPengeluaranRincian];
+                        copy[idx].nama = e.target.value;
+                        setPembiayaanPengeluaranRincian(copy);
+                      }}
+                      className="flex-grow px-3.5 py-2 bg-white rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none"
+                    />
+
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center bg-white rounded-xl border border-slate-200 px-3 py-2">
+                        <span className="text-xs text-slate-400 font-bold mr-1">Rp</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="0"
+                          value={item.nominal !== undefined && item.nominal !== null ? item.nominal : ""}
+                          onChange={(e) => {
+                            const copy = [...pembiayaanPengeluaranRincian];
+                            copy[idx].nominal = e.target.value;
+                            setPembiayaanPengeluaranRincian(copy);
+                          }}
+                          className="w-32 sm:w-44 text-xs font-bold text-slate-900 focus:outline-none bg-transparent"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removePembiayaanPengeluaranRow(idx)}
+                        className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                        title="Hapus baris pengeluaran pembiayaan"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="flex justify-end">
               <button
                 type="submit"
@@ -1090,7 +1357,7 @@ export default function KelolaInfografisAdmin() {
                 className="bg-[#004329] hover:bg-[#00321F] text-white font-bold text-xs sm:text-sm py-3 px-6 rounded-xl transition shadow-md active:scale-95 disabled:opacity-50 flex items-center space-x-2"
               >
                 <Save className="w-4 h-4" />
-                <span>{saving ? "Menyimpan APBDes..." : "Simpan Data APBDes"}</span>
+                <span>{saving ? "Menyimpan APBDes..." : "Simpan Data APBDes & Pembiayaan"}</span>
               </button>
             </div>
           </form>

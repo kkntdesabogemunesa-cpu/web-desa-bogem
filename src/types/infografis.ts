@@ -35,7 +35,7 @@ export interface ItemOrganisasi {
 
 export interface ItemRincianAnggaran {
   nama: string;
-  nominal: number;
+  nominal: number | string;
 }
 
 export interface StatAPBDes {
@@ -45,7 +45,13 @@ export interface StatAPBDes {
   belanja_total: number;
   belanja_rincian: ItemRincianAnggaran[];
   surplus_defisit: number;
-  silpa: number;
+  // Pembiayaan Desa (SiLPA Tahun Sebelumnya & Pengeluaran Pembiayaan)
+  pembiayaan_penerimaan?: number;
+  pembiayaan_penerimaan_rincian?: ItemRincianAnggaran[];
+  pembiayaan_pengeluaran?: number;
+  pembiayaan_pengeluaran_rincian?: ItemRincianAnggaran[];
+  pembiayaan_netto?: number;
+  silpa: number; // Sisa Lebih Perhitungan Anggaran Tahun Berjalan (Surplus/Defisit + Pembiayaan Netto)
 }
 
 export interface ItemRiwayatIDM {

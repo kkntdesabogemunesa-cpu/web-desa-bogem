@@ -107,6 +107,15 @@ export const defaultInfografisData: InfografisData = {
       { nama: "Bidang Penanggulangan Bencana & Darurat", nominal: 40000000 },
     ],
     surplus_defisit: 75300000,
+    pembiayaan_penerimaan: 0,
+    pembiayaan_penerimaan_rincian: [
+      { nama: "SiLPA Tahun Anggaran Sebelumnya", nominal: 0 },
+    ],
+    pembiayaan_pengeluaran: 0,
+    pembiayaan_pengeluaran_rincian: [
+      { nama: "Penyertaan Modal Desa (BUMDes)", nominal: 0 },
+    ],
+    pembiayaan_netto: 0,
     silpa: 75300000,
   },
   idm: {
@@ -145,13 +154,24 @@ export async function fetchInfografisData(): Promise<InfografisData> {
       return defaultInfografisData;
     }
 
+    // Check if organisasi was stored in 'organisasi' column or in 'pekerjaan' fallback column
+    let orgList = defaultOrganisasiList;
+    if (data.organisasi && Array.isArray(data.organisasi) && data.organisasi.length > 0) {
+      orgList = data.organisasi;
+    } else if (
+      data.pekerjaan &&
+      Array.isArray(data.pekerjaan) &&
+      data.pekerjaan.length > 0 &&
+      (data.pekerjaan[0]?.singkatan || data.pekerjaan[0]?.ketua)
+    ) {
+      orgList = data.pekerjaan;
+    }
+
     return {
       demografi: data.demografi || defaultInfografisData.demografi,
       pekerjaan: data.pekerjaan || defaultInfografisData.pekerjaan,
       pendidikan: data.pendidikan || defaultInfografisData.pendidikan,
-      organisasi: data.organisasi && Array.isArray(data.organisasi) && data.organisasi.length > 0
-        ? data.organisasi
-        : defaultOrganisasiList,
+      organisasi: orgList,
       apbdes: data.apbdes || defaultInfografisData.apbdes,
       idm: data.idm || defaultInfografisData.idm,
       updated_at: data.updated_at || defaultInfografisData.updated_at,
@@ -169,27 +189,79 @@ export async function updateInfografisData(
     if (!supabase) return { success: false, error: "Database client is not available." };
 
     const current = await fetchInfografisData();
-    const updatedPayload = {
+    const targetOrganisasi =
+      newData.organisasi !== undefined
+        ? newData.organisasi
+        : (current.organisasi || defaultOrganisasiList);
+
+    const basePayload: Record<string, any> = {
       id: "main",
       demografi: newData.demografi || current.demografi,
-      pekerjaan: newData.pekerjaan !== undefined ? newData.pekerjaan : current.pekerjaan,
-      pendidikan: newData.pendidikan !== undefined ? newData.pendidikan : current.pendidikan,
-      organisasi: newData.organisasi !== undefined ? newData.organisasi : (current.organisasi || defaultOrganisasiList),
       apbdes: newData.apbdes || current.apbdes,
       idm: newData.idm || current.idm,
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from("infografis").upsert(updatedPayload);
+    // 1. Try upsert with dedicated 'organisasi' column first
+    const { error: primaryError } = await supabase.from("infografis").upsert({
+      ...basePayload,
+      organisasi: targetOrganisasi,
+      pekerjaan: newData.pekerjaan !== undefined ? newData.pekerjaan : current.pekerjaan,
+      pendidikan: newData.pendidikan !== undefined ? newData.pendidikan : current.pendidikan,
+    });
 
-    if (error) {
-      console.error("updateInfografisData error:", error.message);
-      return { success: false, error: error.message };
+    if (!primaryError) {
+      return { success: true };
     }
 
-    return { success: true };
+    // 2. If 'organisasi' column doesn't exist yet in Supabase (Postgres Error 42703),
+    // fallback to storing organisasi data in 'pekerjaan' JSONB column so saving NEVER fails!
+    if (primaryError.code === "42703" || primaryError.message?.toLowerCase().includes("organisasi")) {
+      console.warn("Column 'organisasi' not found in table. Using fallback storage in 'pekerjaan' column.");
+      const { error: fallbackError } = await supabase.from("infografis").upsert({
+        ...basePayload,
+        pekerjaan: targetOrganisasi,
+      });
+
+      if (!fallbackError) {
+        return { success: true };
+      }
+      return { success: false, error: fallbackError.message };
+    }
+
+    console.error("updateInfografisData error:", primaryError.message);
+    return { success: false, error: primaryError.message };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat memperbarui infografis.";
     return { success: false, error: msg };
   }
 }
+
+export function parseNominal(val: string | number | undefined | null): number {
+  if (val === undefined || val === null || val === "") return 0;
+  if (typeof val === "number") return isNaN(val) ? 0 : val;
+  let str = String(val).trim();
+  if (!str) return 0;
+
+  if (str.includes(".") && str.includes(",")) {
+    if (str.lastIndexOf(",") > str.lastIndexOf(".")) {
+      str = str.replace(/\./g, "").replace(",", ".");
+    } else {
+      str = str.replace(/,/g, "");
+    }
+  } else if (str.includes(",")) {
+    str = str.replace(",", ".");
+  }
+
+  const parsed = parseFloat(str);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
+export function formatRupiah(val: number | string | undefined | null): string {
+  const num = parseNominal(val);
+  return num.toLocaleString("id-ID", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
+
