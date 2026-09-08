@@ -41,7 +41,7 @@ export default function BeritaPage() {
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         
         {/* Header Banner */}
-        <div className="bg-[#073623] rounded-3xl p-6 sm:p-8 lg:p-10 text-white shadow-sm relative overflow-hidden">
+        <div className="bg-[#073623] rounded-2xl sm:rounded-3xl p-5 sm:p-8 lg:p-10 text-white shadow-sm relative overflow-hidden">
           <div className="relative z-10 space-y-3 sm:space-y-4 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2.5">
               <Link
@@ -57,11 +57,11 @@ export default function BeritaPage() {
               </div>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">
+            <h1 className="text-xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight break-words">
               Warta & Informasi Desa
             </h1>
 
-            <p className="text-emerald-100/85 text-xs sm:text-sm lg:text-base leading-relaxed">
+            <p className="text-emerald-100/85 text-xs sm:text-sm lg:text-base leading-relaxed break-words">
               Publikasi resmi pengumuman pemerintah desa, laporan pembangunan, agenda posyandu, dan dokumentasi kegiatan masyarakat Desa Bogem.
             </p>
           </div>
@@ -69,13 +69,13 @@ export default function BeritaPage() {
 
         {/* Search & Category Filter Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-          {/* Horizontally scrollable category pills on mobile */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          {/* Horizontally scrollable category pills on mobile with edge-to-edge feel */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm whitespace-nowrap active:scale-95 ${
+                className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm whitespace-nowrap active:scale-95 flex-shrink-0 ${
                   selectedCategory === cat
                     ? "bg-[#063321] text-white"
                     : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/80"
@@ -106,7 +106,7 @@ export default function BeritaPage() {
             <p className="text-xs font-semibold text-slate-500">Memuat kabar warta desa...</p>
           </div>
         ) : filteredBerita.length === 0 ? (
-          <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-slate-200/80 space-y-2">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-8 sm:p-12 text-center border border-slate-200/80 space-y-2">
             <Newspaper className="w-10 h-10 text-slate-300 mx-auto" />
             <h3 className="text-base font-bold text-slate-800">Tidak ada berita ditemukan</h3>
             <p className="text-xs text-slate-500">Coba ubah kata kunci pencarian atau kategori filter di atas.</p>
@@ -117,7 +117,7 @@ export default function BeritaPage() {
             {filteredBerita.map((item) => (
               <article
                 key={item.id}
-                className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md border border-slate-200/80 transition-all duration-200 flex flex-col justify-between group"
+                className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm hover:shadow-md border border-slate-200/80 transition-all duration-200 flex flex-col justify-between group"
               >
                 {/* News Banner Photo with Link */}
                 <Link href={`/berita/${item.id}`} className="block relative aspect-[16/9] bg-slate-100 overflow-hidden">
@@ -136,7 +136,7 @@ export default function BeritaPage() {
                 </Link>
 
                 {/* Content */}
-                <div className="p-5 sm:p-6 flex-grow flex flex-col justify-between space-y-4">
+                <div className="p-4 sm:p-6 flex-grow flex flex-col justify-between space-y-4">
                   <div className="space-y-2">
                     {item.kategori && (
                       <span className="inline-block text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
@@ -144,13 +144,13 @@ export default function BeritaPage() {
                       </span>
                     )}
 
-                    <h2 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-emerald-800 transition line-clamp-2 leading-snug">
+                    <h2 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-emerald-800 transition line-clamp-2 leading-snug break-words">
                       <Link href={`/berita/${item.id}`}>
                         {item.judul}
                       </Link>
                     </h2>
                     
-                    <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
+                    <p className="text-xs text-slate-600 leading-relaxed line-clamp-3 break-words">
                       {item.ringkasan || item.konten}
                     </p>
                   </div>

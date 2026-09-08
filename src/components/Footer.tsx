@@ -26,9 +26,9 @@ export default function Footer() {
   const cleanPhone = rawPhone.replace(/[^0-9+]/g, "");
 
   return (
-    <footer className="bg-[#05281a] text-emerald-100/90 border-t border-emerald-900/60 pb-28 md:pb-8 pt-12">
+    <footer className="bg-[#05281a] text-emerald-100/90 border-t border-emerald-900/60 pb-28 md:pb-8 pt-8 sm:pt-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-10">
           
           {/* Column 1: Info Desa */}
           <div className="space-y-4 md:col-span-1">
@@ -52,7 +52,7 @@ export default function Footer() {
 
           {/* Column 2: Kontak Kantor Desa */}
           <div className="space-y-3">
-            <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider text-emerald-300">Kontak Kantor Desa</h4>
+            <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">Kontak Kantor Desa</h4>
             <ul className="space-y-2.5 text-xs sm:text-sm text-emerald-200/90">
               <li className="flex items-start space-x-2.5">
                 <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
@@ -75,7 +75,7 @@ export default function Footer() {
 
           {/* Column 3: Jam Pelayanan */}
           <div className="space-y-3">
-            <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider text-emerald-300">Jam Pelayanan Kantor</h4>
+            <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">Jam Pelayanan Kantor</h4>
             <div className="space-y-2 text-xs sm:text-sm text-emerald-200/90">
               <div className="flex items-center space-x-2">
                 <Clock className="w-4 h-4 text-emerald-400 flex-shrink-0" />
@@ -89,9 +89,9 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Column 4: Navigasi Halaman */}
-          <div className="space-y-3">
-            <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider text-emerald-300">Navigasi Cepat</h4>
+          {/* Column 4: Navigasi Halaman (Disembunyikan di mobile agar tidak menumpuk) */}
+          <div className="hidden md:block space-y-3">
+            <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">Navigasi Cepat</h4>
             <ul className="space-y-2 text-xs sm:text-sm">
               <li>
                 <Link href="/" className="hover:text-white transition">Beranda</Link>

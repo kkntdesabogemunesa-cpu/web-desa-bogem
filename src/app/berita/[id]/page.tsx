@@ -98,7 +98,7 @@ export default async function DetailBeritaPage({ params }: PageProps) {
     <main className="min-h-screen bg-[#F8FAFC] pb-28 pt-6 sm:pt-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
         {/* Breadcrumb Navigation */}
-        <nav className="flex items-center space-x-2 text-xs font-medium text-slate-500 overflow-x-auto whitespace-nowrap scrollbar-none">
+        <nav className="flex items-center space-x-2 text-xs font-medium text-slate-500 overflow-x-auto whitespace-nowrap scrollbar-none py-1">
           <Link href="/" className="hover:text-emerald-800 transition">
             Beranda
           </Link>
@@ -107,7 +107,7 @@ export default async function DetailBeritaPage({ params }: PageProps) {
             Kabar Berita
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-          <span className="text-slate-900 font-semibold truncate max-w-[200px] sm:max-w-md">
+          <span className="text-slate-900 font-semibold truncate max-w-[140px] sm:max-w-md">
             {berita.judul}
           </span>
         </nav>
@@ -124,7 +124,7 @@ export default async function DetailBeritaPage({ params }: PageProps) {
         </div>
 
         {/* Article Container */}
-        <article className="bg-white rounded-3xl p-6 sm:p-10 lg:p-12 shadow-sm border border-slate-200/80 space-y-6">
+        <article className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-10 lg:p-12 shadow-sm border border-slate-200/80 space-y-6">
           {/* Header & Meta */}
           <header className="space-y-4 border-b border-slate-100 pb-6">
             <div className="flex flex-wrap items-center gap-2">
@@ -139,22 +139,22 @@ export default async function DetailBeritaPage({ params }: PageProps) {
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 leading-tight tracking-tight">
+            <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-slate-900 leading-snug sm:leading-tight tracking-tight break-words">
               {berita.judul}
             </h1>
 
             {/* Author & Publish Info Bar */}
             <div className="flex items-center space-x-3 pt-2 text-xs text-slate-500">
-              <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold border border-emerald-100">
+              <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold border border-emerald-100 flex-shrink-0">
                 <User className="w-4 h-4 text-emerald-700" />
               </div>
-              <div>
-                <div className="font-bold text-slate-800">
+              <div className="min-w-0 flex-1">
+                <div className="font-bold text-slate-800 truncate">
                   {berita.penulis || "Pemerintah Desa Bogem"}
                 </div>
                 <div className="text-[11px] text-slate-400 flex items-center space-x-1">
-                  <Calendar className="w-3 h-3" />
-                  <span>{formatDateIndonesian(berita.created_at)}</span>
+                  <Calendar className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">{formatDateIndonesian(berita.created_at)}</span>
                 </div>
               </div>
             </div>
@@ -176,7 +176,7 @@ export default async function DetailBeritaPage({ params }: PageProps) {
 
           {/* Lead Summary (if present) */}
           {berita.ringkasan && (
-            <div className="bg-emerald-50/60 border-l-2 border-emerald-600 p-4 sm:p-5 rounded-r-2xl text-slate-700 text-sm sm:text-base font-medium italic leading-relaxed">
+            <div className="bg-emerald-50/60 border-l-4 border-emerald-600 p-3.5 sm:p-5 rounded-r-2xl text-slate-700 text-xs sm:text-base font-medium italic leading-relaxed break-words">
               &ldquo;{berita.ringkasan}&rdquo;
             </div>
           )}
@@ -184,19 +184,19 @@ export default async function DetailBeritaPage({ params }: PageProps) {
           {/* Article Full Body */}
           <div className="space-y-4 sm:space-y-5 text-slate-700 text-sm sm:text-base leading-relaxed sm:leading-loose">
             {paragraphs.map((p, idx) => (
-              <p key={idx} className="text-justify sm:text-left font-normal">
+              <p key={idx} className="text-left font-normal break-words leading-relaxed">
                 {p}
               </p>
             ))}
           </div>
 
           {/* Footer of Article */}
-          <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="text-xs text-slate-500">
               Kategori: <strong className="text-slate-800">{berita.kategori || "Pengumuman Resmi"}</strong>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full sm:w-auto">
               <span className="text-xs font-semibold text-slate-600">Bagikan Warta Ini:</span>
               <ShareButtons title={berita.judul} />
             </div>

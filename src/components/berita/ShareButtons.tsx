@@ -64,12 +64,12 @@ export default function ShareButtons({ title }: ShareButtonsProps) {
   };
 
   return (
-    <div className="relative flex flex-wrap items-center gap-1.5 sm:gap-2">
+    <div className="relative grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
       {/* WhatsApp */}
       <button
         type="button"
         onClick={handleShareWA}
-        className="inline-flex items-center space-x-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#075E54] border border-[#25D366]/30 px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 shadow-sm"
+        className="inline-flex items-center justify-center space-x-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#075E54] border border-[#25D366]/30 px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 shadow-sm"
         title="Bagikan ke WhatsApp"
       >
         <svg className="w-3.5 h-3.5 fill-current flex-shrink-0" viewBox="0 0 24 24">
@@ -82,7 +82,7 @@ export default function ShareButtons({ title }: ShareButtonsProps) {
       <button
         type="button"
         onClick={handleShareFB}
-        className="inline-flex items-center space-x-1.5 bg-[#1877F2]/10 hover:bg-[#1877F2]/20 text-[#1877F2] border border-[#1877F2]/30 px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 shadow-sm"
+        className="inline-flex items-center justify-center space-x-1.5 bg-[#1877F2]/10 hover:bg-[#1877F2]/20 text-[#1877F2] border border-[#1877F2]/30 px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 shadow-sm"
         title="Bagikan ke Facebook"
       >
         <svg className="w-3.5 h-3.5 fill-current flex-shrink-0" viewBox="0 0 24 24">
@@ -95,7 +95,7 @@ export default function ShareButtons({ title }: ShareButtonsProps) {
       <button
         type="button"
         onClick={handleShareIG}
-        className="inline-flex items-center space-x-1.5 bg-[#E1306C]/10 hover:bg-[#E1306C]/20 text-[#E1306C] border border-[#E1306C]/30 px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 shadow-sm"
+        className="inline-flex items-center justify-center space-x-1.5 bg-[#E1306C]/10 hover:bg-[#E1306C]/20 text-[#E1306C] border border-[#E1306C]/30 px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 shadow-sm"
         title="Bagikan ke Instagram (Salin link & buka Instagram)"
       >
         <svg className="w-3.5 h-3.5 fill-current flex-shrink-0" viewBox="0 0 24 24">
@@ -108,7 +108,7 @@ export default function ShareButtons({ title }: ShareButtonsProps) {
       <button
         type="button"
         onClick={handleCopyLink}
-        className="inline-flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 shadow-sm"
+        className="inline-flex items-center justify-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-xs transition active:scale-95 shadow-sm"
         title="Salin Tautan Artikel"
       >
         {copied ? (
@@ -121,9 +121,9 @@ export default function ShareButtons({ title }: ShareButtonsProps) {
 
       {/* Tooltip feedback for Instagram */}
       {igNotice && (
-        <div className="absolute -top-10 left-0 bg-slate-900 text-white text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg flex items-center space-x-1.5 z-20 whitespace-nowrap pointer-events-none">
+        <div className="col-span-2 sm:absolute sm:-top-10 sm:left-0 bg-slate-900 text-white text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg flex items-center justify-center space-x-1.5 z-20 whitespace-nowrap">
           <Check className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Tautan artikel disalin! Siap dibagikan ke Story / DM.</span>
+          <span>Tautan artikel disalin! Siap dibagikan.</span>
         </div>
       )}
     </div>
