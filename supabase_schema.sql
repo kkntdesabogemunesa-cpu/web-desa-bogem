@@ -449,6 +449,8 @@ FOR DELETE USING (public.is_admin());
 
 -- RPC FUNCTION: Lacak Surat Aman (SECURITY DEFINER)
 -- Wajibkan NIK untuk mencegah brute-force/enumerasi nomor tiket!
+DROP FUNCTION IF EXISTS public.track_surat_secure(text, text);
+DROP FUNCTION IF EXISTS public.track_surat_secure;
 CREATE OR REPLACE FUNCTION public.track_surat_secure(p_ticket text, p_nik text)
 RETURNS TABLE (
   id text,
@@ -500,6 +502,8 @@ WITH CHECK (
 );
 
 -- TRIGGER PENCEGAHAN PRIVILEGE ESCALATION
+DROP TRIGGER IF EXISTS trg_protect_profile_role ON public.profiles;
+DROP FUNCTION IF EXISTS public.protect_profile_role();
 CREATE OR REPLACE FUNCTION public.protect_profile_role()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -532,6 +536,8 @@ CREATE TRIGGER trg_protect_profile_role
 -- RPC FUNCTION: Cek Unik NIK (SECURITY DEFINER)
 -- Hanya mengembalikan boolean (true jika sudah terdaftar, false jika belum)
 -- Tanpa mengekspos data pribadi warga ke publik!
+DROP FUNCTION IF EXISTS public.is_nik_registered(text);
+DROP FUNCTION IF EXISTS public.is_nik_registered;
 CREATE OR REPLACE FUNCTION public.is_nik_registered(p_nik text)
 RETURNS boolean
 LANGUAGE plpgsql
@@ -546,6 +552,8 @@ END;
 $$;
 
 -- RATE LIMITING PERMOHONAN SURAT (MAKSIMAL 3 PENGAJUAN PER 10 MENIT PER NIK)
+DROP TRIGGER IF EXISTS trg_surat_rate_limit ON public.permohonan_surat;
+DROP FUNCTION IF EXISTS public.check_surat_rate_limit();
 CREATE OR REPLACE FUNCTION public.check_surat_rate_limit()
 RETURNS trigger
 LANGUAGE plpgsql

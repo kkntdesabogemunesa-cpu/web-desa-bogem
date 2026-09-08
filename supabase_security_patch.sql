@@ -29,6 +29,8 @@ FOR INSERT WITH CHECK (
 
 -- 2. RPC FUNCTION UNTUK FITUR LACAK SURAT WARGA (WAJIB KODE TIKET + NIK)
 -- Mencegah enumerasi / brute-force: NIK diwajibkan secara mutlak!
+DROP FUNCTION IF EXISTS public.track_surat_secure(text, text);
+DROP FUNCTION IF EXISTS public.track_surat_secure;
 CREATE OR REPLACE FUNCTION public.track_surat_secure(p_ticket text, p_nik text)
 RETURNS TABLE (
   id text,
@@ -76,6 +78,8 @@ WITH CHECK (
 
 -- 4. TRIGGER MUTLAK PENCEGAHAN PRIVILEGE ESCALATION (ROLE INJECTION)
 -- Mencegah injeksi { role: 'admin' } baik saat INSERT (signUp) maupun UPDATE dari client!
+DROP TRIGGER IF EXISTS trg_protect_profile_role ON public.profiles;
+DROP FUNCTION IF EXISTS public.protect_profile_role();
 CREATE OR REPLACE FUNCTION public.protect_profile_role()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -110,6 +114,8 @@ CREATE TRIGGER trg_protect_profile_role
   EXECUTE FUNCTION public.protect_profile_role();
 
 -- 5. RPC FUNCTION UNTUK PENGECEKAN REGISTRASI NIK (BOOLEAN SAJA)
+DROP FUNCTION IF EXISTS public.is_nik_registered(text);
+DROP FUNCTION IF EXISTS public.is_nik_registered;
 CREATE OR REPLACE FUNCTION public.is_nik_registered(p_nik text)
 RETURNS boolean
 LANGUAGE plpgsql
@@ -130,6 +136,8 @@ FOR INSERT WITH CHECK (bucket_id = 'public-images' AND public.is_admin());
 
 -- 7. RATE LIMITING PADA PERMOHONAN SURAT (MAKSIMAL 3 PENGAJUAN PER 10 MENIT PER NIK)
 -- Bekerja di level database, aman untuk serverless & mencegah spam direct API
+DROP TRIGGER IF EXISTS trg_surat_rate_limit ON public.permohonan_surat;
+DROP FUNCTION IF EXISTS public.check_surat_rate_limit();
 CREATE OR REPLACE FUNCTION public.check_surat_rate_limit()
 RETURNS trigger
 LANGUAGE plpgsql
