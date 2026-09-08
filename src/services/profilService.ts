@@ -48,7 +48,7 @@ export async function fetchProfilDesa(): Promise<ProfilDesaData> {
 
     const { data, error } = await supabase
       .from("profil_desa")
-      .select("*")
+      .select("id, visi, misi, nama_kades, foto_kades, sambutan_kades, bagan_desa_image, bagan_bpd_image, sejarah, luas_wilayah, jumlah_penduduk, ketinggian, batas_wilayah, jam_pelayanan, jam_pelayanan_note, alamat_kantor, telepon_kantor, email_kantor, updated_at")
       .eq("id", "main")
       .maybeSingle();
 

@@ -1,7 +1,7 @@
 -- ==============================================================================
--- SUPABASE SECURITY PATCH - DESA BOGEM
+-- SUPABASE SECURITY PATCH (LENGKAP) - DESA BOGEM
 -- Jalankan skrip ini di SQL Editor Supabase Dashboard Anda.
--- Mengamankan RLS Permohonan Surat, Profil Warga, dan Storage Object
+-- Mengamankan RLS Permohonan Surat, Profil Warga, Storage, & Pencegahan Privilege Escalation
 -- ==============================================================================
 
 -- 1. AMANKAN TABEL PERMOHONAN SURAT
@@ -27,8 +27,9 @@ FOR INSERT WITH CHECK (
   AND catatan_admin IS NULL
 );
 
--- 2. RPC FUNCTION UNTUK FITUR LACAK SURAT WARGA (AMAN DARI DUMP PUBLIK)
-CREATE OR REPLACE FUNCTION public.track_surat_secure(p_ticket text, p_nik text DEFAULT NULL)
+-- 2. RPC FUNCTION UNTUK FITUR LACAK SURAT WARGA (WAJIB KODE TIKET + NIK)
+-- Mencegah enumerasi / brute-force: NIK diwajibkan secara mutlak!
+CREATE OR REPLACE FUNCTION public.track_surat_secure(p_ticket text, p_nik text)
 RETURNS TABLE (
   id text,
   jenis_surat text,
@@ -45,29 +46,70 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  IF p_nik IS NOT NULL AND trim(p_nik) <> '' THEN
-    RETURN QUERY
-    SELECT s.id, s.jenis_surat, s.nama_lengkap, s.status, s.catatan_admin, s.file_surat_selesai, s.nama_file_selesai, s.created_at, s.updated_at
-    FROM public.permohonan_surat s
-    WHERE s.id = trim(p_ticket) AND s.nik = trim(p_nik);
-  ELSE
-    RETURN QUERY
-    SELECT s.id, s.jenis_surat, s.nama_lengkap, s.status, s.catatan_admin, s.file_surat_selesai, s.nama_file_selesai, s.created_at, s.updated_at
-    FROM public.permohonan_surat s
-    WHERE s.id = trim(p_ticket);
+  -- Wajibkan NIK terisi dan minimal 16 karakter
+  IF p_nik IS NULL OR length(trim(p_nik)) < 16 THEN
+    RETURN;
   END IF;
+
+  RETURN QUERY
+  SELECT s.id, s.jenis_surat, s.nama_lengkap, s.status, s.catatan_admin, s.file_surat_selesai, s.nama_file_selesai, s.created_at, s.updated_at
+  FROM public.permohonan_surat s
+  WHERE s.id = trim(p_ticket) AND s.nik = trim(p_nik);
 END;
 $$;
 
 -- 3. AMANKAN TABEL PROFILES (NIK & NO HP WARGA)
 DROP POLICY IF EXISTS "Allow public read profiles" ON public.profiles;
 DROP POLICY IF EXISTS "User view own profile or admin" ON public.profiles;
+DROP POLICY IF EXISTS "User update own profile" ON public.profiles;
 
 -- Profil warga HANYA boleh dibaca oleh pemilik akun bersangkutan atau Admin Desa
 CREATE POLICY "User view own profile or admin" ON public.profiles
 FOR SELECT USING (auth.uid() = id OR public.is_admin());
 
--- 4. RPC FUNCTION UNTUK PENGECEKAN REGISTRASI NIK (BOOLEAN SAJA)
+-- User boleh mengupdate profil sendiri, tapi kolom role TIDAK BISA diubah ke admin
+CREATE POLICY "User update own profile" ON public.profiles
+FOR UPDATE USING (auth.uid() = id OR public.is_admin())
+WITH CHECK (
+  (auth.uid() = id AND role = 'warga') OR public.is_admin()
+);
+
+-- 4. TRIGGER MUTLAK PENCEGAHAN PRIVILEGE ESCALATION (ROLE INJECTION)
+-- Mencegah injeksi { role: 'admin' } baik saat INSERT (signUp) maupun UPDATE dari client!
+CREATE OR REPLACE FUNCTION public.protect_profile_role()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Saat user baru terdaftar (INSERT):
+  -- Jika bukan Admin asli yang menjalankan, paksa role selalu 'warga'
+  IF TG_OP = 'INSERT' THEN
+    IF NOT public.is_admin() THEN
+      NEW.role := 'warga';
+    END IF;
+  END IF;
+
+  -- Saat profil diperbarui (UPDATE):
+  -- Non-admin DILARANG KERAS mengubah isi kolom role!
+  IF TG_OP = 'UPDATE' THEN
+    IF NOT public.is_admin() AND NEW.role IS DISTINCT FROM OLD.role THEN
+      RAISE EXCEPTION 'Akses Ditolak: Anda tidak memiliki izin untuk memodifikasi hak akses (role).';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_protect_profile_role ON public.profiles;
+CREATE TRIGGER trg_protect_profile_role
+  BEFORE INSERT OR UPDATE ON public.profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.protect_profile_role();
+
+-- 5. RPC FUNCTION UNTUK PENGECEKAN REGISTRASI NIK (BOOLEAN SAJA)
 CREATE OR REPLACE FUNCTION public.is_nik_registered(p_nik text)
 RETURNS boolean
 LANGUAGE plpgsql
@@ -81,11 +123,43 @@ BEGIN
 END;
 $$;
 
--- 5. AMANKAN STORAGE BUCKET 'public-images'
+-- 6. AMANKAN STORAGE BUCKET 'public-images'
 DROP POLICY IF EXISTS "Admin upload images" ON storage.objects;
 CREATE POLICY "Admin upload images" ON storage.objects
 FOR INSERT WITH CHECK (bucket_id = 'public-images' AND public.is_admin());
 
+-- 7. RATE LIMITING PADA PERMOHONAN SURAT (MAKSIMAL 3 PENGAJUAN PER 10 MENIT PER NIK)
+-- Bekerja di level database, aman untuk serverless & mencegah spam direct API
+CREATE OR REPLACE FUNCTION public.check_surat_rate_limit()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  recent_count integer;
+BEGIN
+  SELECT COUNT(*) INTO recent_count
+  FROM public.permohonan_surat
+  WHERE nik = NEW.nik
+    AND created_at >= (NOW() - INTERVAL '10 minutes');
+
+  IF recent_count >= 3 THEN
+    RAISE EXCEPTION 'Rate limit exceeded: Maksimal 3 permohonan surat per 10 menit untuk NIK ini.'
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_surat_rate_limit ON public.permohonan_surat;
+CREATE TRIGGER trg_surat_rate_limit
+  BEFORE INSERT ON public.permohonan_surat
+  FOR EACH ROW
+  EXECUTE FUNCTION public.check_surat_rate_limit();
+
 -- Pastikan izin akses publik ke RPC functions tersedia
 GRANT EXECUTE ON FUNCTION public.track_surat_secure(text, text) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.is_nik_registered(text) TO anon, authenticated;
+

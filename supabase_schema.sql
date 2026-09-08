@@ -448,9 +448,8 @@ CREATE POLICY "Admin delete surat" ON public.permohonan_surat
 FOR DELETE USING (public.is_admin());
 
 -- RPC FUNCTION: Lacak Surat Aman (SECURITY DEFINER)
--- Hanya mengembalikan 1 baris surat yang cocok dengan Kode Tiket (dan NIK jika diinput)
--- Tanpa perlu membuka hak akses SELECT tabel permohonan_surat kepada publik!
-CREATE OR REPLACE FUNCTION public.track_surat_secure(p_ticket text, p_nik text DEFAULT NULL)
+-- Wajibkan NIK untuk mencegah brute-force/enumerasi nomor tiket!
+CREATE OR REPLACE FUNCTION public.track_surat_secure(p_ticket text, p_nik text)
 RETURNS TABLE (
   id text,
   jenis_surat text,
@@ -467,17 +466,14 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  IF p_nik IS NOT NULL AND trim(p_nik) <> '' THEN
-    RETURN QUERY
-    SELECT s.id, s.jenis_surat, s.nama_lengkap, s.status, s.catatan_admin, s.file_surat_selesai, s.nama_file_selesai, s.created_at, s.updated_at
-    FROM public.permohonan_surat s
-    WHERE s.id = trim(p_ticket) AND s.nik = trim(p_nik);
-  ELSE
-    RETURN QUERY
-    SELECT s.id, s.jenis_surat, s.nama_lengkap, s.status, s.catatan_admin, s.file_surat_selesai, s.nama_file_selesai, s.created_at, s.updated_at
-    FROM public.permohonan_surat s
-    WHERE s.id = trim(p_ticket);
+  IF p_nik IS NULL OR length(trim(p_nik)) < 16 THEN
+    RETURN;
   END IF;
+
+  RETURN QUERY
+  SELECT s.id, s.jenis_surat, s.nama_lengkap, s.status, s.catatan_admin, s.file_surat_selesai, s.nama_file_selesai, s.created_at, s.updated_at
+  FROM public.permohonan_surat s
+  WHERE s.id = trim(p_ticket) AND s.nik = trim(p_nik);
 END;
 $$;
 
@@ -496,9 +492,42 @@ FOR SELECT USING (auth.uid() = id OR public.is_admin());
 CREATE POLICY "User insert own profile" ON public.profiles
 FOR INSERT WITH CHECK (auth.uid() = id);
 
--- User dapat mengupdate profil miliknya sendiri, atau Admin dapat mengupdate seluruh profil
+-- User dapat mengupdate profil sendiri, tapi kolom role TIDAK BISA diubah ke admin
 CREATE POLICY "User update own profile" ON public.profiles
-FOR UPDATE USING (auth.uid() = id OR public.is_admin()) WITH CHECK (auth.uid() = id OR public.is_admin());
+FOR UPDATE USING (auth.uid() = id OR public.is_admin())
+WITH CHECK (
+  (auth.uid() = id AND role = 'warga') OR public.is_admin()
+);
+
+-- TRIGGER PENCEGAHAN PRIVILEGE ESCALATION
+CREATE OR REPLACE FUNCTION public.protect_profile_role()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF NOT public.is_admin() THEN
+      NEW.role := 'warga';
+    END IF;
+  END IF;
+
+  IF TG_OP = 'UPDATE' THEN
+    IF NOT public.is_admin() AND NEW.role IS DISTINCT FROM OLD.role THEN
+      RAISE EXCEPTION 'Akses Ditolak: Anda tidak memiliki izin untuk memodifikasi hak akses (role).';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_protect_profile_role ON public.profiles;
+CREATE TRIGGER trg_protect_profile_role
+  BEFORE INSERT OR UPDATE ON public.profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.protect_profile_role();
 
 -- RPC FUNCTION: Cek Unik NIK (SECURITY DEFINER)
 -- Hanya mengembalikan boolean (true jika sudah terdaftar, false jika belum)
@@ -515,6 +544,36 @@ BEGIN
   );
 END;
 $$;
+
+-- RATE LIMITING PERMOHONAN SURAT (MAKSIMAL 3 PENGAJUAN PER 10 MENIT PER NIK)
+CREATE OR REPLACE FUNCTION public.check_surat_rate_limit()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  recent_count integer;
+BEGIN
+  SELECT COUNT(*) INTO recent_count
+  FROM public.permohonan_surat
+  WHERE nik = NEW.nik
+    AND created_at >= (NOW() - INTERVAL '10 minutes');
+
+  IF recent_count >= 3 THEN
+    RAISE EXCEPTION 'Rate limit exceeded: Maksimal 3 permohonan surat per 10 menit untuk NIK ini.'
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_surat_rate_limit ON public.permohonan_surat;
+CREATE TRIGGER trg_surat_rate_limit
+  BEFORE INSERT ON public.permohonan_surat
+  FOR EACH ROW
+  EXECUTE FUNCTION public.check_surat_rate_limit();
 
 -- ==============================================================================
 -- KONFIGURASI STORAGE BUCKET 'public-images'

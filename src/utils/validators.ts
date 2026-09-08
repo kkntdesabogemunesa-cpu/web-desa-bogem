@@ -4,7 +4,7 @@
 export function isValidGmail(email: string): boolean {
   if (!email) return false;
   const clean = email.trim().toLowerCase();
-  return clean.endsWith("@gmail.com") || clean.endsWith("@desa.id") || clean.includes("@");
+  return /^[a-zA-Z0-9._%+-]+@(gmail\.com|desa\.id)$/.test(clean);
 }
 
 /**

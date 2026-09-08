@@ -7,12 +7,16 @@ import {
   defaultOpsiSuratList,
 } from "@/types/surat";
 
-// Generate unique ticket code: SRT-YYYYMM-XXXX
+// Generate unique ticket code: SRT-YYYYMM-XXXXXX (6-char alphanumeric keyspace)
 export function generateTicketCode(): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
-  const random = Math.floor(1000 + Math.random() * 9000);
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Tanpa 0/O, 1/I untuk mencegah kebingungan baca
+  let random = "";
+  for (let i = 0; i < 6; i++) {
+    random += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
   return `SRT-${year}${month}-${random}`;
 }
 
@@ -108,23 +112,27 @@ export async function fetchSuratList(page: number = 1, limit: number = 50): Prom
 
 /**
  * Fetch ONLY surat applications belonging to a specific citizen user (by User ID or NIK)
+ * Sanitizes input parameters to prevent query injection into PostgREST filter
  */
 export async function fetchUserSuratList(userId?: string, nik?: string): Promise<PermohonanSurat[]> {
   try {
     if (!supabase) return [];
     if (!userId && !nik) return [];
 
+    const cleanNik = nik && /^[0-9]{16}$/.test(nik.trim()) ? nik.trim() : null;
+    const cleanUserId = userId && /^[0-9a-fA-F-]{36}$/.test(userId.trim()) ? userId.trim() : null;
+
+    if (!cleanUserId && !cleanNik) return [];
+
     let query = supabase
       .from("permohonan_surat")
       .select("*")
       .order("created_at", { ascending: false });
 
-    const cleanNik = nik?.trim();
-
-    if (userId && cleanNik) {
-      query = query.or(`user_id.eq.${userId},nik.eq.${cleanNik}`);
-    } else if (userId) {
-      query = query.eq("user_id", userId);
+    if (cleanUserId && cleanNik) {
+      query = query.or(`user_id.eq.${cleanUserId},nik.eq.${cleanNik}`);
+    } else if (cleanUserId) {
+      query = query.eq("user_id", cleanUserId);
     } else if (cleanNik) {
       query = query.eq("nik", cleanNik);
     }
@@ -144,17 +152,22 @@ export async function fetchUserSuratList(userId?: string, nik?: string): Promise
 }
 
 /**
- * Track a specific surat by Ticket ID (and optional NIK validation for citizen security).
- * Uses secure RPC 'track_surat_secure' to protect table from public dumps, with fallback.
+ * Track a specific surat by Ticket ID AND citizen NIK.
+ * NIK is strictly mandatory to prevent brute-force enumeration of ticket IDs!
  */
 export async function searchSuratByTicket(ticketId: string, nik?: string): Promise<PermohonanSurat | null> {
   try {
     if (!supabase) return null;
 
-    const cleanTicket = ticketId.trim();
-    const cleanNik = nik?.trim() || null;
+    const cleanTicket = ticketId?.trim();
+    const cleanNik = nik?.trim();
 
-    // 1. Try secure RPC function first
+    // NIK wajib ada dan minimal 16 karakter untuk menjaga privasi warga!
+    if (!cleanTicket || !cleanNik || cleanNik.length < 16) {
+      return null;
+    }
+
+    // 1. Coba lewat RPC function 'track_surat_secure'
     try {
       const { data: rpcData, error: rpcError } = await supabase.rpc("track_surat_secure", {
         p_ticket: cleanTicket,
@@ -168,20 +181,16 @@ export async function searchSuratByTicket(ticketId: string, nik?: string): Promi
         return null;
       }
     } catch {
-      // Fallback if RPC not yet created in Supabase
+      // Fallback jika RPC belum di-run di Supabase
     }
 
-    // 2. Fallback to direct query
-    let query = supabase
+    // 2. Fallback query langsung: WAJIB menyertakan .eq("nik", cleanNik)!
+    const { data, error } = await supabase
       .from("permohonan_surat")
       .select("id, jenis_surat, nama_lengkap, status, catatan_admin, file_surat_selesai, nama_file_selesai, created_at, updated_at")
-      .eq("id", cleanTicket);
-
-    if (cleanNik) {
-      query = query.eq("nik", cleanNik);
-    }
-
-    const { data, error } = await query.maybeSingle();
+      .eq("id", cleanTicket)
+      .eq("nik", cleanNik)
+      .maybeSingle();
 
     if (error) {
       console.error("searchSuratByTicket error:", error.message);
@@ -201,32 +210,60 @@ export async function createPermohonanSurat(
   try {
     if (!supabase) return { success: false, error: "Database client is not available." };
 
-    const ticketId = generateTicketCode();
-    const now = new Date().toISOString();
-
-    const newSurat: PermohonanSurat = {
-      id: ticketId,
-      user_id: input.user_id || undefined,
-      opsi_surat_id: input.opsi_surat_id || undefined,
-      nik: input.nik.trim(),
-      nama_lengkap: input.nama_lengkap.trim(),
-      no_whatsapp: input.no_whatsapp.trim(),
-      email: input.email?.trim() || undefined,
-      jenis_surat: input.jenis_surat,
-      data_formulir: input.data_formulir || {},
-      status: "MENUNGGU",
-      created_at: now,
-      updated_at: now,
-    };
-
-    const { error } = await supabase.from("permohonan_surat").insert([newSurat]);
-
-    if (error) {
-      console.error("createPermohonanSurat error:", error.message);
-      return { success: false, error: error.message };
+    // Validasi server-side
+    const cleanNik = input.nik?.trim() || "";
+    if (!cleanNik || cleanNik.length !== 16 || !/^[0-9]{16}$/.test(cleanNik)) {
+      return { success: false, error: "NIK pemohon wajib 16 digit angka sesuai KTP." };
+    }
+    if (!input.nama_lengkap || input.nama_lengkap.trim().length < 2) {
+      return { success: false, error: "Nama lengkap pemohon wajib diisi." };
+    }
+    if (!input.no_whatsapp || input.no_whatsapp.trim().length < 9) {
+      return { success: false, error: "Nomor WhatsApp wajib diisi dengan benar." };
+    }
+    if (!input.jenis_surat || input.jenis_surat.trim().length < 2) {
+      return { success: false, error: "Jenis surat yang diajukan wajib dipilih." };
     }
 
-    return { success: true, data: newSurat };
+    const now = new Date().toISOString();
+    let retries = 3;
+    let lastErrorMsg = "";
+
+    // Retry-on-conflict: jika terjadi tabrakan primary key ticketId (error 23505), generate ulang
+    while (retries > 0) {
+      const ticketId = generateTicketCode();
+      const newSurat: PermohonanSurat = {
+        id: ticketId,
+        user_id: input.user_id || undefined,
+        opsi_surat_id: input.opsi_surat_id || undefined,
+        nik: cleanNik,
+        nama_lengkap: input.nama_lengkap.trim(),
+        no_whatsapp: input.no_whatsapp.trim(),
+        email: input.email?.trim() || undefined,
+        jenis_surat: input.jenis_surat.trim(),
+        data_formulir: input.data_formulir || {},
+        status: "MENUNGGU",
+        created_at: now,
+        updated_at: now,
+      };
+
+      const { error } = await supabase.from("permohonan_surat").insert([newSurat]);
+
+      if (!error) {
+        return { success: true, data: newSurat };
+      }
+
+      // Jika collision (duplicate key code 23505), coba lagi
+      if (error.code === "23505" || error.message.includes("duplicate key")) {
+        retries--;
+        continue;
+      }
+
+      lastErrorMsg = error.message;
+      break;
+    }
+
+    return { success: false, error: lastErrorMsg || "Gagal membuat permohonan surat. Silakan coba lagi." };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat mengajukan permohonan surat.";
     return { success: false, error: msg };

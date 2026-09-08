@@ -265,7 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const emailRedirectTo = `${origin}/auth/callback?redirect=/lengkapi-profil`;
 
       const userMetadata: Record<string, any> = {
-        role: data.role || "warga",
+        role: "warga", // Mutlak dipaksa sebagai warga, peran admin hanya via database langsung
       };
       if (data.nama) {
         userMetadata.name = data.nama;
@@ -313,7 +313,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 email: cleanEmail,
                 nama: data.nama || cleanEmail.split("@")[0] || "Warga Desa",
                 no_hp: data.phone || null,
-                role: data.role || "warga",
+                role: "warga",
                 updated_at: new Date().toISOString(),
               },
             ],
@@ -331,7 +331,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             nik: cleanNik,
             email: cleanEmail,
             name: data.nama || cleanEmail.split("@")[0] || "Warga Desa",
-            role: data.role || "warga",
+            role: "warga",
             phone: data.phone,
             isProfileComplete: Boolean(cleanNik && cleanNik.length === 16 && data.phone && data.phone.length >= 9),
           };

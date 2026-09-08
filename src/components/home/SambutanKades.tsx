@@ -2,6 +2,7 @@ import { ProfilDesaData } from "@/types/profil";
 import { PerangkatItem } from "@/types/perangkat";
 import { defaultProfilDesa } from "@/services/profilService";
 import { ShieldCheck, Building2, UserCheck, Quote, Landmark } from "lucide-react";
+import ImageWithSkeleton from "@/components/ImageWithSkeleton";
 
 interface SambutanKadesProps {
   profilData: ProfilDesaData;
@@ -38,22 +39,12 @@ export default function SambutanKades({ profilData, listPerangkat }: SambutanKad
           
           {/* Portrait Photo Card */}
           <div className="w-40 sm:w-48 md:w-56 aspect-[3/4] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm flex-shrink-0 relative group flex items-center justify-center">
-            {displayKadesFoto ? (
-              <img
-                src={displayKadesFoto}
-                alt={displayKadesNama}
-                loading="lazy"
-                decoding="async"
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-100">
-                <UserCheck className="w-14 h-14" />
-              </div>
-            )}
+            <ImageWithSkeleton
+              src={displayKadesFoto}
+              alt={displayKadesNama}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              fallbackIcon={<UserCheck className="w-14 h-14 text-slate-400" />}
+            />
 
             {/* Official Badge */}
             <div className="absolute top-2.5 left-2.5 bg-[#063321] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm flex items-center space-x-1">

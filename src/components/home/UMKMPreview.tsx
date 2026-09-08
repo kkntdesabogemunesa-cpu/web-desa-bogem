@@ -16,6 +16,7 @@ export default function UMKMPreview({ listUMKM = [] }: UMKMPreviewProps) {
   const [loading, setLoading] = useState(listUMKM.length === 0);
 
   useEffect(() => {
+    if (listUMKM && listUMKM.length > 0) return;
     fetchUMKMList()
       .then((data) => {
         if (data && data.length > 0) {
@@ -24,7 +25,7 @@ export default function UMKMPreview({ listUMKM = [] }: UMKMPreviewProps) {
       })
       .catch((err) => console.error("Error loading UMKM preview:", err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [listUMKM]);
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16 space-y-6 sm:space-y-8">

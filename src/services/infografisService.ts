@@ -146,7 +146,7 @@ export async function fetchInfografisData(): Promise<InfografisData> {
 
     const { data, error } = await supabase
       .from("infografis")
-      .select("*")
+      .select("id, demografi, pekerjaan, pendidikan, organisasi, apbdes, idm, updated_at")
       .eq("id", "main")
       .maybeSingle();
 

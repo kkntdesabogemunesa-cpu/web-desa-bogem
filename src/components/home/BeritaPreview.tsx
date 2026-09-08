@@ -17,6 +17,7 @@ export default function BeritaPreview({ listBerita = [] }: BeritaPreviewProps) {
   const [loading, setLoading] = useState(listBerita.length === 0);
 
   useEffect(() => {
+    if (listBerita && listBerita.length > 0) return;
     fetchBeritaList()
       .then((data) => {
         if (data && data.length > 0) {
@@ -25,7 +26,7 @@ export default function BeritaPreview({ listBerita = [] }: BeritaPreviewProps) {
       })
       .catch((err) => console.error("Error loading berita preview:", err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [listBerita]);
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16 space-y-6 sm:space-y-8">
