@@ -144,13 +144,15 @@ export async function fetchInfografisData(): Promise<InfografisData> {
   try {
     if (!supabase) return defaultInfografisData;
 
+    // Use select("*") to dynamically support both schemas (with or without dedicated 'organisasi' column)
     const { data, error } = await supabase
       .from("infografis")
-      .select("id, demografi, pekerjaan, pendidikan, organisasi, apbdes, idm, updated_at")
+      .select("*")
       .eq("id", "main")
       .maybeSingle();
 
     if (error || !data) {
+      if (error) console.error("fetchInfografisData error:", error.message);
       return defaultInfografisData;
     }
 
@@ -215,13 +217,23 @@ export async function updateInfografisData(
     }
 
     // 2. If 'organisasi' column doesn't exist yet in Supabase (Postgres Error 42703),
-    // fallback to storing organisasi data in 'pekerjaan' JSONB column so saving NEVER fails!
+    // fallback to storing organisasi data safely in 'pekerjaan' column without corrupting other fields!
     if (primaryError.code === "42703" || primaryError.message?.toLowerCase().includes("organisasi")) {
       console.warn("Column 'organisasi' not found in table. Using fallback storage in 'pekerjaan' column.");
-      const { error: fallbackError } = await supabase.from("infografis").upsert({
+      const fallbackPayload: Record<string, any> = {
         ...basePayload,
-        pekerjaan: targetOrganisasi,
-      });
+        pendidikan: newData.pendidikan !== undefined ? newData.pendidikan : current.pendidikan,
+      };
+
+      if (newData.organisasi !== undefined) {
+        fallbackPayload.pekerjaan = targetOrganisasi;
+      } else if (newData.pekerjaan !== undefined) {
+        fallbackPayload.pekerjaan = newData.pekerjaan;
+      } else {
+        fallbackPayload.pekerjaan = current.pekerjaan;
+      }
+
+      const { error: fallbackError } = await supabase.from("infografis").upsert(fallbackPayload);
 
       if (!fallbackError) {
         return { success: true };

@@ -4,6 +4,9 @@
 -- Mengamankan RLS Permohonan Surat, Profil Warga, Storage, & Pencegahan Privilege Escalation
 -- ==============================================================================
 
+-- 0. PASTIKAN STRUKTUR KOLOM TABEL INFOGRAFIS TERBARU
+ALTER TABLE public.infografis ADD COLUMN IF NOT EXISTS organisasi JSONB DEFAULT '[]'::jsonb;
+
 -- 1. AMANKAN TABEL PERMOHONAN SURAT
 DROP POLICY IF EXISTS "Warga view own surat" ON public.permohonan_surat;
 DROP POLICY IF EXISTS "Public select permohonan_surat" ON public.permohonan_surat;
