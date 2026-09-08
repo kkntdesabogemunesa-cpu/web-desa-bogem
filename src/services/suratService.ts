@@ -79,16 +79,20 @@ export async function saveOpsiSuratList(
 // ==========================================
 
 /**
- * Fetch ALL surat applications (Admin Dashboard Only)
+ * Fetch surat applications with pagination support (Admin Dashboard Only)
  */
-export async function fetchSuratList(): Promise<PermohonanSurat[]> {
+export async function fetchSuratList(page: number = 1, limit: number = 50): Promise<PermohonanSurat[]> {
   try {
     if (!supabase) return [];
+
+    const from = Math.max(0, (page - 1) * limit);
+    const to = from + limit - 1;
 
     const { data, error } = await supabase
       .from("permohonan_surat")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (error) {
       console.error("fetchSuratList error:", error.message);
@@ -140,19 +144,41 @@ export async function fetchUserSuratList(userId?: string, nik?: string): Promise
 }
 
 /**
- * Track a specific surat by Ticket ID (and optional NIK validation for citizen security)
+ * Track a specific surat by Ticket ID (and optional NIK validation for citizen security).
+ * Uses secure RPC 'track_surat_secure' to protect table from public dumps, with fallback.
  */
 export async function searchSuratByTicket(ticketId: string, nik?: string): Promise<PermohonanSurat | null> {
   try {
     if (!supabase) return null;
 
+    const cleanTicket = ticketId.trim();
+    const cleanNik = nik?.trim() || null;
+
+    // 1. Try secure RPC function first
+    try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc("track_surat_secure", {
+        p_ticket: cleanTicket,
+        p_nik: cleanNik,
+      });
+
+      if (!rpcError && rpcData && rpcData.length > 0) {
+        return rpcData[0] as PermohonanSurat;
+      }
+      if (!rpcError && rpcData && rpcData.length === 0) {
+        return null;
+      }
+    } catch {
+      // Fallback if RPC not yet created in Supabase
+    }
+
+    // 2. Fallback to direct query
     let query = supabase
       .from("permohonan_surat")
       .select("id, jenis_surat, nama_lengkap, status, catatan_admin, file_surat_selesai, nama_file_selesai, created_at, updated_at")
-      .eq("id", ticketId.trim());
+      .eq("id", cleanTicket);
 
-    if (nik) {
-      query = query.eq("nik", nik.trim());
+    if (cleanNik) {
+      query = query.eq("nik", cleanNik);
     }
 
     const { data, error } = await query.maybeSingle();

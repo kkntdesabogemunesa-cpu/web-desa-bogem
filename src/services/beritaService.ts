@@ -3,14 +3,22 @@ import { BeritaItem, CreateBeritaInput } from "@/types/berita";
 
 export const fallbackBeritaList: BeritaItem[] = [];
 
-export async function fetchBeritaList(): Promise<BeritaItem[]> {
+export async function fetchBeritaList(page?: number, limit?: number): Promise<BeritaItem[]> {
   try {
     if (!supabase) return fallbackBeritaList;
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("berita")
       .select("id, judul, kategori, penulis, ringkasan, konten, gambar, created_at")
       .order("created_at", { ascending: false });
+
+    if (page !== undefined && limit !== undefined) {
+      const from = Math.max(0, (page - 1) * limit);
+      const to = from + limit - 1;
+      query = query.range(from, to);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("fetchBeritaList error:", error.message);

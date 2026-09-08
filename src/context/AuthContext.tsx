@@ -36,7 +36,6 @@ interface AuthContextType {
     phone: string;
   }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  demoLogin: (role: UserRole) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -48,7 +47,6 @@ const AuthContext = createContext<AuthContextType>({
   resendVerificationEmail: async () => ({ success: false }),
   updateProfile: async () => ({ success: false }),
   logout: async () => {},
-  demoLogin: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -230,19 +228,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
         }
 
-        // Check if NIK is already registered
+        // Check if NIK is already registered (using secure RPC or fallback)
         try {
-          const { data: existingNik } = await supabase
-            .from("profiles")
-            .select("id")
-            .eq("nik", cleanNik)
-            .maybeSingle();
+          const { data: isReg, error: rpcErr } = await supabase.rpc("is_nik_registered", {
+            p_nik: cleanNik,
+          });
 
-          if (existingNik) {
+          if (!rpcErr && isReg === true) {
             return {
               success: false,
               error: "NIK ini sudah terdaftar di sistem desa. Silakan masuk menggunakan NIK Anda.",
             };
+          }
+
+          if (rpcErr) {
+            const { data: existingNik } = await supabase
+              .from("profiles")
+              .select("id")
+              .eq("nik", cleanNik)
+              .maybeSingle();
+
+            if (existingNik) {
+              return {
+                success: false,
+                error: "NIK ini sudah terdaftar di sistem desa. Silakan masuk menggunakan NIK Anda.",
+              };
+            }
           }
         } catch {
           // Table check failure is non-fatal
@@ -505,23 +516,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Demo mode login
-  const demoLogin = (role: UserRole) => {
-    const demoProfile: UserProfile = {
-      id: role === "admin" ? "demo-admin-id" : "demo-warga-id",
-      nik: role === "warga" ? "3520012345670001" : undefined,
-      email: role === "admin" ? "admin@desa.id" : "warga@desa.id",
-      name: role === "admin" ? "Admin Desa" : "Budi Santoso (Warga)",
-      role: role,
-      phone: "081234567890",
-      isProfileComplete: true,
-    };
-    setUser(demoProfile);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("desa_demo_user", JSON.stringify(demoProfile));
-    }
-  };
-
   const logout = async () => {
     if (supabase) {
       try {
@@ -529,9 +523,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         console.warn("Sign out error:", err);
       }
-    }
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("desa_demo_user");
     }
     setUser(null);
   };
@@ -547,7 +538,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         resendVerificationEmail,
         updateProfile,
         logout,
-        demoLogin,
       }}
     >
       {children}

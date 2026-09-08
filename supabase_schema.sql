@@ -420,14 +420,25 @@ CREATE POLICY "Admin write profil_desa" ON public.profil_desa FOR ALL USING (pub
 -- 5. Kebijakan Tabel Sensitif: Permohonan Surat
 DROP POLICY IF EXISTS "Warga view own surat" ON public.permohonan_surat;
 DROP POLICY IF EXISTS "Public select permohonan_surat" ON public.permohonan_surat;
+DROP POLICY IF EXISTS "Admin select all permohonan_surat" ON public.permohonan_surat;
+DROP POLICY IF EXISTS "Warga select own permohonan_surat" ON public.permohonan_surat;
+DROP POLICY IF EXISTS "Public insert surat" ON public.permohonan_surat;
 
--- Izinkan publik/warga membaca data permohonan surat (untuk pelacakan Kode Tiket, NIK, dan unduh berkas surat)
-CREATE POLICY "Public select permohonan_surat" ON public.permohonan_surat
-FOR SELECT USING (true);
+-- Hanya Admin Desa yang boleh membaca SELURUH data permohonan surat
+CREATE POLICY "Admin select all permohonan_surat" ON public.permohonan_surat
+FOR SELECT USING (public.is_admin());
 
--- Siapapun (Warga login / Pengunjung yang mengajukan permohonan) boleh memasukkan pengajuan
+-- Warga yang login hanya boleh melihat permohonan miliknya sendiri
+CREATE POLICY "Warga select own permohonan_surat" ON public.permohonan_surat
+FOR SELECT USING (auth.uid() = user_id);
+
+-- Pengajuan surat baru: Hanya boleh diajukan dengan status awal 'MENUNGGU' dan tanpa file/catatan admin
 CREATE POLICY "Public insert surat" ON public.permohonan_surat
-FOR INSERT WITH CHECK (true);
+FOR INSERT WITH CHECK (
+  status = 'MENUNGGU'
+  AND file_surat_selesai IS NULL
+  AND catatan_admin IS NULL
+);
 
 -- Hanya Admin Desa yang boleh mengubah status surat atau menghapus pengajuan
 CREATE POLICY "Admin update delete surat" ON public.permohonan_surat
@@ -436,17 +447,50 @@ FOR UPDATE USING (public.is_admin()) WITH CHECK (public.is_admin());
 CREATE POLICY "Admin delete surat" ON public.permohonan_surat
 FOR DELETE USING (public.is_admin());
 
+-- RPC FUNCTION: Lacak Surat Aman (SECURITY DEFINER)
+-- Hanya mengembalikan 1 baris surat yang cocok dengan Kode Tiket (dan NIK jika diinput)
+-- Tanpa perlu membuka hak akses SELECT tabel permohonan_surat kepada publik!
+CREATE OR REPLACE FUNCTION public.track_surat_secure(p_ticket text, p_nik text DEFAULT NULL)
+RETURNS TABLE (
+  id text,
+  jenis_surat text,
+  nama_lengkap text,
+  status text,
+  catatan_admin text,
+  file_surat_selesai text,
+  nama_file_selesai text,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF p_nik IS NOT NULL AND trim(p_nik) <> '' THEN
+    RETURN QUERY
+    SELECT s.id, s.jenis_surat, s.nama_lengkap, s.status, s.catatan_admin, s.file_surat_selesai, s.nama_file_selesai, s.created_at, s.updated_at
+    FROM public.permohonan_surat s
+    WHERE s.id = trim(p_ticket) AND s.nik = trim(p_nik);
+  ELSE
+    RETURN QUERY
+    SELECT s.id, s.jenis_surat, s.nama_lengkap, s.status, s.catatan_admin, s.file_surat_selesai, s.nama_file_selesai, s.created_at, s.updated_at
+    FROM public.permohonan_surat s
+    WHERE s.id = trim(p_ticket);
+  END IF;
+END;
+$$;
+
 -- 6. Kebijakan Tabel Profiles
--- Reset kebijakan lama
 DROP POLICY IF EXISTS "Allow public read profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Allow write profiles" ON public.profiles;
 DROP POLICY IF EXISTS "User view own profile or admin" ON public.profiles;
 DROP POLICY IF EXISTS "User update own profile" ON public.profiles;
 DROP POLICY IF EXISTS "User insert own profile" ON public.profiles;
 
--- Publik diizinkan membaca data profil agar NIK login lookup dan validasi unik NIK dapat berjalan lancar
-CREATE POLICY "Allow public read profiles" ON public.profiles
-FOR SELECT USING (true);
+-- Profil warga HANYA boleh dibaca oleh pemilik akun bersangkutan atau Admin Desa
+CREATE POLICY "User view own profile or admin" ON public.profiles
+FOR SELECT USING (auth.uid() = id OR public.is_admin());
 
 -- User terotentikasi dapat membuat (insert) profil miliknya sendiri jika belum ada
 CREATE POLICY "User insert own profile" ON public.profiles
@@ -455,6 +499,22 @@ FOR INSERT WITH CHECK (auth.uid() = id);
 -- User dapat mengupdate profil miliknya sendiri, atau Admin dapat mengupdate seluruh profil
 CREATE POLICY "User update own profile" ON public.profiles
 FOR UPDATE USING (auth.uid() = id OR public.is_admin()) WITH CHECK (auth.uid() = id OR public.is_admin());
+
+-- RPC FUNCTION: Cek Unik NIK (SECURITY DEFINER)
+-- Hanya mengembalikan boolean (true jika sudah terdaftar, false jika belum)
+-- Tanpa mengekspos data pribadi warga ke publik!
+CREATE OR REPLACE FUNCTION public.is_nik_registered(p_nik text)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles WHERE nik = trim(p_nik)
+  );
+END;
+$$;
 
 -- ==============================================================================
 -- KONFIGURASI STORAGE BUCKET 'public-images'
@@ -472,9 +532,9 @@ DROP POLICY IF EXISTS "Admin delete images" ON storage.objects;
 CREATE POLICY "Public view images" ON storage.objects
 FOR SELECT USING (bucket_id = 'public-images');
 
--- Pengguna terautentikasi atau Admin boleh mengunggah file
+-- Hanya Admin Desa yang boleh mengunggah file ke bucket publik
 CREATE POLICY "Admin upload images" ON storage.objects
-FOR INSERT WITH CHECK (bucket_id = 'public-images' AND (auth.role() = 'authenticated' OR public.is_admin()));
+FOR INSERT WITH CHECK (bucket_id = 'public-images' AND public.is_admin());
 
 CREATE POLICY "Admin update images" ON storage.objects
 FOR UPDATE USING (bucket_id = 'public-images' AND public.is_admin());

@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     }
 
     // Fetching all citizen applications requires Admin session
-    const authCheck = await verifyAdminSession();
+    const authCheck = await verifyAdminSession(request);
     if (!authCheck.isAdmin) {
       return NextResponse.json(
         { success: false, error: "Unauthorized: Data permohonan surat hanya dapat diakses oleh admin desa." },
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const authCheck = await verifyAdminSession();
+    const authCheck = await verifyAdminSession(request);
     if (!authCheck.isAdmin) {
       return NextResponse.json({ success: false, error: authCheck.error }, { status: 403 });
     }
@@ -86,7 +86,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const authCheck = await verifyAdminSession();
+    const authCheck = await verifyAdminSession(request);
     if (!authCheck.isAdmin) {
       return NextResponse.json({ success: false, error: authCheck.error }, { status: 403 });
     }
