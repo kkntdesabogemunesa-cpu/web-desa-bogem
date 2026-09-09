@@ -30,8 +30,8 @@ export default function Footer() {
     totalKunjungan: 1,
   });
 
-  // State untuk accordion di tampilan mobile (default terbuka pada Kunjungan Website sesuai screenshot)
-  const [openAccordion, setOpenAccordion] = useState<string | null>("kunjungan");
+  // State untuk accordion di tampilan mobile (default tertutup semua, baru terbuka saat diklik)
+  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
   // Initial fetch profil desa & pencatatan kunjungan saat mount
   useEffect(() => {
