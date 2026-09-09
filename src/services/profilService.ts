@@ -2,10 +2,10 @@ import { supabase } from "@/lib/supabase";
 import { ProfilDesaData, BatasWilayah } from "@/types/profil";
 
 export const defaultBatasWilayah: BatasWilayah = {
-  utara: "Desa Tladan / Genengan",
-  timur: "Desa Pojok / Kawedanan",
-  selatan: "Desa Giripurno",
-  barat: "Desa Sugihrejo",
+  utara: "Desa Karangrejo",
+  timur: "Kelurahan Sampung",
+  selatan: "Kelurahan Sampung",
+  barat: "Desa Jambangan",
 };
 
 export const defaultSejarahDesa = `Nama Desa Bogem memiliki akar sejarah yang kuat dan sarat nilai perjuangan serta kearifan lokal di wilayah Kecamatan Kawedanan, Kabupaten Magetan. Sejak dahulu kala, kawasan ini dikenal sebagai wilayah pemukiman yang tentram dengan tanah persawahan yang subur dan sumber mata air yang melimpah.
@@ -30,15 +30,15 @@ export const defaultProfilDesa: ProfilDesaData = {
   bagan_desa_image: "",
   bagan_bpd_image: "",
   sejarah: defaultSejarahDesa,
-  luas_wilayah: "245 Ha",
-  jumlah_penduduk: "3.620 Jiwa",
+  luas_wilayah: "101,03 Ha",
+  jumlah_penduduk: "1.615 Jiwa",
   ketinggian: "± 78 mdpl",
   batas_wilayah: defaultBatasWilayah,
   jam_pelayanan: "Senin - Jumat: 08.00 - 15.00 WIB",
   jam_pelayanan_note: "*Sabtu & Minggu: Libur / Pelayanan Darurat",
   alamat_kantor: "Jl. Bakti Mulya No. 241, Desa Bogem, Kec. Kawedanan, Kab. Magetan",
-  telepon_kantor: "+62 812-3456-7890",
-  email_kantor: "info@desabogem.id",
+  telepon_kantor: "0851-3655-8975",
+  email_kantor: "desabogemjaya@gmail.com",
   updated_at: new Date().toISOString(),
 };
 

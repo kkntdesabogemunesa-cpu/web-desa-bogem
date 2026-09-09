@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 :root {
   --background: #f8fafc;
@@ -30,4 +31,35 @@ body {
 /* Safe area padding helper for modern iOS devices */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+}
+
+/* Animasi Lucu & Organik untuk Karakter Penduduk */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(1.5deg);
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(0deg) scale(1.08);
+  }
+  25% {
+    transform: rotate(-4deg) scale(1.12);
+  }
+  75% {
+    transform: rotate(4deg) scale(1.12);
+  }
+}
+
+.bogem-polygon-highlight {
+  transition: fill-opacity 0.25s ease, stroke-width 0.25s ease;
+}
+
+.bogem-polygon-highlight:hover {
+  fill-opacity: 0.55 !important;
+  stroke-width: 3.5px !important;
 }

@@ -22,6 +22,7 @@ import {
   formatRupiah,
 } from "@/services/infografisService";
 import { InfografisData } from "@/types/infografis";
+import PendudukCards from "@/components/home/PendudukCards";
 
 export default function InfografisPage() {
   const [activeTab, setActiveTab] = useState<"penduduk" | "organisasi" | "apbd">("penduduk");
@@ -129,52 +130,13 @@ export default function InfografisPage() {
         {/* Tab 1: Demografi Penduduk */}
         {activeTab === "penduduk" && (
           <div className="space-y-6">
-            {/* Top Stat Counters */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-6">
-              <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-sm border border-slate-100 space-y-1.5 sm:space-y-2">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                  <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-                </div>
-                <div className="text-lg sm:text-3xl font-extrabold text-slate-900 break-words">
-                  {demografi.total_penduduk.toLocaleString("id-ID")}
-                </div>
-                <div className="text-[10px] sm:text-xs font-semibold text-slate-500">Total Penduduk (Jiwa)</div>
-              </div>
-
-              <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-sm border border-slate-100 space-y-1.5 sm:space-y-2">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
-                  <span className="font-bold text-xs sm:text-sm">♂</span>
-                </div>
-                <div className="text-lg sm:text-3xl font-extrabold text-slate-900 break-words">
-                  {demografi.pria.toLocaleString("id-ID")}
-                </div>
-                <div className="text-[10px] sm:text-xs font-semibold text-slate-500">
-                  Laki-Laki ({persenPria}%)
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-sm border border-slate-100 space-y-1.5 sm:space-y-2">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center">
-                  <span className="font-bold text-xs sm:text-sm">♀</span>
-                </div>
-                <div className="text-lg sm:text-3xl font-extrabold text-slate-900 break-words">
-                  {demografi.wanita.toLocaleString("id-ID")}
-                </div>
-                <div className="text-[10px] sm:text-xs font-semibold text-slate-500">
-                  Perempuan ({persenWanita}%)
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-sm border border-slate-100 space-y-1.5 sm:space-y-2">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
-                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
-                </div>
-                <div className="text-lg sm:text-3xl font-extrabold text-slate-900 break-words">
-                  {demografi.kepala_keluarga.toLocaleString("id-ID")}
-                </div>
-                <div className="text-[10px] sm:text-xs font-semibold text-slate-500">Kepala Keluarga (KK)</div>
-              </div>
-            </div>
+            {/* Top Stat Counters Beranimasi Lucu Sesuai Lampiran 4 */}
+            <PendudukCards
+              totalPenduduk={demografi.total_penduduk}
+              kepalaKeluarga={demografi.kepala_keluarga}
+              perempuan={demografi.wanita}
+              lakiLaki={demografi.pria}
+            />
 
             {/* Visual Progress Ratio */}
             <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-sm border border-slate-200/80 space-y-3 sm:space-y-4">

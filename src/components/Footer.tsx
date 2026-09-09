@@ -3,37 +3,71 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Phone, Mail, Clock, MapPin, Heart } from "lucide-react";
+import {
+  Phone,
+  Mail,
+  Clock,
+  MapPin,
+  Globe,
+  ChevronDown,
+  Share2,
+  Compass,
+  DoorOpen,
+} from "lucide-react";
 import { fetchProfilDesa, defaultProfilDesa } from "@/services/profilService";
+import { getVisitorStats, recordWebsiteVisit, VisitorStats } from "@/services/visitorService";
 import { ProfilDesaData } from "@/types/profil";
 
 export default function Footer() {
   const pathname = usePathname();
   const [profil, setProfil] = useState<ProfilDesaData>(defaultProfilDesa);
+  const [stats, setStats] = useState<VisitorStats>({
+    hariIni: 1,
+    kemarin: 0,
+    mingguIni: 1,
+    mingguLalu: 0,
+    bulanIni: 1,
+    bulanLalu: 0,
+    totalKunjungan: 1,
+  });
+
+  // State untuk accordion di tampilan mobile (Lampiran 2)
+  const [openAccordion, setOpenAccordion] = useState<string | null>("kunjungan");
 
   useEffect(() => {
     fetchProfilDesa().then((data) => {
       if (data) setProfil(data);
     }).catch(() => {});
+
+    // Rekam kunjungan nyata (100% real data) dan perbarui statistik
+    recordWebsiteVisit().then((realStats) => {
+      if (realStats) setStats(realStats);
+    });
   }, []);
 
-  // Hide public footer inside admin panel
+  // Sembunyikan footer saat berada di panel admin
   if (pathname?.startsWith("/admin")) {
     return null;
   }
 
-  const rawPhone = profil.telepon_kantor || "+62 812-3456-7890";
+  const rawPhone = profil.telepon_kantor || "0851-3655-8975";
   const cleanPhone = rawPhone.replace(/[^0-9+]/g, "");
+
+  const toggleAccordion = (key: string) => {
+    setOpenAccordion(openAccordion === key ? null : key);
+  };
 
   return (
     <footer className="bg-[#05281a] text-emerald-100/90 border-t border-emerald-900/60 pb-28 md:pb-8 pt-8 sm:pt-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-10">
+        
+        {/* ===================== TAMPILAN LAPTOP & DESKTOP (>= md) ===================== */}
+        <div className="hidden md:grid grid-cols-4 gap-8 mb-10 items-start">
           
-          {/* Column 1: Info Desa */}
-          <div className="space-y-4 md:col-span-1">
+          {/* Kolom 1: Info Identitas Desa */}
+          <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="relative w-10 h-12 flex-shrink-0 flex items-center justify-center">
+              <div className="relative w-11 h-14 flex-shrink-0 flex items-center justify-center">
                 <img
                   src="/images/logo-magetan.png"
                   alt="Logo Kabupaten Magetan"
@@ -41,22 +75,27 @@ export default function Footer() {
                 />
               </div>
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">Desa Bogem</h3>
-                <p className="text-xs text-emerald-300/90">Kec. Kawedanan, Kab. Magetan</p>
+                <h3 className="text-lg font-extrabold text-white tracking-tight">Desa Bogem</h3>
+                <p className="text-xs text-emerald-300 font-medium">Kecamatan Kawedanan</p>
+                <p className="text-xs text-emerald-400/80">Kabupaten Magetan, Jawa Timur</p>
               </div>
             </div>
-            <p className="text-xs sm:text-sm text-emerald-200/80 leading-relaxed">
+            <p className="text-xs text-emerald-200/80 leading-relaxed">
               Website Resmi Layanan Informasi Publik, Administrasi Persuratan & Promosi Produk UMKM Warga Desa Bogem.
             </p>
           </div>
 
-          {/* Column 2: Kontak Kantor Desa */}
+          {/* Kolom 2: Kontak Kantor Desa */}
           <div className="space-y-3">
-            <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">Kontak Kantor Desa</h4>
-            <ul className="space-y-2.5 text-xs sm:text-sm text-emerald-200/90">
+            <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">
+              Kontak Kantor Desa
+            </h4>
+            <ul className="space-y-2.5 text-xs text-emerald-200/90">
               <li className="flex items-start space-x-2.5">
                 <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <span className="leading-relaxed">{profil.alamat_kantor || "Jl. Bakti Mulya No. 241, Desa Bogem, Kec. Kawedanan, Kab. Magetan"}</span>
+                <span className="leading-relaxed">
+                  {profil.alamat_kantor || "Jl. Bakti Mulya No. 241, Desa Bogem, Kec. Kawedanan, Kab. Magetan"}
+                </span>
               </li>
               <li className="flex items-center space-x-2.5">
                 <Phone className="w-4 h-4 text-emerald-400 flex-shrink-0" />
@@ -66,66 +105,276 @@ export default function Footer() {
               </li>
               <li className="flex items-center space-x-2.5">
                 <Mail className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <a href={`mailto:${profil.email_kantor || "info@desabogem.id"}`} className="hover:text-white transition">
-                  {profil.email_kantor || "info@desabogem.id"}
+                <a href={`mailto:${profil.email_kantor || "desabogemjaya@gmail.com"}`} className="hover:text-white transition">
+                  {profil.email_kantor || "desabogemjaya@gmail.com"}
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: Jam Pelayanan */}
+          {/* Kolom 3: Jam Pelayanan (Kontak Darurat Dihapus sesuai permintaan user) */}
           <div className="space-y-3">
-            <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">Jam Pelayanan Kantor</h4>
-            <div className="space-y-2 text-xs sm:text-sm text-emerald-200/90">
+            <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">
+              Jam Pelayanan Kantor
+            </h4>
+            <div className="space-y-2.5 text-xs text-emerald-200/90">
               <div className="flex items-center space-x-2">
                 <Clock className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span>{profil.jam_pelayanan || "Senin - Jumat: 08.00 - 15.00 WIB"}</span>
+                <span className="font-semibold text-white">{profil.jam_pelayanan || "Senin - Jumat: 08.00 - 15.00 WIB"}</span>
               </div>
-              {profil.jam_pelayanan_note && (
-                <div className="flex items-center space-x-2 text-emerald-400/80 text-xs mt-2">
-                  <span>{profil.jam_pelayanan_note}</span>
-                </div>
-              )}
+              <p className="text-[11px] text-emerald-400/80 leading-relaxed">
+                {profil.jam_pelayanan_note || "*Sabtu & Minggu: Libur Pelayanan Administrasi"}
+              </p>
+              <div className="pt-2 border-t border-emerald-900/60 text-xs text-emerald-300/80 leading-relaxed">
+                Pelayanan persuratan warga dapat diajukan secara online 24 jam melalui menu Layanan Surat.
+              </div>
             </div>
           </div>
 
-          {/* Column 4: Navigasi Halaman (Disembunyikan di mobile agar tidak menumpuk) */}
-          <div className="hidden md:block space-y-3">
-            <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">Navigasi Cepat</h4>
-            <ul className="space-y-2 text-xs sm:text-sm">
-              <li>
-                <Link href="/" className="hover:text-white transition">Beranda</Link>
-              </li>
-              <li>
-                <Link href="/profil" className="hover:text-white transition">Profil Desa</Link>
-              </li>
-              <li>
-                <Link href="/pemerintah" className="hover:text-white transition">Pemerintah & SOTK</Link>
-              </li>
-              <li>
-                <Link href="/infografis" className="hover:text-white transition">Infografis & IDM</Link>
-              </li>
-              <li>
-                <Link href="/berita" className="hover:text-white transition">Kabar Berita</Link>
-              </li>
-              <li>
-                <Link href="/potensi" className="hover:text-white transition font-medium text-emerald-300">Beli dari Desa (UMKM)</Link>
-              </li>
-              <li>
-                <Link href="/layanan-surat" className="hover:text-white transition font-semibold text-emerald-300">Layanan Surat Online</Link>
-              </li>
-            </ul>
+          {/* Kolom 4: WIDGET KUNJUNGAN WEBSITE (DATA REAL SESUAI LAMPIRAN 1) */}
+          <div className="space-y-3">
+            <div className="bg-[#3e4548] text-white rounded-2xl p-4 shadow-xl border border-slate-600/60 space-y-2.5">
+              <h4 className="text-sm font-extrabold tracking-wide text-white border-b border-slate-600/80 pb-2">
+                Jumlah Kunjungan
+              </h4>
+              <div className="space-y-1.5 text-xs">
+                <div className="flex justify-between items-center py-1 border-b border-slate-600/50">
+                  <span className="text-slate-200">Hari Ini</span>
+                  <span className="font-bold text-white text-sm">{stats.hariIni.toLocaleString("id-ID")}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-600/50">
+                  <span className="text-slate-200">Kemarin</span>
+                  <span className="font-bold text-white">{stats.kemarin.toLocaleString("id-ID")}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-600/50">
+                  <span className="text-slate-200">Minggu Ini</span>
+                  <span className="font-bold text-white">{stats.mingguIni.toLocaleString("id-ID")}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-600/50">
+                  <span className="text-slate-200">Minggu Lalu</span>
+                  <span className="font-bold text-white">{stats.mingguLalu.toLocaleString("id-ID")}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-600/50">
+                  <span className="text-slate-200">Bulan Ini</span>
+                  <span className="font-bold text-white">{stats.bulanIni.toLocaleString("id-ID")}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-600/50">
+                  <span className="text-slate-200">Bulan Lalu</span>
+                  <span className="font-bold text-white">{stats.bulanLalu.toLocaleString("id-ID")}</span>
+                </div>
+                <div className="flex justify-between items-center pt-1.5 font-bold text-emerald-300">
+                  <span>Total Kunjungan</span>
+                  <span className="text-sm text-emerald-200">{stats.totalKunjungan.toLocaleString("id-ID")}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Indikator Pill Button Sesuai Lampiran 1 */}
+            <div className="bg-[#3aa37e] text-white px-4 py-2.5 rounded-2xl flex items-center justify-between shadow-md">
+              <div className="flex items-center space-x-2.5">
+                <DoorOpen className="w-5 h-5 flex-shrink-0" />
+                <div className="leading-tight">
+                  <div className="text-[11px] font-medium opacity-90">Kunjungan</div>
+                  <div className="text-xs font-bold">{stats.hariIni} Hari Ini</div>
+                </div>
+              </div>
+              <ChevronDown className="w-4 h-4 opacity-80" />
+            </div>
           </div>
 
         </div>
 
-        {/* Bottom Copyright */}
-        <div className="pt-6 border-t border-emerald-900/60 flex flex-col md:flex-row items-center justify-between text-xs text-emerald-400/80 gap-2">
-          <p>© {new Date().getFullYear()} Pemerintah Desa Bogem, Magetan. Hak Cipta Dilindungi.</p>
-          <div className="flex items-center space-x-1">
-            <span>Portal Resmi Layanan Masyarakat Desa</span>
+        {/* ===================== TAMPILAN MOBILE (< md) ACCORDION SESUAI LAMPIRAN 2 ===================== */}
+        <div className="md:hidden space-y-4 mb-8">
+          
+          {/* Header Mobile: Logo & Nama Desa Sesuai Lampiran 2 */}
+          <div className="flex items-center space-x-3 pb-3 border-b border-emerald-900/60">
+            <div className="w-12 h-14 flex-shrink-0 flex items-center justify-center">
+              <img
+                src="/images/logo-magetan.png"
+                alt="Logo Kabupaten Magetan"
+                className="w-full h-full object-contain drop-shadow"
+              />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-white tracking-tight">Desa Bogem</h3>
+              <p className="text-xs text-emerald-300 font-medium">Kecamatan Kawedanan</p>
+              <p className="text-xs text-emerald-400/90">Kabupaten Magetan</p>
+              <p className="text-[11px] text-emerald-500">Provinsi Jawa Timur</p>
+            </div>
+          </div>
+
+          {/* List Accordion Mobile (Kontak Darurat Dihapus sesuai permintaan user) */}
+          <div className="space-y-2 text-sm">
+            
+            {/* 1. Accordion: Kunjungan Website (Data Real) */}
+            <div className="border-b border-emerald-900/50 pb-2">
+              <button
+                type="button"
+                onClick={() => toggleAccordion("kunjungan")}
+                className="w-full flex items-center justify-between py-2.5 font-bold text-white text-left active:opacity-80 cursor-pointer"
+              >
+                <div className="flex items-center space-x-2.5">
+                  <Globe className="w-4 h-4 text-emerald-400" />
+                  <span>Kunjungan Website</span>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-emerald-400 transition-transform duration-200 ${
+                    openAccordion === "kunjungan" ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {openAccordion === "kunjungan" && (
+                <div className="mt-2 bg-[#3e4548] text-white rounded-2xl p-4 shadow-xl border border-slate-600/60 space-y-2 animate-in fade-in duration-200">
+                  <h5 className="text-xs font-bold text-emerald-300 border-b border-slate-600 pb-1 mb-2">
+                    Statistik Kunjungan Real
+                  </h5>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-600/50 text-xs">
+                    <span className="text-slate-200">Hari Ini</span>
+                    <span className="font-bold">{stats.hariIni.toLocaleString("id-ID")}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-600/50 text-xs">
+                    <span className="text-slate-200">Kemarin</span>
+                    <span className="font-bold">{stats.kemarin.toLocaleString("id-ID")}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-600/50 text-xs">
+                    <span className="text-slate-200">Minggu Ini</span>
+                    <span className="font-bold">{stats.mingguIni.toLocaleString("id-ID")}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-600/50 text-xs">
+                    <span className="text-slate-200">Minggu Lalu</span>
+                    <span className="font-bold">{stats.mingguLalu.toLocaleString("id-ID")}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-600/50 text-xs">
+                    <span className="text-slate-200">Bulan Ini</span>
+                    <span className="font-bold">{stats.bulanIni.toLocaleString("id-ID")}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-600/50 text-xs">
+                    <span className="text-slate-200">Bulan Lalu</span>
+                    <span className="font-bold">{stats.bulanLalu.toLocaleString("id-ID")}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1 font-bold text-emerald-300 text-xs">
+                    <span>Total Kunjungan</span>
+                    <span>{stats.totalKunjungan.toLocaleString("id-ID")}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Accordion: Kontak Desa */}
+            <div className="border-b border-emerald-900/50 pb-2">
+              <button
+                type="button"
+                onClick={() => toggleAccordion("kontak")}
+                className="w-full flex items-center justify-between py-2.5 font-bold text-white text-left active:opacity-80 cursor-pointer"
+              >
+                <div className="flex items-center space-x-2.5">
+                  <Phone className="w-4 h-4 text-emerald-400" />
+                  <span>Kontak Desa</span>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-emerald-400 transition-transform duration-200 ${
+                    openAccordion === "kontak" ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {openAccordion === "kontak" && (
+                <div className="mt-2 text-xs text-emerald-200/90 space-y-2.5 pl-6 animate-in fade-in duration-200">
+                  <p className="leading-relaxed">
+                    📍 {profil.alamat_kantor || "Jl. Bakti Mulya No. 241, Desa Bogem, Kec. Kawedanan, Kab. Magetan"}
+                  </p>
+                  <p>
+                    📞 Telp/WA:{" "}
+                    <a href={`tel:${cleanPhone}`} className="text-white underline font-semibold">
+                      {rawPhone}
+                    </a>
+                  </p>
+                  <p>
+                    ✉️ Email:{" "}
+                    <a href={`mailto:${profil.email_kantor || "desabogemjaya@gmail.com"}`} className="text-white underline">
+                      {profil.email_kantor || "desabogemjaya@gmail.com"}
+                    </a>
+                  </p>
+                  <p>
+                    ⏰ Jam Pelayanan:{" "}
+                    <span className="text-white font-medium">
+                      {profil.jam_pelayanan || "Senin - Jumat 08.00 - 15.00 WIB"}
+                    </span>
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* 3. Accordion: Sosial Media */}
+            <div className="border-b border-emerald-900/50 pb-2">
+              <button
+                type="button"
+                onClick={() => toggleAccordion("sosmed")}
+                className="w-full flex items-center justify-between py-2.5 font-bold text-white text-left active:opacity-80 cursor-pointer"
+              >
+                <div className="flex items-center space-x-2.5">
+                  <Share2 className="w-4 h-4 text-emerald-400" />
+                  <span>Sosial Media</span>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-emerald-400 transition-transform duration-200 ${
+                    openAccordion === "sosmed" ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {openAccordion === "sosmed" && (
+                <div className="mt-2 text-xs text-emerald-200/90 space-y-2 pl-6 animate-in fade-in duration-200">
+                  <div>Facebook: <span className="text-white font-medium">Pemerintah Desa Bogem Magetan</span></div>
+                  <div>Instagram: <span className="text-white font-medium">@desabogem_magetan</span></div>
+                  <div>YouTube: <span className="text-white font-medium">Desa Bogem Official</span></div>
+                  <div>WhatsApp Warga: <span className="text-white font-medium">{rawPhone}</span></div>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Accordion: Jelajahi Sesuai Konten Website */}
+            <div className="border-b border-emerald-900/50 pb-2">
+              <button
+                type="button"
+                onClick={() => toggleAccordion("jelajahi")}
+                className="w-full flex items-center justify-between py-2.5 font-bold text-white text-left active:opacity-80 cursor-pointer"
+              >
+                <div className="flex items-center space-x-2.5">
+                  <Compass className="w-4 h-4 text-emerald-400" />
+                  <span>Jelajahi</span>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-emerald-400 transition-transform duration-200 ${
+                    openAccordion === "jelajahi" ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {openAccordion === "jelajahi" && (
+                <div className="mt-2 grid grid-cols-2 gap-2.5 text-xs text-emerald-200 pl-6 animate-in fade-in duration-200">
+                  <Link href="/" className="hover:text-white py-1">Beranda</Link>
+                  <Link href="/profil" className="hover:text-white py-1">Profil Desa</Link>
+                  <Link href="/pemerintah" className="hover:text-white py-1">Pemerintah & SOTK</Link>
+                  <Link href="/infografis" className="hover:text-white py-1">Infografis & IDM</Link>
+                  <Link href="/berita" className="hover:text-white py-1">Kabar Berita</Link>
+                  <Link href="/potensi" className="hover:text-white py-1 text-emerald-300 font-semibold">Produk UMKM</Link>
+                  <Link href="/layanan-surat" className="hover:text-white py-1 text-emerald-300 font-semibold col-span-2">Layanan Surat Online</Link>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
+
+        {/* ===================== BOTTOM COPYRIGHT ===================== */}
+        <div className="pt-6 border-t border-emerald-900/60 flex flex-col md:flex-row items-center justify-between text-xs text-emerald-400/80 gap-2 text-center md:text-left">
+          <p>© {new Date().getFullYear()} Pemerintah Desa Bogem, Kec. Kawedanan, Kab. Magetan. Hak Cipta Dilindungi.</p>
+          <span>Portal Pelayanan & Informasi Publik Desa Bogem</span>
+        </div>
+
       </div>
     </footer>
   );
