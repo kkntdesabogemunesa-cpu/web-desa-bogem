@@ -3,7 +3,18 @@ import { PerangkatItem, CreatePerangkatInput } from "@/types/perangkat";
 
 export const fallbackPerangkatList: PerangkatItem[] = [];
 
-export async function fetchPerangkatList(): Promise<PerangkatItem[]> {
+let cachedPerangkat: { data: PerangkatItem[]; timestamp: number } | null = null;
+const PERANGKAT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 menit client-side cache
+
+export function clearPerangkatCache(): void {
+  cachedPerangkat = null;
+}
+
+export async function fetchPerangkatList(forceRefresh = false): Promise<PerangkatItem[]> {
+  if (!forceRefresh && cachedPerangkat && Date.now() - cachedPerangkat.timestamp < PERANGKAT_CACHE_TTL_MS) {
+    return cachedPerangkat.data;
+  }
+
   try {
     if (!supabase) return fallbackPerangkatList;
 
@@ -17,7 +28,9 @@ export async function fetchPerangkatList(): Promise<PerangkatItem[]> {
       return fallbackPerangkatList;
     }
 
-    return data || fallbackPerangkatList;
+    const result = data || fallbackPerangkatList;
+    cachedPerangkat = { data: result, timestamp: Date.now() };
+    return result;
   } catch (err) {
     console.error("fetchPerangkatList exception:", err);
     return fallbackPerangkatList;
@@ -44,6 +57,7 @@ export async function createPerangkat(input: CreatePerangkatInput): Promise<{ su
       return { success: false, error: error.message };
     }
 
+    clearPerangkatCache();
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat menambahkan perangkat desa.";
@@ -58,7 +72,7 @@ export async function updatePerangkat(
   try {
     if (!supabase) return { success: false, error: "Database client is not available." };
 
-    const payload: Record<string, any> = {};
+    const payload: Record<string, unknown> = {};
     if (input.nama !== undefined) payload.nama = input.nama.trim();
     if (input.jabatan !== undefined) payload.jabatan = input.jabatan.trim();
     if (input.foto !== undefined) payload.foto = input.foto || null;
@@ -72,6 +86,7 @@ export async function updatePerangkat(
       return { success: false, error: error.message };
     }
 
+    clearPerangkatCache();
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat memperbarui perangkat desa.";
@@ -90,6 +105,7 @@ export async function deletePerangkat(id: string | number): Promise<{ success: b
       return { success: false, error: error.message };
     }
 
+    clearPerangkatCache();
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat menghapus perangkat desa.";

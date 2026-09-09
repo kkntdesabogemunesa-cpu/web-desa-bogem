@@ -13,6 +13,14 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Desa Bogem | Kec. Kawedanan, Kab. Magetan",
   description: "Website Resmi Pemerintah Desa Bogem, Kecamatan Kawedanan, Kabupaten Magetan - Layanan Informasi Publik & UMKM",
+  icons: {
+    icon: [
+      { url: "/images/logo-magetan.png", type: "image/png" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    shortcut: "/images/logo-magetan.png",
+    apple: "/images/logo-magetan.png",
+  },
 };
 
 export default function RootLayout({

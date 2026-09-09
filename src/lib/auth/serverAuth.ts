@@ -1,7 +1,7 @@
-import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseJsClient, User } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
-export async function verifyAdminSession(req?: Request): Promise<{ isAdmin: boolean; error?: string; user?: any }> {
+export async function verifyAdminSession(req?: Request): Promise<{ isAdmin: boolean; error?: string; user?: User }> {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";

@@ -42,7 +42,18 @@ export const defaultProfilDesa: ProfilDesaData = {
   updated_at: new Date().toISOString(),
 };
 
-export async function fetchProfilDesa(): Promise<ProfilDesaData> {
+let cachedProfil: { data: ProfilDesaData; timestamp: number } | null = null;
+const PROFIL_CACHE_TTL_MS = 5 * 60 * 1000; // 5 menit client-side cache
+
+export function clearProfilCache(): void {
+  cachedProfil = null;
+}
+
+export async function fetchProfilDesa(forceRefresh = false): Promise<ProfilDesaData> {
+  if (!forceRefresh && cachedProfil && Date.now() - cachedProfil.timestamp < PROFIL_CACHE_TTL_MS) {
+    return cachedProfil.data;
+  }
+
   try {
     if (!supabase) return defaultProfilDesa;
 
@@ -56,7 +67,7 @@ export async function fetchProfilDesa(): Promise<ProfilDesaData> {
       return defaultProfilDesa;
     }
 
-    return {
+    const result: ProfilDesaData = {
       id: "main",
       visi: data.visi || defaultProfilDesa.visi,
       misi: Array.isArray(data.misi) && data.misi.length > 0 ? data.misi : defaultProfilDesa.misi,
@@ -77,6 +88,9 @@ export async function fetchProfilDesa(): Promise<ProfilDesaData> {
       email_kantor: data.email_kantor || defaultProfilDesa.email_kantor,
       updated_at: data.updated_at || new Date().toISOString(),
     };
+
+    cachedProfil = { data: result, timestamp: Date.now() };
+    return result;
   } catch (err) {
     console.error("fetchProfilDesa error:", err);
     return defaultProfilDesa;
@@ -87,7 +101,7 @@ export async function updateProfilDesa(input: Partial<ProfilDesaData>): Promise<
   try {
     if (!supabase) return { success: false, error: "Database client is not available." };
 
-    const payload: Record<string, any> = {
+    const payload: Record<string, unknown> = {
       id: "main",
       updated_at: new Date().toISOString(),
     };
@@ -117,6 +131,7 @@ export async function updateProfilDesa(input: Partial<ProfilDesaData>): Promise<
       return { success: false, error: error.message };
     }
 
+    clearProfilCache();
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat memperbarui profil desa.";

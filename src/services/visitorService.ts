@@ -95,6 +95,20 @@ function parseStatsResponse(raw: unknown): VisitorStats {
   };
 }
 
+const STORAGE_TIME_KEY = "bogem_real_visitor_stats_time";
+const STATS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 menit TTL untuk hemat kuota Supabase
+
+function isStatsCacheFresh(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const time = localStorage.getItem(STORAGE_TIME_KEY);
+    if (!time) return false;
+    return Date.now() - Number(time) < STATS_CACHE_TTL_MS;
+  } catch {
+    return false;
+  }
+}
+
 function getCachedStats(): VisitorStats | null {
   if (typeof window !== "undefined") {
     try {
@@ -122,6 +136,13 @@ export async function recordWebsiteVisit(): Promise<VisitorStats | null> {
   const visitRecordedKey = `bogem_visited_${todayWIB}`;
   const alreadyVisitedToday = localStorage.getItem(visitRecordedKey) === "1";
 
+  // Jika pengunjung sudah tercatat hari ini dan cache statistik masih segar (< 5 menit),
+  // kembalikan cache lokal tanpa membuang RPC call ke Supabase
+  if (alreadyVisitedToday && isStatsCacheFresh()) {
+    const cached = getCachedStats();
+    if (cached) return cached;
+  }
+
   try {
     if (!supabase) {
       return getCachedStats();
@@ -146,7 +167,7 @@ export async function recordWebsiteVisit(): Promise<VisitorStats | null> {
       }
     }
 
-    // 2. SELALU panggil get_visitor_stats untuk memperoleh angka statistik terbaru
+    // 2. Ambil statistik terbaru dari RPC get_visitor_stats
     const { data: statsData, error: statsError } = await supabase.rpc("get_visitor_stats");
 
     if (statsError || !statsData) {
@@ -156,6 +177,7 @@ export async function recordWebsiteVisit(): Promise<VisitorStats | null> {
 
     const calculatedStats = parseStatsResponse(statsData);
     localStorage.setItem(STORAGE_CACHE_KEY, JSON.stringify(calculatedStats));
+    localStorage.setItem(STORAGE_TIME_KEY, String(Date.now()));
     return calculatedStats;
   } catch (err) {
     console.error("recordWebsiteVisit error:", err);
@@ -166,9 +188,14 @@ export async function recordWebsiteVisit(): Promise<VisitorStats | null> {
 /**
  * Mengambil statistik kunjungan terkini tanpa mencatat hit baru.
  */
-export async function getVisitorStats(): Promise<VisitorStats | null> {
+export async function getVisitorStats(forceRefresh = false): Promise<VisitorStats | null> {
   if (typeof window === "undefined") {
     return null;
+  }
+
+  if (!forceRefresh && isStatsCacheFresh()) {
+    const cached = getCachedStats();
+    if (cached) return cached;
   }
 
   try {
@@ -183,6 +210,7 @@ export async function getVisitorStats(): Promise<VisitorStats | null> {
 
     const stats = parseStatsResponse(statsData);
     localStorage.setItem(STORAGE_CACHE_KEY, JSON.stringify(stats));
+    localStorage.setItem(STORAGE_TIME_KEY, String(Date.now()));
     return stats;
   } catch (err) {
     console.error("getVisitorStats error:", err);

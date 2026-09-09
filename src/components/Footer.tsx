@@ -15,9 +15,8 @@ import {
   DoorOpen,
 } from "lucide-react";
 import { fetchProfilDesa, defaultProfilDesa } from "@/services/profilService";
-import { getVisitorStats, recordWebsiteVisit, VisitorStats } from "@/services/visitorService";
+import { recordWebsiteVisit, VisitorStats } from "@/services/visitorService";
 import { ProfilDesaData } from "@/types/profil";
-import { supabase } from "@/lib/supabase";
 
 export default function Footer() {
   const pathname = usePathname();
@@ -37,8 +36,8 @@ export default function Footer() {
   // State timestamp pembaruan terakhir (WIB)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // State untuk accordion di tampilan mobile (Lampiran 2)
-  const [openAccordion, setOpenAccordion] = useState<string | null>("kunjungan");
+  // State untuk accordion di tampilan mobile (default tersembunyi / tertutup, baru terbuka saat diklik)
+  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
   // 1. Initial fetch profil desa & pencatatan kunjungan saat mount
   useEffect(() => {
@@ -53,39 +52,6 @@ export default function Footer() {
         setLastUpdated(new Date());
       }
     });
-  }, []);
-
-  // 2. Realtime subscription: Dengarkan INSERT baru di tabel visitor_logs
-  useEffect(() => {
-    if (!supabase) return;
-
-    let debounceTimer: NodeJS.Timeout | null = null;
-
-    const handleNewVisit = () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        getVisitorStats().then((newStats) => {
-          if (newStats) {
-            setStats(newStats);
-            setLastUpdated(new Date());
-          }
-        });
-      }, 1500); // Debounce 1.5 detik
-    };
-
-    const channel = supabase
-      .channel("visitor_logs_changes")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "visitor_logs" },
-        handleNewVisit
-      )
-      .subscribe();
-
-    return () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   // Sembunyikan footer saat berada di panel admin
@@ -269,7 +235,7 @@ export default function Footer() {
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                       </span>
                       <span className="text-[11px] text-emerald-300 font-medium">
-                        Diperbarui secara real-time
+                        Statistik Kunjungan Aktif
                       </span>
                     </div>
                   </div>
@@ -367,7 +333,7 @@ export default function Footer() {
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                       </span>
                       <span className="text-emerald-300 font-medium text-[10px]">
-                        Diperbarui secara real-time
+                        Statistik Kunjungan Aktif
                       </span>
                     </div>
                     <span className="text-[10px] text-slate-400">

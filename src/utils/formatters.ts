@@ -133,7 +133,12 @@ export function formatRupiahInput(val: string): string {
   // 5. Single price formatting
   const digitsOnly = pricePart.replace(/[^0-9]/g, "");
   if (!digitsOnly) {
-    return prefix ? prefix.trim() : (unitPart ? unitPart.trim() : val);
+    // If the input only contains "Rp", "Rp.", "Rp ", or punctuation without digits, allow user to clear the input
+    const cleanLetters = trimmed.replace(/[^a-z]/gi, "").toLowerCase();
+    if (cleanLetters === "rp" || cleanLetters === "r" || !cleanLetters) {
+      return "";
+    }
+    return prefix ? prefix.trim() : (unitPart ? unitPart.trim() : "");
   }
 
   const formattedNum = Number(digitsOnly).toLocaleString("id-ID");

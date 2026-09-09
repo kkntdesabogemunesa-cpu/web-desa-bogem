@@ -9,7 +9,7 @@ import {
 } from "@/services/beritaService";
 import { BeritaItem, KATEGORI_BERITA_PRESETS } from "@/types/berita";
 import { formatDateIndonesian } from "@/utils/formatters";
-import { compressImage } from "@/utils/imageCompressor";
+import { compressImage, isImageFile } from "@/utils/imageCompressor";
 import { uploadVillageImage } from "@/lib/storage";
 import {
   ArrowLeft,
@@ -77,8 +77,8 @@ export default function KelolaBeritaAdmin() {
   };
 
   const processFile = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setErrorMessage("Berkas harus berupa gambar (JPG, PNG, WEBP).");
+    if (!isImageFile(file)) {
+      setErrorMessage("Berkas harus berupa gambar (JPG, PNG, WEBP, HEIC).");
       setStatus("error");
       return;
     }
@@ -386,7 +386,7 @@ export default function KelolaBeritaAdmin() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp,image/*"
                   onChange={handleFileChange}
                   className="hidden"
                 />

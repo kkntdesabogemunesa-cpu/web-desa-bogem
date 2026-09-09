@@ -232,12 +232,13 @@ export default function PotensiDesa() {
               {/* Modal Header Image */}
               <div className="relative aspect-[16/9] bg-slate-100">
                 {selectedItem.gambar && (
-                  <img
+                  <ImageWithSkeleton
                     src={selectedItem.gambar}
                     alt={selectedItem.nama_usaha}
-                    loading="lazy"
-                    decoding="async"
+                    priority={true}
+                    sizes="(max-width: 640px) 100vw, 512px"
                     className="w-full h-full object-cover"
+                    fallbackIcon={<ShoppingBag className="w-12 h-12 text-emerald-600/40" />}
                   />
                 )}
                 <button

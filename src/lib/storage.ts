@@ -1,7 +1,10 @@
 import { supabase } from "@/lib/supabase";
+import { compressImageToFile, isImageFile } from "@/utils/imageCompressor";
 
 /**
- * Upload an image file to Supabase Storage Bucket ('public-images')
+ * Upload an image or document file to Supabase Storage Bucket ('public-images')
+ * Automatically compresses large mobile photos (e.g. 10MB-20MB down to <250KB WebP/JPEG)
+ * before uploading to ensure reliable, lightning-fast uploads from smartphones and laptops.
  * Returns the permanent public CDN URL of the uploaded image.
  */
 export async function uploadVillageImage(
@@ -12,20 +15,39 @@ export async function uploadVillageImage(
     throw new Error("Supabase client is not available in current environment.");
   }
 
-  // 1. Validasi ukuran file (Maksimal 5MB)
-  const MAX_SIZE = 5 * 1024 * 1024;
-  if (file.size > MAX_SIZE) {
-    throw new Error("Ukuran file melebihi batas maksimal (5 MB). Harap pilih file yang lebih kecil.");
+  let fileToUpload: File = file;
+
+  // 1. If it's an image, auto-compress on the client first
+  if (isImageFile(file)) {
+    try {
+      fileToUpload = await compressImageToFile(file, 1200, 1200, 0.82);
+    } catch (compressErr) {
+      console.warn("Client compression failed, attempting upload with original file:", compressErr);
+      fileToUpload = file;
+    }
   }
 
-  // 2. Validasi tipe file / MIME type yang diizinkan
-  const fileExt = (file.name.split(".").pop() || "jpg").toLowerCase();
-  const cleanExt = fileExt.replace(/[^a-z0-9]/g, "");
-  const allowedExtensions = ["jpg", "jpeg", "png", "webp", "pdf"];
-  const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+  // 2. Validate file size (Max 5MB for compressed image, 10MB for documents)
+  const MAX_SIZE = folder === "dokumen" ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+  if (fileToUpload.size > MAX_SIZE) {
+    throw new Error(
+      `Ukuran file (${(fileToUpload.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas maksimal. Harap pilih gambar lain.`
+    );
+  }
 
-  if (!allowedExtensions.includes(cleanExt) || (file.type && !allowedMimeTypes.includes(file.type.toLowerCase()))) {
-    throw new Error("Format file tidak didukung. Hanya file gambar (JPG, PNG, WEBP) atau PDF yang diperbolehkan.");
+  // 3. Resolve clean extension based on MIME type or filename
+  let cleanExt = "jpg";
+  if (fileToUpload.type === "image/webp") {
+    cleanExt = "webp";
+  } else if (fileToUpload.type === "image/png") {
+    cleanExt = "png";
+  } else if (fileToUpload.type === "image/jpeg" || fileToUpload.type === "image/jpg") {
+    cleanExt = "jpg";
+  } else if (fileToUpload.type === "application/pdf") {
+    cleanExt = "pdf";
+  } else {
+    const rawExt = fileToUpload.name.split(".").pop()?.toLowerCase() || "jpg";
+    cleanExt = rawExt.replace(/[^a-z0-9]/g, "") || "jpg";
   }
 
   // Generate unique file path: folder/timestamp-random.ext
@@ -34,10 +56,10 @@ export async function uploadVillageImage(
 
   const { data, error } = await supabase.storage
     .from("public-images")
-    .upload(filePath, file, {
+    .upload(filePath, fileToUpload, {
       cacheControl: "31536000", // 1 year cache
       upsert: false,
-      contentType: file.type || "image/jpeg",
+      contentType: fileToUpload.type || (cleanExt === "webp" ? "image/webp" : "image/jpeg"),
     });
 
   if (error) {
@@ -51,3 +73,4 @@ export async function uploadVillageImage(
 
   return publicUrlData.publicUrl;
 }
+

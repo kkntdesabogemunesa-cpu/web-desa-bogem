@@ -23,6 +23,17 @@ interface PageProps {
 
 export const revalidate = 60; // Cache individual article for 60 seconds
 
+export async function generateStaticParams() {
+  try {
+    const list = await fetchBeritaList();
+    return list.map((item) => ({
+      id: String(item.id),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const berita = await fetchBeritaById(id);

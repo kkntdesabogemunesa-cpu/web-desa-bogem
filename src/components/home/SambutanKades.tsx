@@ -42,6 +42,8 @@ export default function SambutanKades({ profilData, listPerangkat }: SambutanKad
             <ImageWithSkeleton
               src={displayKadesFoto}
               alt={displayKadesNama}
+              priority={true}
+              sizes="(max-width: 640px) 160px, (max-width: 768px) 192px, 224px"
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               fallbackIcon={<UserCheck className="w-14 h-14 text-slate-400" />}
             />

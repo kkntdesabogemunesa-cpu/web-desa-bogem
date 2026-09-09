@@ -13,6 +13,7 @@ import { UMKM_CATEGORIES } from "@/utils/constants";
 import { formatRupiahInput } from "@/utils/formatters";
 import { compressImage } from "@/utils/imageCompressor";
 import { uploadVillageImage } from "@/lib/storage";
+import { isImageFile } from "@/utils/imageCompressor";
 import {
   ArrowLeft,
   Send,
@@ -32,6 +33,7 @@ import {
   Search,
   Check,
   MapPin,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -50,6 +52,8 @@ export default function KelolaUMKMAdmin() {
   const [harga, setHarga] = useState("");
   const [gambar, setGambar] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadProgressMsg, setUploadProgressMsg] = useState("");
 
   // Edit Mode state
   const [editingId, setEditingId] = useState<string | number | null>(null);
@@ -83,38 +87,41 @@ export default function KelolaUMKMAdmin() {
   }, []);
 
   // Handle direct file selection from laptop/phone
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      processFile(file);
+      await processFile(file);
     }
   };
 
   const processFile = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setFeedbackMsg("Berkas harus berupa gambar (JPG, PNG, WEBP).");
+    if (!isImageFile(file)) {
+      setFeedbackMsg("Berkas harus berupa gambar (JPG, PNG, WEBP, atau HEIC).");
       setStatus("error");
+      formTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
 
+    setIsUploadingImage(true);
+    setUploadProgressMsg("Mengompresi dan mengunggah foto produk...");
+    setStatus("idle");
+    setFeedbackMsg("");
+
     try {
+      // uploadVillageImage auto-compresses the image client-side to <250KB WebP/JPEG
       const publicUrl = await uploadVillageImage(file, "umkm");
       setGambar(publicUrl);
-      setStatus("idle");
-    } catch {
-      try {
-        const compressed = await compressImage(file, 1200, 900, 0.82);
-        setGambar(compressed);
-        setStatus("idle");
-      } catch {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target?.result) {
-            setGambar(event.target.result as string);
-            setStatus("idle");
-          }
-        };
-        reader.readAsDataURL(file);
+      setUploadProgressMsg("Foto produk berhasil diunggah!");
+      setTimeout(() => setUploadProgressMsg(""), 3000);
+    } catch (err: unknown) {
+      const errorText = err instanceof Error ? err.message : "Gagal mengunggah foto produk.";
+      setFeedbackMsg(errorText);
+      setStatus("error");
+      formTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
       }
     }
   };
@@ -202,6 +209,14 @@ export default function KelolaUMKMAdmin() {
   // Submit Handler (Create or Update)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isUploadingImage) {
+      setFeedbackMsg("Mohon tunggu beberapa detik, foto produk sedang dikompresi dan diunggah...");
+      setStatus("error");
+      formTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
     setStatus("loading");
     setFeedbackMsg("");
 
@@ -223,6 +238,7 @@ export default function KelolaUMKMAdmin() {
       if (!res.success) {
         setFeedbackMsg(res.error || "Gagal memperbarui data UMKM.");
         setStatus("error");
+        formTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       } else {
         setStatus("sukses");
         setFeedbackMsg(`Produk UMKM "${namaUsaha}" berhasil diperbarui!`);
@@ -246,6 +262,7 @@ export default function KelolaUMKMAdmin() {
       if (!res.success) {
         setFeedbackMsg(res.error || "Gagal menyimpan data UMKM.");
         setStatus("error");
+        formTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       } else {
         setStatus("sukses");
         setFeedbackMsg(`Produk UMKM "${namaUsaha}" berhasil ditambahkan ke etalase!`);
@@ -265,15 +282,20 @@ export default function KelolaUMKMAdmin() {
 
     setDeletingId(item.id);
     try {
-      await deleteUMKM(item.id);
+      const res = await deleteUMKM(item.id);
+      if (!res.success) {
+        alert(res.error || "Gagal menghapus data UMKM.");
+        return;
+      }
       setDeleteSuccessMsg(`Produk UMKM "${item.nama_usaha}" berhasil dihapus.`);
       setTimeout(() => setDeleteSuccessMsg(""), 4000);
       if (editingId === item.id) {
         resetForm();
       }
       await loadUMKM();
-    } catch {
-      alert("Gagal menghapus data UMKM.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Gagal menghapus data UMKM.";
+      alert(msg);
     } finally {
       setDeletingId(null);
     }
@@ -398,7 +420,7 @@ export default function KelolaUMKMAdmin() {
                   required
                   value={namaUsaha}
                   onChange={(e) => setNamaUsaha(e.target.value)}
-                  className="w-full border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 text-xs text-slate-800 font-medium bg-slate-50 focus:bg-white"
+                  className="w-full border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 text-base sm:text-xs text-slate-800 font-medium bg-slate-50 focus:bg-white"
                   placeholder="Contoh: Keripik Tempe Bu Tejo"
                 />
               </div>
@@ -412,7 +434,7 @@ export default function KelolaUMKMAdmin() {
                   required
                   value={pemilik}
                   onChange={(e) => setPemilik(e.target.value)}
-                  className="w-full border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 text-xs text-slate-800 font-medium bg-slate-50 focus:bg-white"
+                  className="w-full border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 text-base sm:text-xs text-slate-800 font-medium bg-slate-50 focus:bg-white"
                   placeholder="Contoh: Siti Aminah"
                 />
               </div>
@@ -426,7 +448,7 @@ export default function KelolaUMKMAdmin() {
                 <select
                   value={kategori}
                   onChange={(e) => setKategori(e.target.value)}
-                  className="w-full border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 text-xs text-slate-800 font-medium bg-slate-50 focus:bg-white"
+                  className="w-full border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 text-base sm:text-xs text-slate-800 font-medium bg-slate-50 focus:bg-white"
                 >
                   {UMKM_CATEGORIES.filter((c) => c !== "Semua").map((cat) => (
                     <option key={cat} value={cat}>
@@ -442,11 +464,12 @@ export default function KelolaUMKMAdmin() {
                   <span>WhatsApp Pemesanan <span className="text-rose-500">*</span></span>
                 </label>
                 <input
-                  type="text"
+                  type="tel"
+                  inputMode="tel"
                   required
                   value={kontak}
                   onChange={(e) => setKontak(e.target.value)}
-                  className="w-full border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 text-xs text-slate-800 font-medium bg-slate-50 focus:bg-white"
+                  className="w-full border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 text-base sm:text-xs text-slate-800 font-medium bg-slate-50 focus:bg-white"
                   placeholder="Contoh: 081234567890"
                 />
               </div>
@@ -460,7 +483,7 @@ export default function KelolaUMKMAdmin() {
                   type="text"
                   value={alamat}
                   onChange={(e) => setAlamat(e.target.value)}
-                  className="w-full border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 text-xs text-slate-800 font-medium bg-slate-50 focus:bg-white"
+                  className="w-full border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 text-base sm:text-xs text-slate-800 font-medium bg-slate-50 focus:bg-white"
                   placeholder="Contoh: RT 03 / RW 01, Dusun Krajan"
                 />
               </div>
@@ -480,10 +503,11 @@ export default function KelolaUMKMAdmin() {
 
               <input
                 type="text"
+                inputMode="text"
                 required
                 value={harga}
                 onChange={(e) => handleHargaChange(e.target.value)}
-                className="w-full border border-emerald-300 px-4 py-3 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 text-sm text-slate-900 font-extrabold shadow-inner"
+                className="w-full border border-emerald-300 px-4 py-3 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 text-base sm:text-sm text-slate-900 font-extrabold shadow-inner"
                 placeholder="Contoh: 15000 atau 15000 - 250000 (Otomatis jadi Rp 15.000 - Rp 250.000)"
               />
 
@@ -556,38 +580,51 @@ export default function KelolaUMKMAdmin() {
                 rows={3}
                 value={deskripsi}
                 onChange={(e) => setDeskripsi(e.target.value)}
-                className="w-full border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 text-xs text-slate-800 font-medium leading-relaxed bg-slate-50 focus:bg-white"
+                className="w-full border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 text-base sm:text-xs text-slate-800 font-medium leading-relaxed bg-slate-50 focus:bg-white"
                 placeholder="Jelaskan bahan baku, keunggulan rasa, varian ukuran, dan rincian produk..."
               />
             </div>
 
             {/* Product Photo Upload Box */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-700 uppercase flex items-center space-x-1.5">
-                <ImageIcon className="w-4 h-4 text-emerald-700" />
-                <span>Foto Produk UMKM (Opsional)</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="umkm-photo-input"
+                  className="text-xs font-bold text-slate-700 uppercase flex items-center space-x-1.5 cursor-pointer"
+                >
+                  <ImageIcon className="w-4 h-4 text-emerald-700" />
+                  <span>Foto Produk UMKM (Opsional)</span>
+                </label>
+                {isUploadingImage && (
+                  <span className="text-[11px] font-bold text-emerald-700 flex items-center space-x-1 animate-pulse">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>{uploadProgressMsg || "Sedang memproses..."}</span>
+                  </span>
+                )}
+              </div>
 
-              {/* Hidden File Input */}
+              {/* Accessible Native File Input with cross-platform mobile compatibility */}
               <input
+                id="umkm-photo-input"
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                accept="image/*"
-                className="hidden"
+                accept="image/jpeg,image/png,image/webp,image/*"
+                disabled={isUploadingImage}
+                className="sr-only"
               />
 
-              {/* Upload Drop Zone / Preview Box */}
-              <div
+              {/* Upload Drop Zone / Label Box */}
+              <label
+                htmlFor="umkm-photo-input"
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={`relative rounded-2xl border-2 border-dashed p-5 text-center cursor-pointer transition-all duration-200 ${
+                className={`relative block rounded-2xl border-2 border-dashed p-5 text-center cursor-pointer transition-all duration-200 ${
                   isDragging
                     ? "border-emerald-500 bg-emerald-50 scale-[1.01]"
                     : "border-slate-300 hover:border-emerald-600 bg-slate-50 hover:bg-slate-100/80"
-                }`}
+                } ${isUploadingImage ? "opacity-70 pointer-events-none" : ""}`}
               >
                 {gambar ? (
                   <div className="space-y-3">
@@ -600,10 +637,11 @@ export default function KelolaUMKMAdmin() {
                       <button
                         type="button"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           setGambar("");
                         }}
-                        className="absolute top-2 right-2 bg-black/60 hover:bg-black text-white p-1.5 rounded-full backdrop-blur transition"
+                        className="absolute top-2 right-2 bg-black/60 hover:bg-black text-white p-1.5 rounded-full backdrop-blur transition z-20"
                         title="Hapus foto ini"
                       >
                         <X className="w-4 h-4" />
@@ -611,26 +649,42 @@ export default function KelolaUMKMAdmin() {
                     </div>
                     <div className="flex items-center justify-center space-x-2 text-xs font-bold text-emerald-800">
                       <Upload className="w-4 h-4" />
-                      <span>Klik untuk mengganti foto produk</span>
+                      <span>Ketuk untuk mengganti foto produk</span>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-2 py-3">
                     <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
-                      <Upload className="w-5 h-5" />
+                      {isUploadingImage ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Upload className="w-5 h-5" />
+                      )}
                     </div>
                     <div>
                       <span className="text-xs font-bold text-slate-800 block">
-                        Klik di sini untuk Unggah Foto Produk dari Laptop / HP
+                        {isUploadingImage
+                          ? "Sedang Mengompresi & Mengunggah Foto..."
+                          : "Ketuk di sini untuk Unggah Foto Produk dari Kamera HP / Laptop"}
                       </span>
                       <span className="text-[11px] text-slate-500">
-                        atau seret & lepas berkas foto (JPG, PNG, WEBP, Maks. 5MB)
+                        {isUploadingImage
+                          ? "Mohon tunggu sebentar..."
+                          : "Mendukung kamera HP, Galeri, JPG, PNG, WEBP, HEIC (Otomatis dikompres)"}
                       </span>
                     </div>
                   </div>
                 )}
-              </div>
+              </label>
             </div>
+
+            {/* Mobile-visible inline error reminder before submit */}
+            {status === "error" && (
+              <div className="p-3.5 bg-rose-50 text-rose-800 rounded-xl border border-rose-200 flex items-center space-x-2.5 text-xs font-semibold animate-in fade-in duration-200 sm:hidden">
+                <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                <span>{feedbackMsg || "Gagal menyimpan data UMKM. Periksa input di atas."}</span>
+              </div>
+            )}
 
             {/* Form Actions */}
             <div className="flex items-center gap-3 pt-2">
@@ -647,28 +701,34 @@ export default function KelolaUMKMAdmin() {
 
               <button
                 type="submit"
-                disabled={status === "loading"}
+                disabled={status === "loading" || isUploadingImage}
                 className={`flex-grow text-white font-bold py-3.5 px-4 rounded-xl transition flex items-center justify-center space-x-2 text-xs sm:text-sm shadow-md active:scale-95 ${
-                  status === "loading"
+                  status === "loading" || isUploadingImage
                     ? "bg-emerald-800/50 cursor-not-allowed"
                     : editingId !== null
                     ? "bg-amber-600 hover:bg-amber-700"
                     : "bg-[#004329] hover:bg-[#00321F]"
                 }`}
               >
-                {editingId !== null ? (
+                {isUploadingImage ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Sedang Mengunggah Foto...</span>
+                  </>
+                ) : status === "loading" ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Menyimpan Data...</span>
+                  </>
+                ) : editingId !== null ? (
                   <>
                     <Check className="w-4 h-4" />
-                    <span>
-                      {status === "loading" ? "Menyimpan Pembaruan..." : "Simpan Pembaruan UMKM"}
-                    </span>
+                    <span>Simpan Pembaruan UMKM</span>
                   </>
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    <span>
-                      {status === "loading" ? "Menyimpan Data..." : "Tambahkan ke Etalase UMKM"}
-                    </span>
+                    <span>Tambahkan ke Etalase UMKM</span>
                   </>
                 )}
               </button>

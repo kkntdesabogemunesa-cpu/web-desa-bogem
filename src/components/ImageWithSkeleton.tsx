@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Image as ImageIcon } from "lucide-react";
 
 interface ImageWithSkeletonProps {
@@ -10,6 +11,9 @@ interface ImageWithSkeletonProps {
   containerClassName?: string;
   fallbackIcon?: React.ReactNode;
   aspectRatio?: string;
+  priority?: boolean;
+  sizes?: string;
+  quality?: number;
 }
 
 export default function ImageWithSkeleton({
@@ -19,6 +23,9 @@ export default function ImageWithSkeleton({
   containerClassName = "relative w-full h-full overflow-hidden bg-slate-100",
   fallbackIcon,
   aspectRatio,
+  priority = false,
+  sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
+  quality = 75,
 }: ImageWithSkeletonProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -34,6 +41,8 @@ export default function ImageWithSkeleton({
     );
   }
 
+  const isDataOrBlob = src.startsWith("data:") || src.startsWith("blob:");
+
   return (
     <div
       className={containerClassName}
@@ -41,14 +50,17 @@ export default function ImageWithSkeleton({
     >
       {/* Shimmer skeleton while image is loading */}
       {!isLoaded && (
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 animate-pulse" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 animate-pulse z-0" />
       )}
 
-      <img
+      <Image
         src={src}
         alt={alt}
-        loading="lazy"
-        decoding="async"
+        fill
+        priority={priority}
+        sizes={sizes}
+        quality={quality}
+        unoptimized={isDataOrBlob}
         onLoad={() => setIsLoaded(true)}
         onError={() => setHasError(true)}
         className={`${className} transition-opacity duration-300 ${
@@ -58,3 +70,4 @@ export default function ImageWithSkeleton({
     </div>
   );
 }
+

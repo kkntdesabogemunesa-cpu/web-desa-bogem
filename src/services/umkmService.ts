@@ -3,7 +3,18 @@ import { UMKMItem, CreateUMKMInput } from "@/types/umkm";
 
 export const fallbackUMKMList: UMKMItem[] = [];
 
-export async function fetchUMKMList(): Promise<UMKMItem[]> {
+let cachedUMKM: { data: UMKMItem[]; timestamp: number } | null = null;
+const UMKM_CACHE_TTL_MS = 2 * 60 * 1000; // 2 menit client-side cache
+
+export function clearUMKMCache(): void {
+  cachedUMKM = null;
+}
+
+export async function fetchUMKMList(forceRefresh = false): Promise<UMKMItem[]> {
+  if (!forceRefresh && cachedUMKM && Date.now() - cachedUMKM.timestamp < UMKM_CACHE_TTL_MS) {
+    return cachedUMKM.data;
+  }
+
   try {
     if (!supabase) return fallbackUMKMList;
 
@@ -17,7 +28,9 @@ export async function fetchUMKMList(): Promise<UMKMItem[]> {
       return fallbackUMKMList;
     }
 
-    return data || fallbackUMKMList;
+    const result = data || fallbackUMKMList;
+    cachedUMKM = { data: result, timestamp: Date.now() };
+    return result;
   } catch (err) {
     console.error("fetchUMKMList exception:", err);
     return fallbackUMKMList;
@@ -47,6 +60,7 @@ export async function createUMKM(input: CreateUMKMInput): Promise<{ success: boo
       return { success: false, error: error.message };
     }
 
+    clearUMKMCache();
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat menambahkan UMKM.";
@@ -61,7 +75,7 @@ export async function updateUMKM(
   try {
     if (!supabase) return { success: false, error: "Database client is not available." };
 
-    const payload: Record<string, any> = {};
+    const payload: Record<string, unknown> = {};
     if (input.nama_usaha !== undefined) payload.nama_usaha = input.nama_usaha.trim();
     if (input.pemilik !== undefined) payload.pemilik = input.pemilik.trim();
     if (input.deskripsi !== undefined) payload.deskripsi = input.deskripsi.trim();
@@ -78,6 +92,7 @@ export async function updateUMKM(
       return { success: false, error: error.message };
     }
 
+    clearUMKMCache();
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat memperbarui data UMKM.";
@@ -96,6 +111,7 @@ export async function deleteUMKM(id: string | number): Promise<{ success: boolea
       return { success: false, error: error.message };
     }
 
+    clearUMKMCache();
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat menghapus UMKM.";

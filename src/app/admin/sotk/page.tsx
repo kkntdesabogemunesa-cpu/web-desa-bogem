@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { fetchPerangkatList, createPerangkat, updatePerangkat, deletePerangkat } from "@/services/perangkatService";
 import { PerangkatItem } from "@/types/perangkat";
-import { compressImage } from "@/utils/imageCompressor";
+import { compressImage, isImageFile } from "@/utils/imageCompressor";
 import { uploadVillageImage } from "@/lib/storage";
 import {
   ArrowLeft,
@@ -87,8 +87,8 @@ export default function KelolaSOTKAdmin() {
   };
 
   const processFile = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setFeedbackMessage("Berkas harus berupa gambar (JPG, PNG, WEBP).");
+    if (!isImageFile(file)) {
+      setFeedbackMessage("Berkas harus berupa gambar (JPG, PNG, WEBP, HEIC).");
       setStatus("error");
       return;
     }
@@ -360,7 +360,7 @@ export default function KelolaSOTKAdmin() {
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/*"
                 className="hidden"
               />
 

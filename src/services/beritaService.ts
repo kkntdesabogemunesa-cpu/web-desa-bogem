@@ -3,7 +3,20 @@ import { BeritaItem, CreateBeritaInput } from "@/types/berita";
 
 export const fallbackBeritaList: BeritaItem[] = [];
 
-export async function fetchBeritaList(page?: number, limit?: number): Promise<BeritaItem[]> {
+let cachedBeritaList: { data: BeritaItem[]; timestamp: number } | null = null;
+const BERITA_CACHE_TTL_MS = 2 * 60 * 1000; // 2 menit client-side cache
+
+export function clearBeritaCache(): void {
+  cachedBeritaList = null;
+}
+
+export async function fetchBeritaList(page?: number, limit?: number, forceRefresh = false): Promise<BeritaItem[]> {
+  const isFullList = page === undefined && limit === undefined;
+
+  if (isFullList && !forceRefresh && cachedBeritaList && Date.now() - cachedBeritaList.timestamp < BERITA_CACHE_TTL_MS) {
+    return cachedBeritaList.data;
+  }
+
   try {
     if (!supabase) return fallbackBeritaList;
 
@@ -25,7 +38,11 @@ export async function fetchBeritaList(page?: number, limit?: number): Promise<Be
       return fallbackBeritaList;
     }
 
-    return data || fallbackBeritaList;
+    const result = data || fallbackBeritaList;
+    if (isFullList) {
+      cachedBeritaList = { data: result, timestamp: Date.now() };
+    }
+    return result;
   } catch (err) {
     console.error("fetchBeritaList exception:", err);
     return fallbackBeritaList;
@@ -85,6 +102,7 @@ export async function createBerita(input: CreateBeritaInput): Promise<{ success:
       return { success: false, error: error.message };
     }
 
+    clearBeritaCache();
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat membuat berita.";
@@ -99,7 +117,7 @@ export async function updateBerita(
   try {
     if (!supabase) return { success: false, error: "Database client is not available." };
 
-    const payload: Record<string, any> = {};
+    const payload: Record<string, unknown> = {};
     if (input.judul !== undefined) payload.judul = input.judul.trim();
     if (input.konten !== undefined) payload.konten = input.konten.trim();
     if (input.penulis !== undefined) payload.penulis = input.penulis.trim();
@@ -114,6 +132,7 @@ export async function updateBerita(
       return { success: false, error: error.message };
     }
 
+    clearBeritaCache();
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat memperbarui berita.";
@@ -132,6 +151,7 @@ export async function deleteBerita(id: string | number): Promise<{ success: bool
       return { success: false, error: error.message };
     }
 
+    clearBeritaCache();
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat menghapus berita.";
