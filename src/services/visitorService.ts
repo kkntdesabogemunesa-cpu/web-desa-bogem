@@ -10,94 +10,116 @@ export interface VisitorStats {
   totalKunjungan: number;
 }
 
-interface VisitorLog {
-  total: number;
-  daily: Record<string, number>; // "YYYY-MM-DD" -> count
-}
-
 const STORAGE_CACHE_KEY = "bogem_real_visitor_stats";
 
-// Helper untuk format tanggal YYYY-MM-DD lokal
-function formatDate(d: Date): string {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-// Menghitung metrik berdasarkan log harian real
-function calculateStatsFromLog(log: VisitorLog): VisitorStats {
-  const now = new Date();
-  const todayStr = formatDate(now);
-
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  const yesterdayStr = formatDate(yesterday);
-
-  // Minggu ini (dari hari Senin minggu berjalan hingga hari ini)
-  const dayOfWeek = (now.getDay() + 6) % 7; // 0 = Senin, 6 = Minggu
-  let mingguIniCount = 0;
-  for (let i = 0; i <= dayOfWeek; i++) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - i);
-    mingguIniCount += log.daily[formatDate(d)] || 0;
+/**
+ * Menghasilkan tanggal hari ini dalam format YYYY-MM-DD sesuai zona waktu Asia/Jakarta (WIB).
+ */
+export function getTodayWIB(): string {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    return formatter.format(new Date()); // Output: "YYYY-MM-DD"
+  } catch {
+    // Fallback perhitungan manual offset UTC+7 (WIB)
+    const now = new Date();
+    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+    const wib = new Date(utc + 7 * 3600000);
+    const y = wib.getFullYear();
+    const m = String(wib.getMonth() + 1).padStart(2, "0");
+    const d = String(wib.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
   }
-
-  // Minggu lalu (7 hari sebelum Senin minggu ini)
-  let mingguLaluCount = 0;
-  for (let i = dayOfWeek + 1; i <= dayOfWeek + 7; i++) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - i);
-    mingguLaluCount += log.daily[formatDate(d)] || 0;
-  }
-
-  // Bulan ini (YYYY-MM)
-  const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  let bulanIniCount = 0;
-
-  // Bulan lalu
-  const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastMonthPrefix = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, "0")}`;
-  let bulanLaluCount = 0;
-
-  Object.entries(log.daily).forEach(([dateStr, count]) => {
-    if (dateStr.startsWith(currentMonthPrefix)) {
-      bulanIniCount += count;
-    } else if (dateStr.startsWith(lastMonthPrefix)) {
-      bulanLaluCount += count;
-    }
-  });
-
-  return {
-    hariIni: log.daily[todayStr] || 0,
-    kemarin: log.daily[yesterdayStr] || 0,
-    mingguIni: mingguIniCount,
-    mingguLalu: mingguLaluCount,
-    bulanIni: bulanIniCount,
-    bulanLalu: bulanLaluCount,
-    totalKunjungan: log.total || Object.values(log.daily).reduce((a, b) => a + b, 0),
-  };
 }
 
 /**
- * Mencatat kunjungan unik nyata (1 hit per pengunjung per hari) langsung ke Supabase.
- * Tidak ada data palsu/hardcoded — data 100% real terhitung saat diakses!
+ * Menghasilkan hash unik per browser pengunjung (privacy-friendly, tanpa IP mentah).
+ * Menggunakan kombinasi User-Agent, resolusi layar, color depth, dan timezone offset.
  */
-export async function recordWebsiteVisit(): Promise<VisitorStats> {
+export async function generateVisitorHash(): Promise<string> {
   if (typeof window === "undefined") {
-    return {
-      hariIni: 0,
-      kemarin: 0,
-      mingguIni: 0,
-      mingguLalu: 0,
-      bulanIni: 0,
-      bulanLalu: 0,
-      totalKunjungan: 0,
-    };
+    return "server-env";
   }
 
-  const todayStr = formatDate(new Date());
-  const visitRecordedKey = `bogem_visited_${todayStr}`;
+  const nav = window.navigator;
+  const scr = window.screen;
+  const tzOffset = new Date().getTimezoneOffset();
+
+  const fingerprintRaw = [
+    nav.userAgent || "",
+    scr?.width || 0,
+    scr?.height || 0,
+    scr?.colorDepth || 0,
+    tzOffset,
+  ].join("###");
+
+  // Gunakan Web Crypto API jika tersedia di Secure Context (HTTPS / localhost)
+  if (typeof window.crypto !== "undefined" && window.crypto?.subtle) {
+    try {
+      const msgBuffer = new TextEncoder().encode(fingerprintRaw);
+      const hashBuffer = await window.crypto.subtle.digest("SHA-256", msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    } catch {
+      // Fallback ke hash djb2 jika digest gagal
+    }
+  }
+
+  // Fallback: Algoritma hash string djb2 sederhana jika non-secure / HTTP
+  return fallbackDjb2Hash(fingerprintRaw);
+}
+
+function fallbackDjb2Hash(str: string): string {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash = hash & hash; // Konversi ke integer 32-bit
+  }
+  return `djb2_${Math.abs(hash).toString(16)}`;
+}
+
+function parseStatsResponse(raw: unknown): VisitorStats {
+  const data = (typeof raw === "string" ? JSON.parse(raw) : raw) as Record<string, unknown> || {};
+  return {
+    hariIni: Number(data.hariIni ?? data.hari_ini ?? 0),
+    kemarin: Number(data.kemarin ?? 0),
+    mingguIni: Number(data.mingguIni ?? data.minggu_ini ?? 0),
+    mingguLalu: Number(data.mingguLalu ?? data.minggu_lalu ?? 0),
+    bulanIni: Number(data.bulanIni ?? data.bulan_ini ?? 0),
+    bulanLalu: Number(data.bulanLalu ?? data.bulan_lalu ?? 0),
+    totalKunjungan: Number(data.totalKunjungan ?? data.total_kunjungan ?? 0),
+  };
+}
+
+function getCachedStats(): VisitorStats | null {
+  if (typeof window !== "undefined") {
+    try {
+      const cached = localStorage.getItem(STORAGE_CACHE_KEY);
+      if (cached) {
+        return parseStatsResponse(JSON.parse(cached));
+      }
+    } catch {
+      // abaikan jika parsing cache gagal
+    }
+  }
+  return null;
+}
+
+/**
+ * Mencatat kunjungan website unik harian secara atomik ke database via RPC record_visit
+ * dan mengembalikan statistik agregat terkini via RPC get_visitor_stats.
+ */
+export async function recordWebsiteVisit(): Promise<VisitorStats | null> {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const todayWIB = getTodayWIB();
+  const visitRecordedKey = `bogem_visited_${todayWIB}`;
   const alreadyVisitedToday = localStorage.getItem(visitRecordedKey) === "1";
 
   try {
@@ -105,43 +127,34 @@ export async function recordWebsiteVisit(): Promise<VisitorStats> {
       return getCachedStats();
     }
 
-    // Ambil data log kunjungan real dari infografis Supabase
-    const { data: info, error } = await supabase
-      .from("infografis")
-      .select("id, demografi")
-      .eq("id", "main")
-      .maybeSingle();
+    // 1. Optimistic check di client via localStorage:
+    // Jika hari ini belum tercatat di browser, panggil RPC record_visit
+    if (!alreadyVisitedToday) {
+      const hash = await generateVisitorHash();
+      const currentPath = window.location.pathname || "/";
 
-    if (error || !info) {
+      const { error: recordError } = await supabase.rpc("record_visit", {
+        p_visitor_hash: hash,
+        p_path: currentPath,
+      });
+
+      if (!recordError) {
+        // Tandai di localStorage bahwa kunjungan hari ini sudah berhasil dicatat
+        localStorage.setItem(visitRecordedKey, "1");
+      } else {
+        console.warn("record_visit RPC warning:", recordError.message);
+      }
+    }
+
+    // 2. SELALU panggil get_visitor_stats untuk memperoleh angka statistik terbaru
+    const { data: statsData, error: statsError } = await supabase.rpc("get_visitor_stats");
+
+    if (statsError || !statsData) {
+      console.warn("get_visitor_stats RPC warning:", statsError?.message);
       return getCachedStats();
     }
 
-    const demografi = info.demografi || {};
-    const visitorLog: VisitorLog = demografi.visitor_log || {
-      total: 0,
-      daily: {},
-    };
-
-    if (!alreadyVisitedToday) {
-      // Catat kunjungan baru hari ini
-      visitorLog.daily[todayStr] = (visitorLog.daily[todayStr] || 0) + 1;
-      visitorLog.total = (visitorLog.total || 0) + 1;
-
-      // Update langsung ke database Supabase
-      await supabase
-        .from("infografis")
-        .update({
-          demografi: {
-            ...demografi,
-            visitor_log: visitorLog,
-          },
-        })
-        .eq("id", "main");
-
-      localStorage.setItem(visitRecordedKey, "1");
-    }
-
-    const calculatedStats = calculateStatsFromLog(visitorLog);
+    const calculatedStats = parseStatsResponse(statsData);
     localStorage.setItem(STORAGE_CACHE_KEY, JSON.stringify(calculatedStats));
     return calculatedStats;
   } catch (err) {
@@ -151,58 +164,28 @@ export async function recordWebsiteVisit(): Promise<VisitorStats> {
 }
 
 /**
- * Mengambil statistik kunjungan real terkini
+ * Mengambil statistik kunjungan terkini tanpa mencatat hit baru.
  */
-export async function getVisitorStats(): Promise<VisitorStats> {
+export async function getVisitorStats(): Promise<VisitorStats | null> {
   if (typeof window === "undefined") {
-    return {
-      hariIni: 0,
-      kemarin: 0,
-      mingguIni: 0,
-      mingguLalu: 0,
-      bulanIni: 0,
-      bulanLalu: 0,
-      totalKunjungan: 0,
-    };
+    return null;
   }
 
   try {
     if (!supabase) return getCachedStats();
 
-    const { data: info } = await supabase
-      .from("infografis")
-      .select("demografi")
-      .eq("id", "main")
-      .maybeSingle();
+    const { data: statsData, error: statsError } = await supabase.rpc("get_visitor_stats");
 
-    if (info?.demografi?.visitor_log) {
-      const stats = calculateStatsFromLog(info.demografi.visitor_log);
-      localStorage.setItem(STORAGE_CACHE_KEY, JSON.stringify(stats));
-      return stats;
+    if (statsError || !statsData) {
+      console.warn("get_visitor_stats RPC warning:", statsError?.message);
+      return getCachedStats();
     }
-  } catch {
-    // fallback to cache
-  }
 
-  return getCachedStats();
-}
-
-function getCachedStats(): VisitorStats {
-  if (typeof window !== "undefined") {
-    try {
-      const cached = localStorage.getItem(STORAGE_CACHE_KEY);
-      if (cached) return JSON.parse(cached);
-    } catch {
-      // ignore
-    }
+    const stats = parseStatsResponse(statsData);
+    localStorage.setItem(STORAGE_CACHE_KEY, JSON.stringify(stats));
+    return stats;
+  } catch (err) {
+    console.error("getVisitorStats error:", err);
+    return getCachedStats();
   }
-  return {
-    hariIni: 1,
-    kemarin: 0,
-    mingguIni: 1,
-    mingguLalu: 0,
-    bulanIni: 1,
-    bulanLalu: 0,
-    totalKunjungan: 1,
-  };
 }

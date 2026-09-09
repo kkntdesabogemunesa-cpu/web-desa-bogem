@@ -17,6 +17,7 @@ import {
 import { fetchProfilDesa, defaultProfilDesa } from "@/services/profilService";
 import { getVisitorStats, recordWebsiteVisit, VisitorStats } from "@/services/visitorService";
 import { ProfilDesaData } from "@/types/profil";
+import { supabase } from "@/lib/supabase";
 
 export default function Footer() {
   const pathname = usePathname();
@@ -31,9 +32,15 @@ export default function Footer() {
     totalKunjungan: 1,
   });
 
+  // State untuk expand ringkasan kunjungan (Desktop)
+  const [isExpanded, setIsExpanded] = useState(false);
+  // State timestamp pembaruan terakhir (WIB)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
   // State untuk accordion di tampilan mobile (Lampiran 2)
   const [openAccordion, setOpenAccordion] = useState<string | null>("kunjungan");
 
+  // 1. Initial fetch profil desa & pencatatan kunjungan saat mount
   useEffect(() => {
     fetchProfilDesa().then((data) => {
       if (data) setProfil(data);
@@ -41,8 +48,44 @@ export default function Footer() {
 
     // Rekam kunjungan nyata (100% real data) dan perbarui statistik
     recordWebsiteVisit().then((realStats) => {
-      if (realStats) setStats(realStats);
+      if (realStats) {
+        setStats(realStats);
+        setLastUpdated(new Date());
+      }
     });
+  }, []);
+
+  // 2. Realtime subscription: Dengarkan INSERT baru di tabel visitor_logs
+  useEffect(() => {
+    if (!supabase) return;
+
+    let debounceTimer: NodeJS.Timeout | null = null;
+
+    const handleNewVisit = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        getVisitorStats().then((newStats) => {
+          if (newStats) {
+            setStats(newStats);
+            setLastUpdated(new Date());
+          }
+        });
+      }, 1500); // Debounce 1.5 detik
+    };
+
+    const channel = supabase
+      .channel("visitor_logs_changes")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "visitor_logs" },
+        handleNewVisit
+      )
+      .subscribe();
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Sembunyikan footer saat berada di panel admin
@@ -55,6 +98,23 @@ export default function Footer() {
 
   const toggleAccordion = (key: string) => {
     setOpenAccordion(openAccordion === key ? null : key);
+  };
+
+  const formatWIBTime = (date: Date | null) => {
+    if (!date) return "-";
+    try {
+      return (
+        new Intl.DateTimeFormat("id-ID", {
+          timeZone: "Asia/Jakarta",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        }).format(date) + " WIB"
+      );
+    } catch {
+      return date.toLocaleTimeString("id-ID") + " WIB";
+    }
   };
 
   return (
@@ -169,16 +229,56 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* Indikator Pill Button Sesuai Lampiran 1 */}
-            <div className="bg-[#3aa37e] text-white px-4 py-2.5 rounded-2xl flex items-center justify-between shadow-md">
-              <div className="flex items-center space-x-2.5">
-                <DoorOpen className="w-5 h-5 flex-shrink-0" />
-                <div className="leading-tight">
-                  <div className="text-[11px] font-medium opacity-90">Kunjungan</div>
-                  <div className="text-xs font-bold">{stats.hariIni} Hari Ini</div>
+            {/* Indikator Pill Button Sesuai Lampiran 1 (Interactive Expand) */}
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="w-full bg-[#3aa37e] hover:bg-[#349271] text-white px-4 py-2.5 rounded-2xl flex items-center justify-between shadow-md transition active:scale-95 cursor-pointer text-left"
+                aria-expanded={isExpanded}
+                aria-label="Toggle ringkasan kunjungan hari ini"
+              >
+                <div className="flex items-center space-x-2.5">
+                  <DoorOpen className="w-5 h-5 flex-shrink-0" />
+                  <div className="leading-tight">
+                    <div className="text-[11px] font-medium opacity-90">Kunjungan</div>
+                    <div className="text-xs font-bold">{stats.hariIni} Hari Ini</div>
+                  </div>
                 </div>
-              </div>
-              <ChevronDown className="w-4 h-4 opacity-80" />
+                <ChevronDown
+                  className={`w-4 h-4 opacity-80 transition-transform duration-200 ${
+                    isExpanded ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {/* Panel Ringkasan Realtime saat Expanded */}
+              {isExpanded && (
+                <div className="bg-[#2d3336] text-white rounded-2xl p-3.5 shadow-lg border border-slate-600/60 space-y-2.5 text-xs animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-600/60">
+                    <span className="text-slate-300">Kunjungan Unik Hari Ini:</span>
+                    <span className="font-extrabold text-emerald-300 text-sm">
+                      {stats.hariIni.toLocaleString("id-ID")} orang
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-0.5">
+                    <div className="flex items-center space-x-1.5">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      <span className="text-[11px] text-emerald-300 font-medium">
+                        Diperbarui secara real-time
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-[10px] text-slate-400 text-right">
+                    Terakhir diperbarui: {formatWIBTime(lastUpdated)}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -257,6 +357,22 @@ export default function Footer() {
                   <div className="flex justify-between items-center pt-1 font-bold text-emerald-300 text-xs">
                     <span>Total Kunjungan</span>
                     <span>{stats.totalKunjungan.toLocaleString("id-ID")}</span>
+                  </div>
+
+                  {/* Indikator Status Real-time Mobile */}
+                  <div className="pt-2 mt-2 border-t border-slate-600/60 flex items-center justify-between text-[11px]">
+                    <div className="flex items-center space-x-1.5">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      <span className="text-emerald-300 font-medium text-[10px]">
+                        Diperbarui secara real-time
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-400">
+                      Update: {formatWIBTime(lastUpdated)}
+                    </span>
                   </div>
                 </div>
               )}
