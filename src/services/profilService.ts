@@ -42,18 +42,11 @@ export const defaultProfilDesa: ProfilDesaData = {
   updated_at: new Date().toISOString(),
 };
 
-let cachedProfil: { data: ProfilDesaData; timestamp: number } | null = null;
-const PROFIL_CACHE_TTL_MS = 5 * 60 * 1000; // 5 menit client-side cache
-
 export function clearProfilCache(): void {
-  cachedProfil = null;
+  // No-op for compatibility
 }
 
-export async function fetchProfilDesa(forceRefresh = false): Promise<ProfilDesaData> {
-  if (!forceRefresh && cachedProfil && Date.now() - cachedProfil.timestamp < PROFIL_CACHE_TTL_MS) {
-    return cachedProfil.data;
-  }
-
+export async function fetchProfilDesa(): Promise<ProfilDesaData> {
   try {
     if (!supabase) return defaultProfilDesa;
 
@@ -89,7 +82,6 @@ export async function fetchProfilDesa(forceRefresh = false): Promise<ProfilDesaD
       updated_at: data.updated_at || new Date().toISOString(),
     };
 
-    cachedProfil = { data: result, timestamp: Date.now() };
     return result;
   } catch (err) {
     console.error("fetchProfilDesa error:", err);
