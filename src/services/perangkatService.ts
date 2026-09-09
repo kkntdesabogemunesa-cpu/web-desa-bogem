@@ -3,18 +3,11 @@ import { PerangkatItem, CreatePerangkatInput } from "@/types/perangkat";
 
 export const fallbackPerangkatList: PerangkatItem[] = [];
 
-let cachedPerangkat: { data: PerangkatItem[]; timestamp: number } | null = null;
-const PERANGKAT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 menit client-side cache
-
 export function clearPerangkatCache(): void {
-  cachedPerangkat = null;
+  // No-op for compatibility
 }
 
-export async function fetchPerangkatList(forceRefresh = false): Promise<PerangkatItem[]> {
-  if (!forceRefresh && cachedPerangkat && Date.now() - cachedPerangkat.timestamp < PERANGKAT_CACHE_TTL_MS) {
-    return cachedPerangkat.data;
-  }
-
+export async function fetchPerangkatList(): Promise<PerangkatItem[]> {
   try {
     if (!supabase) return fallbackPerangkatList;
 
@@ -28,9 +21,7 @@ export async function fetchPerangkatList(forceRefresh = false): Promise<Perangka
       return fallbackPerangkatList;
     }
 
-    const result = data || fallbackPerangkatList;
-    cachedPerangkat = { data: result, timestamp: Date.now() };
-    return result;
+    return data || fallbackPerangkatList;
   } catch (err) {
     console.error("fetchPerangkatList exception:", err);
     return fallbackPerangkatList;

@@ -3,20 +3,11 @@ import { BeritaItem, CreateBeritaInput } from "@/types/berita";
 
 export const fallbackBeritaList: BeritaItem[] = [];
 
-let cachedBeritaList: { data: BeritaItem[]; timestamp: number } | null = null;
-const BERITA_CACHE_TTL_MS = 2 * 60 * 1000; // 2 menit client-side cache
-
 export function clearBeritaCache(): void {
-  cachedBeritaList = null;
+  // No-op for compatibility
 }
 
-export async function fetchBeritaList(page?: number, limit?: number, forceRefresh = false): Promise<BeritaItem[]> {
-  const isFullList = page === undefined && limit === undefined;
-
-  if (isFullList && !forceRefresh && cachedBeritaList && Date.now() - cachedBeritaList.timestamp < BERITA_CACHE_TTL_MS) {
-    return cachedBeritaList.data;
-  }
-
+export async function fetchBeritaList(page?: number, limit?: number): Promise<BeritaItem[]> {
   try {
     if (!supabase) return fallbackBeritaList;
 
@@ -38,11 +29,7 @@ export async function fetchBeritaList(page?: number, limit?: number, forceRefres
       return fallbackBeritaList;
     }
 
-    const result = data || fallbackBeritaList;
-    if (isFullList) {
-      cachedBeritaList = { data: result, timestamp: Date.now() };
-    }
-    return result;
+    return data || fallbackBeritaList;
   } catch (err) {
     console.error("fetchBeritaList exception:", err);
     return fallbackBeritaList;

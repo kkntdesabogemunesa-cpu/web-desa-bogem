@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { BOGEM_LOCATION } from "@/data/bogemGeoJson";
 import { RefreshCw } from "lucide-react";
 

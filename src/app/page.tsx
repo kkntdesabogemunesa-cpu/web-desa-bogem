@@ -8,8 +8,8 @@ import { UMKMItem } from "@/types/umkm";
 import { PerangkatItem } from "@/types/perangkat";
 import { ProfilDesaData } from "@/types/profil";
 
-// Enable Incremental Static Regeneration (5 minutes edge cache)
-export const revalidate = 300;
+// Dynamic live rendering for real-time admin sync
+export const revalidate = 0;
 
 export default async function Home() {
   let initialBerita: BeritaItem[] = fallbackBeritaList;

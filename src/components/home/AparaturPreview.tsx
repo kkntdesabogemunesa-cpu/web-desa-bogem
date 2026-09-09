@@ -16,16 +16,15 @@ export default function AparaturPreview({ listPerangkat = [] }: AparaturPreviewP
   const [loading, setLoading] = useState(listPerangkat.length === 0);
 
   useEffect(() => {
-    if (listPerangkat && listPerangkat.length > 0) return;
     fetchPerangkatList()
       .then((data) => {
-        if (data && data.length > 0) {
+        if (data && Array.isArray(data)) {
           setItems(data);
         }
       })
       .catch((err) => console.error("Error loading perangkat preview:", err))
       .finally(() => setLoading(false));
-  }, [listPerangkat]);
+  }, []);
 
   return (
     <section id="sotk" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16 space-y-6 sm:space-y-8">

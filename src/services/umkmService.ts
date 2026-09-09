@@ -3,18 +3,11 @@ import { UMKMItem, CreateUMKMInput } from "@/types/umkm";
 
 export const fallbackUMKMList: UMKMItem[] = [];
 
-let cachedUMKM: { data: UMKMItem[]; timestamp: number } | null = null;
-const UMKM_CACHE_TTL_MS = 2 * 60 * 1000; // 2 menit client-side cache
-
 export function clearUMKMCache(): void {
-  cachedUMKM = null;
+  // No-op for compatibility
 }
 
-export async function fetchUMKMList(forceRefresh = false): Promise<UMKMItem[]> {
-  if (!forceRefresh && cachedUMKM && Date.now() - cachedUMKM.timestamp < UMKM_CACHE_TTL_MS) {
-    return cachedUMKM.data;
-  }
-
+export async function fetchUMKMList(): Promise<UMKMItem[]> {
   try {
     if (!supabase) return fallbackUMKMList;
 
@@ -28,9 +21,7 @@ export async function fetchUMKMList(forceRefresh = false): Promise<UMKMItem[]> {
       return fallbackUMKMList;
     }
 
-    const result = data || fallbackUMKMList;
-    cachedUMKM = { data: result, timestamp: Date.now() };
-    return result;
+    return data || fallbackUMKMList;
   } catch (err) {
     console.error("fetchUMKMList exception:", err);
     return fallbackUMKMList;
