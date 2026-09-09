@@ -12,7 +12,6 @@ import {
   ChevronDown,
   Share2,
   Compass,
-  DoorOpen,
 } from "lucide-react";
 import { fetchProfilDesa, defaultProfilDesa } from "@/services/profilService";
 import { recordWebsiteVisit, VisitorStats } from "@/services/visitorService";
@@ -31,25 +30,18 @@ export default function Footer() {
     totalKunjungan: 1,
   });
 
-  // State untuk expand ringkasan kunjungan (Desktop)
-  const [isExpanded, setIsExpanded] = useState(false);
-  // State timestamp pembaruan terakhir (WIB)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  // State untuk accordion di tampilan mobile (default terbuka pada Kunjungan Website sesuai screenshot)
+  const [openAccordion, setOpenAccordion] = useState<string | null>("kunjungan");
 
-  // State untuk accordion di tampilan mobile (default tersembunyi / tertutup, baru terbuka saat diklik)
-  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
-
-  // 1. Initial fetch profil desa & pencatatan kunjungan saat mount
+  // Initial fetch profil desa & pencatatan kunjungan saat mount
   useEffect(() => {
     fetchProfilDesa().then((data) => {
       if (data) setProfil(data);
     }).catch(() => {});
 
-    // Rekam kunjungan nyata (100% real data) dan perbarui statistik
     recordWebsiteVisit().then((realStats) => {
       if (realStats) {
         setStats(realStats);
-        setLastUpdated(new Date());
       }
     });
   }, []);
@@ -64,23 +56,6 @@ export default function Footer() {
 
   const toggleAccordion = (key: string) => {
     setOpenAccordion(openAccordion === key ? null : key);
-  };
-
-  const formatWIBTime = (date: Date | null) => {
-    if (!date) return "-";
-    try {
-      return (
-        new Intl.DateTimeFormat("id-ID", {
-          timeZone: "Asia/Jakarta",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false,
-        }).format(date) + " WIB"
-      );
-    } catch {
-      return date.toLocaleTimeString("id-ID") + " WIB";
-    }
   };
 
   return (
@@ -157,94 +132,58 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Kolom 4: WIDGET KUNJUNGAN WEBSITE (DATA REAL SESUAI LAMPIRAN 1) */}
-          <div className="space-y-3">
-            <div className="bg-[#3e4548] text-white rounded-2xl p-4 shadow-xl border border-slate-600/60 space-y-2.5">
-              <h4 className="text-sm font-extrabold tracking-wide text-white border-b border-slate-600/80 pb-2">
-                Jumlah Kunjungan
+          {/* Kolom 4: Kunjungan Website (Menyatu dengan Footer sesuai screenshot) */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2.5">
+              <Globe className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+              <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">
+                Kunjungan Website
               </h4>
-              <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between items-center py-1 border-b border-slate-600/50">
-                  <span className="text-slate-200">Hari Ini</span>
-                  <span className="font-bold text-white text-sm">{stats.hariIni.toLocaleString("id-ID")}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-600/50">
-                  <span className="text-slate-200">Kemarin</span>
-                  <span className="font-bold text-white">{stats.kemarin.toLocaleString("id-ID")}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-600/50">
-                  <span className="text-slate-200">Minggu Ini</span>
-                  <span className="font-bold text-white">{stats.mingguIni.toLocaleString("id-ID")}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-600/50">
-                  <span className="text-slate-200">Minggu Lalu</span>
-                  <span className="font-bold text-white">{stats.mingguLalu.toLocaleString("id-ID")}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-600/50">
-                  <span className="text-slate-200">Bulan Ini</span>
-                  <span className="font-bold text-white">{stats.bulanIni.toLocaleString("id-ID")}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-600/50">
-                  <span className="text-slate-200">Bulan Lalu</span>
-                  <span className="font-bold text-white">{stats.bulanLalu.toLocaleString("id-ID")}</span>
-                </div>
-                <div className="flex justify-between items-center pt-1.5 font-bold text-emerald-300">
-                  <span>Total Kunjungan</span>
-                  <span className="text-sm text-emerald-200">{stats.totalKunjungan.toLocaleString("id-ID")}</span>
-                </div>
-              </div>
             </div>
 
-            {/* Indikator Pill Button Sesuai Lampiran 1 (Interactive Expand) */}
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full bg-[#3aa37e] hover:bg-[#349271] text-white px-4 py-2.5 rounded-2xl flex items-center justify-between shadow-md transition active:scale-95 cursor-pointer text-left"
-                aria-expanded={isExpanded}
-                aria-label="Toggle ringkasan kunjungan hari ini"
-              >
-                <div className="flex items-center space-x-2.5">
-                  <DoorOpen className="w-5 h-5 flex-shrink-0" />
-                  <div className="leading-tight">
-                    <div className="text-[11px] font-medium opacity-90">Kunjungan</div>
-                    <div className="text-xs font-bold">{stats.hariIni} Hari Ini</div>
-                  </div>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4 pt-1">
+              <div>
+                <div className="text-xs sm:text-sm font-medium text-emerald-100/90">Hari Ini</div>
+                <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                  {stats.hariIni.toLocaleString("id-ID")}
                 </div>
-                <ChevronDown
-                  className={`w-4 h-4 opacity-80 transition-transform duration-200 ${
-                    isExpanded ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {/* Panel Ringkasan Realtime saat Expanded */}
-              {isExpanded && (
-                <div className="bg-[#2d3336] text-white rounded-2xl p-3.5 shadow-lg border border-slate-600/60 space-y-2.5 text-xs animate-in fade-in zoom-in-95 duration-200">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-600/60">
-                    <span className="text-slate-300">Kunjungan Unik Hari Ini:</span>
-                    <span className="font-extrabold text-emerald-300 text-sm">
-                      {stats.hariIni.toLocaleString("id-ID")} orang
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-0.5">
-                    <div className="flex items-center space-x-1.5">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                      </span>
-                      <span className="text-[11px] text-emerald-300 font-medium">
-                        Statistik Kunjungan Aktif
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="text-[10px] text-slate-400 text-right">
-                    Terakhir diperbarui: {formatWIBTime(lastUpdated)}
-                  </div>
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-medium text-emerald-100/90">Kemarin</div>
+                <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                  {stats.kemarin.toLocaleString("id-ID")}
                 </div>
-              )}
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-medium text-emerald-100/90">Minggu Ini</div>
+                <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                  {stats.mingguIni.toLocaleString("id-ID")}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-medium text-emerald-100/90">Minggu Lalu</div>
+                <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                  {stats.mingguLalu.toLocaleString("id-ID")}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-medium text-emerald-100/90">Bulan Ini</div>
+                <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                  {stats.bulanIni.toLocaleString("id-ID")}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-medium text-emerald-100/90">Bulan Lalu</div>
+                <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                  {stats.bulanLalu.toLocaleString("id-ID")}
+                </div>
+              </div>
+              <div className="col-span-2">
+                <div className="text-xs sm:text-sm font-medium text-emerald-100/90">Total Kunjungan</div>
+                <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                  {stats.totalKunjungan.toLocaleString("id-ID")}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -292,53 +231,50 @@ export default function Footer() {
               </button>
 
               {openAccordion === "kunjungan" && (
-                <div className="mt-2 bg-[#3e4548] text-white rounded-2xl p-4 shadow-xl border border-slate-600/60 space-y-2 animate-in fade-in duration-200">
-                  <h5 className="text-xs font-bold text-emerald-300 border-b border-slate-600 pb-1 mb-2">
-                    Statistik Kunjungan Real
-                  </h5>
-                  <div className="flex justify-between items-center py-1 border-b border-slate-600/50 text-xs">
-                    <span className="text-slate-200">Hari Ini</span>
-                    <span className="font-bold">{stats.hariIni.toLocaleString("id-ID")}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1 border-b border-slate-600/50 text-xs">
-                    <span className="text-slate-200">Kemarin</span>
-                    <span className="font-bold">{stats.kemarin.toLocaleString("id-ID")}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1 border-b border-slate-600/50 text-xs">
-                    <span className="text-slate-200">Minggu Ini</span>
-                    <span className="font-bold">{stats.mingguIni.toLocaleString("id-ID")}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1 border-b border-slate-600/50 text-xs">
-                    <span className="text-slate-200">Minggu Lalu</span>
-                    <span className="font-bold">{stats.mingguLalu.toLocaleString("id-ID")}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1 border-b border-slate-600/50 text-xs">
-                    <span className="text-slate-200">Bulan Ini</span>
-                    <span className="font-bold">{stats.bulanIni.toLocaleString("id-ID")}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1 border-b border-slate-600/50 text-xs">
-                    <span className="text-slate-200">Bulan Lalu</span>
-                    <span className="font-bold">{stats.bulanLalu.toLocaleString("id-ID")}</span>
-                  </div>
-                  <div className="flex justify-between items-center pt-1 font-bold text-emerald-300 text-xs">
-                    <span>Total Kunjungan</span>
-                    <span>{stats.totalKunjungan.toLocaleString("id-ID")}</span>
-                  </div>
-
-                  {/* Indikator Status Real-time Mobile */}
-                  <div className="pt-2 mt-2 border-t border-slate-600/60 flex items-center justify-between text-[11px]">
-                    <div className="flex items-center space-x-1.5">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                      </span>
-                      <span className="text-emerald-300 font-medium text-[10px]">
-                        Statistik Kunjungan Aktif
-                      </span>
+                <div className="pt-3 pb-3 px-1 animate-in fade-in duration-200">
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                    <div>
+                      <div className="text-xs sm:text-sm font-medium text-emerald-100/90">Hari Ini</div>
+                      <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                        {stats.hariIni.toLocaleString("id-ID")}
+                      </div>
                     </div>
-                    <span className="text-[10px] text-slate-400">
-                      Update: {formatWIBTime(lastUpdated)}
-                    </span>
+                    <div>
+                      <div className="text-xs sm:text-sm font-medium text-emerald-100/90">Kemarin</div>
+                      <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                        {stats.kemarin.toLocaleString("id-ID")}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs sm:text-sm font-medium text-emerald-100/90">Minggu Ini</div>
+                      <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                        {stats.mingguIni.toLocaleString("id-ID")}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs sm:text-sm font-medium text-emerald-100/90">Minggu Lalu</div>
+                      <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                        {stats.mingguLalu.toLocaleString("id-ID")}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs sm:text-sm font-medium text-emerald-100/90">Bulan Ini</div>
+                      <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                        {stats.bulanIni.toLocaleString("id-ID")}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs sm:text-sm font-medium text-emerald-100/90">Bulan Lalu</div>
+                      <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                        {stats.bulanLalu.toLocaleString("id-ID")}
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <div className="text-xs sm:text-sm font-medium text-emerald-100/90">Total Kunjungan</div>
+                      <div className="text-2xl font-bold text-white tracking-tight mt-0.5">
+                        {stats.totalKunjungan.toLocaleString("id-ID")}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
