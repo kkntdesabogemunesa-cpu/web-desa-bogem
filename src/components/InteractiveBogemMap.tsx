@@ -9,57 +9,86 @@ import { RefreshCw } from "lucide-react";
 export default function InteractiveBogemMap() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const isZoomingRef = useRef(false);
+  const hasAnimatedRef = useRef(false);
   const [isZooming, setIsZooming] = useState(false);
 
-  const triggerZoomAnimation = useCallback((targetMap?: L.Map) => {
+  // Animasi Zoom Mulus: Menghilangkan getar dan mengalir sinematik ke kotak poligon Bogem
+  const triggerZoomAnimation = useCallback((targetMap?: L.Map, fromFar = false) => {
     const map = targetMap || mapInstanceRef.current;
-    if (!map) return;
+    if (!map || isZoomingRef.current) return;
 
-    map.invalidateSize();
+    isZoomingRef.current = true;
     setIsZooming(true);
 
-    // Padding adaptif: lebih ramping di mobile agar polygon tidak terhimpit
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
-    const padding: [number, number] = isMobile ? [12, 12] : [24, 24];
-
-    // Gunakan bounds resmi 215 titik agar seluruh polygon tampil penuh dan presisi di tengah viewport
     const bounds = L.latLngBounds(BOGEM_LOCATION.polygonCoordinates);
-    map.flyToBounds(bounds, {
-      duration: 2.8,
-      easeLinearity: 0.18,
-      padding,
-    });
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+    const padding: [number, number] = isMobile ? [16, 16] : [24, 24];
 
-    setTimeout(() => {
-      setIsZooming(false);
-    }, 2900);
+    if (fromFar) {
+      // Zoom out dulu ke pandangan jauh regional Magetan (zoom 11), lalu meluncur masuk
+      map.flyTo(BOGEM_LOCATION.initialZoomOut, 11, {
+        duration: 1.2,
+        easeLinearity: 0.3,
+      });
+
+      setTimeout(() => {
+        if (!mapInstanceRef.current) return;
+        map.flyToBounds(bounds, {
+          duration: 2.2,
+          easeLinearity: 0.25,
+          padding,
+          maxZoom: 15.5,
+        });
+
+        map.once("moveend", () => {
+          isZoomingRef.current = false;
+          setIsZooming(false);
+        });
+      }, 1300);
+    } else {
+      // Zoom mulus langsung ke batas poligon Desa Bogem
+      map.flyToBounds(bounds, {
+        duration: 2.3,
+        easeLinearity: 0.25,
+        padding,
+        maxZoom: 15.5,
+      });
+
+      map.once("moveend", () => {
+        isZoomingRef.current = false;
+        setIsZooming(false);
+      });
+    }
   }, []);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
-    // Inisialisasi peta pada koordinat regional untuk efek fly-in
+    // 1. Tampilan Awal Jauh dari Lokasi (Zoom 11 - Lanskap Luas Kawasan)
     const map = L.map(mapContainerRef.current, {
       center: BOGEM_LOCATION.initialZoomOut,
-      zoom: 12,
+      zoom: 11,
       zoomControl: false,
-      scrollWheelZoom: false, // Hindari scroll liar saat user scrolling halaman
+      scrollWheelZoom: false,
     });
 
-    // Kontrol zoom pojok kanan bawah
+    // Kontrol zoom di pojok kanan bawah
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    // Basemap Citra Satelit Esri World Imagery resolusi tinggi
+    // 2. Basemap Citra Satelit Esri dengan pengaturan stabil agar tidak bergetar saat zoom
     L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       {
-        attribution:
-          "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+        attribution: "Tiles © Esri — Source: Esri, Maxar",
         maxZoom: 18,
+        updateWhenZooming: false, // Kunci: jangan me-reload tile saat animasi bergerak agar tidak geter
+        updateWhenIdle: true,
+        keepBuffer: 8,
       }
     ).addTo(map);
 
-    // Highlight Polygon Wilayah Desa Bogem (Batas resmi BIG 215 titik koordinat presisi)
+    // 3. Highlight Poligon Wilayah Desa Bogem (Tetap batas resmi BIG tanpa diubah)
     const polygon = L.polygon(BOGEM_LOCATION.polygonCoordinates, {
       color: "#22c55e",
       weight: 2.5,
@@ -74,7 +103,7 @@ export default function InteractiveBogemMap() {
       { sticky: true, direction: "top" }
     );
 
-    // Custom Icon Pin Marker untuk Kantor Desa Bogem
+    // 4. Pin Marker Kantor Desa Bogem
     const customPinIcon = L.divIcon({
       className: "custom-bogem-pin",
       html: `
@@ -83,31 +112,30 @@ export default function InteractiveBogemMap() {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 34px;
-          height: 34px;
+          width: 32px;
+          height: 32px;
         ">
           <div style="
-            position: relative;
             background: #004329;
             color: #ffffff;
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
-            border: 2.5px solid #ffffff;
+            border: 2px solid #ffffff;
             box-shadow: 0 4px 10px rgba(0,0,0,0.25);
             display: flex;
             align-items: center;
             justify-content: center;
           ">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
               <circle cx="12" cy="10" r="3"/>
             </svg>
           </div>
         </div>
       `,
-      iconSize: [34, 34],
-      iconAnchor: [17, 17],
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
     });
 
     const marker = L.marker(BOGEM_LOCATION.kantorDesa, { icon: customPinIcon }).addTo(map);
@@ -122,53 +150,62 @@ export default function InteractiveBogemMap() {
 
     mapInstanceRef.current = map;
 
-    // Listener perubahan ukuran container dan window agar Leaflet map otomatis re-render ukurannya
+    // ResizeObserver yang aman tanpa menginterupsi animasi zoom
     let resizeObserver: ResizeObserver | null = null;
     if (typeof ResizeObserver !== "undefined" && mapContainerRef.current) {
       resizeObserver = new ResizeObserver(() => {
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.invalidateSize();
+        if (mapInstanceRef.current && !isZoomingRef.current) {
+          mapInstanceRef.current.invalidateSize({ pan: false });
         }
       });
       resizeObserver.observe(mapContainerRef.current);
     }
 
-    // IntersectionObserver untuk memicu invalidateSize saat container masuk viewport (misal saat scroll atau tab aktif)
+    const handleWindowResize = () => {
+      if (mapInstanceRef.current && !isZoomingRef.current) {
+        mapInstanceRef.current.invalidateSize({ pan: false });
+      }
+    };
+    window.addEventListener("resize", handleWindowResize);
+
+    // IntersectionObserver untuk memicu animasi zoom saat user scroll mendekati peta
     let intersectionObserver: IntersectionObserver | null = null;
     if (typeof IntersectionObserver !== "undefined" && mapContainerRef.current) {
       intersectionObserver = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
-            if (entry.isIntersecting && mapInstanceRef.current) {
-              mapInstanceRef.current.invalidateSize();
+            if (entry.isIntersecting && mapInstanceRef.current && !isZoomingRef.current) {
+              mapInstanceRef.current.invalidateSize({ pan: false });
+
+              // Ketika user scroll mendekati peta, baru mulai animasi zoom halus dari jauh ke kotak Bogem
+              if (!hasAnimatedRef.current) {
+                hasAnimatedRef.current = true;
+                setTimeout(() => {
+                  if (mapInstanceRef.current) {
+                    triggerZoomAnimation(mapInstanceRef.current, false);
+                  }
+                }, 250);
+              }
             }
           });
         },
-        { threshold: 0.05 }
+        {
+          rootMargin: "0px 0px -40px 0px",
+          threshold: 0.2,
+        }
       );
       intersectionObserver.observe(mapContainerRef.current);
+    } else {
+      // Fallback jika IntersectionObserver tidak tersedia
+      const timer = setTimeout(() => {
+        triggerZoomAnimation(map, false);
+      }, 700);
+      return () => clearTimeout(timer);
     }
 
-    const handleWindowResize = () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.invalidateSize();
-      }
-    };
-    window.addEventListener("resize", handleWindowResize);
-
-    // Animasi Zoom Sinematik Otomatis dari Magetan ke Desa Bogem
-    const timer = setTimeout(() => {
-      triggerZoomAnimation(map);
-    }, 600);
-
     return () => {
-      clearTimeout(timer);
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
-      if (intersectionObserver) {
-        intersectionObserver.disconnect();
-      }
+      if (resizeObserver) resizeObserver.disconnect();
+      if (intersectionObserver) intersectionObserver.disconnect();
       window.removeEventListener("resize", handleWindowResize);
       map.remove();
       mapInstanceRef.current = null;
@@ -176,39 +213,30 @@ export default function InteractiveBogemMap() {
   }, [triggerZoomAnimation]);
 
   return (
-    <div className="relative isolate z-0 w-full h-[380px] sm:h-[440px] lg:h-[480px] min-h-[380px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-md border border-slate-200 bg-slate-100">
+    <div className="relative isolate z-0 w-full h-[380px] sm:h-[440px] lg:h-[480px] min-h-[380px] rounded-3xl overflow-hidden shadow-xs border border-slate-200/80 bg-slate-100">
       {/* Container Leaflet Map */}
       <div ref={mapContainerRef} className="w-full h-full min-h-[380px] sm:min-h-[440px] lg:min-h-[480px] z-0" />
 
-      {/* Floating Header Info Badge */}
-      <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 bg-white/95 backdrop-blur-md px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl sm:rounded-2xl shadow-md border border-slate-200/80 flex items-center space-x-1.5 sm:space-x-2 text-[11px] sm:text-xs pointer-events-auto">
-        <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500" />
-        <div className="font-bold text-slate-800 flex items-center gap-1 sm:gap-1.5">
-          <span>Wilayah Desa Bogem</span>
-          <span className="text-[9px] sm:text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 sm:px-2 py-0.5 rounded-full">
-            Kec. Kawedanan
-          </span>
-        </div>
+      {/* Floating Header Pill - Simpel & Minimalis */}
+      <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-xs border border-slate-200/70 flex items-center space-x-2 text-xs pointer-events-auto">
+        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="font-bold text-slate-800">Desa Bogem</span>
+        <span className="text-slate-400">·</span>
+        <span className="text-[11px] text-slate-600 font-medium">Kec. Kawedanan</span>
       </div>
 
-      {/* Tombol Ulangi Animasi Zoom */}
-      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center space-x-2">
+      {/* Tombol Ulangi Zoom - Halus & Ramping */}
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20">
         <button
           type="button"
-          onClick={() => triggerZoomAnimation()}
+          onClick={() => triggerZoomAnimation(undefined, true)}
           disabled={isZooming}
-          className="bg-white/95 hover:bg-white text-[#004329] font-bold text-[11px] sm:text-xs px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl shadow-md border border-slate-200/80 flex items-center space-x-1.5 transition active:scale-95 disabled:opacity-50 cursor-pointer"
-          title="Ulangi Efek Zoom ke Desa Bogem"
+          className="bg-white/90 hover:bg-white backdrop-blur-md text-emerald-950 font-bold text-xs px-3 py-1.5 rounded-full shadow-xs border border-slate-200/70 flex items-center space-x-1.5 transition active:scale-95 disabled:opacity-50 cursor-pointer"
+          title="Ulangi Animasi Zoom dari Jauh"
         >
-          <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-700 ${isZooming ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-3.5 h-3.5 text-emerald-700 ${isZooming ? "animate-spin" : ""}`} />
           <span className="hidden sm:inline">Ulangi Zoom</span>
         </button>
-      </div>
-
-      {/* Legend Badge di Sudut Kiri Bawah */}
-      <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 z-20 bg-white/95 backdrop-blur-md px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl shadow-md border border-slate-200/80 flex items-center space-x-1.5 sm:space-x-2 text-[10px] sm:text-[11px]">
-        <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded bg-emerald-500/25 border-2 border-emerald-500 flex-shrink-0" />
-        <span className="text-slate-700 font-medium">Batas Administratif Desa</span>
       </div>
     </div>
   );

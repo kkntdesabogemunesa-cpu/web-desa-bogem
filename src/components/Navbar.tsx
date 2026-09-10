@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -21,11 +21,38 @@ export default function Navbar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  const isHomePage = pathname === "/";
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Hide public navbar inside admin panel
   if (pathname?.startsWith("/admin")) {
     return null;
   }
+
+  const isTransparent = isHomePage && !isScrolled && !isOpen;
+
+  const headerClass = isHomePage
+    ? `fixed top-0 left-0 right-0 z-50 transition-all duration-300 text-white ${
+        isTransparent
+          ? "bg-transparent border-b border-transparent shadow-none"
+          : "bg-[#063321]/95 backdrop-blur-md shadow-md border-b border-emerald-900/50"
+      }`
+    : "sticky top-0 z-50 bg-[#063321] text-white shadow-sm border-b border-emerald-900/40";
 
   const navLinks = [
     { name: "Beranda", href: "/", icon: Home },
@@ -38,7 +65,7 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="bg-[#063321] text-white sticky top-0 z-50 shadow-sm border-b border-emerald-900/40">
+    <header className={headerClass}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
           

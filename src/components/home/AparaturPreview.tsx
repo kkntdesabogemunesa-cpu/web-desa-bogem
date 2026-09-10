@@ -42,7 +42,7 @@ export default function AparaturPreview({ listPerangkat = [] }: AparaturPreviewP
           </p>
         </div>
         <Link
-          href="/pemerintah"
+          href="/profil?tab=bagan"
           className="inline-flex items-center space-x-1 text-xs font-bold text-emerald-800 hover:text-emerald-950 transition hover:underline flex-shrink-0"
         >
           <span>Semua Perangkat</span>

@@ -34,7 +34,7 @@ const QUICK_SHORTCUTS: ShortcutItem[] = [
   {
     title: "Struktur SOTK",
     desc: "Aparatur Desa",
-    href: "/pemerintah",
+    href: "/profil?tab=bagan",
     icon: Users,
   },
   {
@@ -59,40 +59,48 @@ const QUICK_SHORTCUTS: ShortcutItem[] = [
 
 export default function QuickShortcuts() {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-8 relative z-20 mb-12 sm:mb-16">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-12 sm:pb-16 relative z-10">
+      {/* Section Header */}
+      <div className="mb-5 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+          Layanan Utama Desa Bogem
+        </h2>
+      </div>
+
+      {/* Shortcuts Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {QUICK_SHORTCUTS.map((item, idx) => {
           const Icon = item.icon;
           return (
             <Link
               key={idx}
               href={item.href}
-              className={`rounded-2xl p-3.5 sm:p-4 transition-all duration-200 group flex flex-col items-center text-center space-y-2 active:scale-95 shadow-sm hover:shadow-md ${
+              className={`rounded-2xl p-4 sm:p-5 transition-all duration-300 group flex flex-col items-center text-center space-y-3 active:scale-95 shadow-sm hover:shadow-md hover:-translate-y-1 ${
                 item.isSpecial
-                  ? "bg-emerald-800 text-white border border-emerald-700 hover:bg-emerald-900"
-                  : "bg-white border border-slate-200/90 hover:border-emerald-500/40 hover:bg-slate-50/50"
+                  ? "bg-gradient-to-br from-[#063321] to-[#0b482f] text-white border border-emerald-700/80 hover:shadow-emerald-950/20"
+                  : "bg-white border border-slate-200/80 hover:border-emerald-500/40 hover:bg-slate-50/60"
               }`}
             >
               <div
-                className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 ${
+                className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 ${
                   item.isSpecial
-                    ? "bg-emerald-700/80 text-white"
-                    : "bg-emerald-50 text-emerald-800 border border-emerald-100"
+                    ? "bg-emerald-700/60 text-emerald-200 border border-emerald-500/30"
+                    : "bg-emerald-50 text-emerald-800 border border-emerald-100/80 group-hover:bg-[#063321] group-hover:text-white group-hover:border-transparent"
                 }`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div className="min-w-0 w-full">
-                <h2
-                  className={`text-xs font-bold truncate ${
+                <h3
+                  className={`text-xs sm:text-sm font-bold truncate ${
                     item.isSpecial ? "text-white" : "text-slate-900 group-hover:text-emerald-800"
                   }`}
                 >
                   {item.title}
-                </h2>
+                </h3>
                 <p
-                  className={`text-[10px] font-normal truncate mt-0.5 ${
-                    item.isSpecial ? "text-emerald-200" : "text-slate-500"
+                  className={`text-[11px] font-normal truncate mt-0.5 ${
+                    item.isSpecial ? "text-emerald-200/90" : "text-slate-500"
                   }`}
                 >
                   {item.desc}

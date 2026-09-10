@@ -375,7 +375,7 @@ export default function Footer() {
                 <div className="mt-2 grid grid-cols-2 gap-2.5 text-xs text-emerald-200 pl-6 animate-in fade-in duration-200">
                   <Link href="/" className="hover:text-white py-1">Beranda</Link>
                   <Link href="/profil" className="hover:text-white py-1">Profil Desa</Link>
-                  <Link href="/pemerintah" className="hover:text-white py-1">Pemerintah & SOTK</Link>
+                  <Link href="/profil?tab=bagan" className="hover:text-white py-1">Pemerintah & SOTK</Link>
                   <Link href="/infografis" className="hover:text-white py-1">Infografis & IDM</Link>
                   <Link href="/berita" className="hover:text-white py-1">Kabar Berita</Link>
                   <Link href="/potensi" className="hover:text-white py-1 text-emerald-300 font-semibold">Produk UMKM</Link>

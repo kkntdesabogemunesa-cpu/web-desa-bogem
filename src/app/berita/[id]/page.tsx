@@ -118,7 +118,7 @@ export default async function DetailBeritaPage({ params }: PageProps) {
             Kabar Berita
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-          <span className="text-slate-900 font-semibold truncate max-w-[140px] sm:max-w-md">
+          <span className="text-slate-900 font-semibold truncate max-w-[160px] sm:max-w-md">
             {berita.judul}
           </span>
         </nav>
@@ -127,19 +127,19 @@ export default async function DetailBeritaPage({ params }: PageProps) {
         <div>
           <Link
             href="/berita"
-            className="inline-flex items-center space-x-2 bg-white hover:bg-slate-50 text-emerald-800 border border-slate-200/90 px-3.5 py-1.5 rounded-full text-xs font-bold transition shadow-sm active:scale-95"
+            className="inline-flex items-center space-x-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-emerald-800 border border-slate-200/80 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Kembali ke Semua Berita</span>
+            <span>Kembali ke Kabar Berita</span>
           </Link>
         </div>
 
         {/* Article Container */}
-        <article className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-10 lg:p-12 shadow-sm border border-slate-200/80 space-y-6">
+        <article className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-10 lg:p-12 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
           {/* Header & Meta */}
           <header className="space-y-4 border-b border-slate-100 pb-6">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-900 border border-emerald-200/80">
+              <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/60">
                 <Tag className="w-3 h-3 text-emerald-700" />
                 <span>{berita.kategori || "Pengumuman Resmi"}</span>
               </span>
@@ -150,13 +150,13 @@ export default async function DetailBeritaPage({ params }: PageProps) {
               </span>
             </div>
 
-            <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-slate-900 leading-snug sm:leading-tight tracking-tight break-words">
+            <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 leading-snug sm:leading-tight tracking-tight break-words">
               {berita.judul}
             </h1>
 
             {/* Author & Publish Info Bar */}
             <div className="flex items-center space-x-3 pt-2 text-xs text-slate-500">
-              <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold border border-emerald-100 flex-shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold border border-emerald-100/80 flex-shrink-0">
                 <User className="w-4 h-4 text-emerald-700" />
               </div>
               <div className="min-w-0 flex-1">
@@ -173,7 +173,7 @@ export default async function DetailBeritaPage({ params }: PageProps) {
 
           {/* Banner Photo */}
           {berita.gambar && (
-            <div className="relative aspect-[16/9] w-full rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm">
+            <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shadow-xs">
               <Image
                 src={berita.gambar}
                 alt={berita.judul}
@@ -187,7 +187,7 @@ export default async function DetailBeritaPage({ params }: PageProps) {
 
           {/* Lead Summary (if present) */}
           {berita.ringkasan && (
-            <div className="bg-emerald-50/60 border-l-4 border-emerald-600 p-3.5 sm:p-5 rounded-r-2xl text-slate-700 text-xs sm:text-base font-medium italic leading-relaxed break-words">
+            <div className="bg-emerald-50/50 border-l-4 border-emerald-700 p-4 sm:p-5 rounded-r-2xl text-slate-700 text-xs sm:text-sm font-medium italic leading-relaxed break-words">
               &ldquo;{berita.ringkasan}&rdquo;
             </div>
           )}
@@ -220,13 +220,13 @@ export default async function DetailBeritaPage({ params }: PageProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <BookOpen className="w-5 h-5 text-emerald-800" />
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
                   Warta & Berita Desa Lainnya
                 </h2>
               </div>
               <Link
                 href="/berita"
-                className="text-xs font-bold text-emerald-800 hover:text-emerald-950 transition hover:underline flex items-center space-x-1"
+                className="text-xs font-bold text-emerald-800 hover:text-emerald-950 transition flex items-center space-x-1"
               >
                 <span>Lihat Semua</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -238,10 +238,10 @@ export default async function DetailBeritaPage({ params }: PageProps) {
                 <Link
                   key={item.id}
                   href={`/berita/${item.id}`}
-                  className="bg-white rounded-2xl sm:rounded-3xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group space-y-3"
+                  className="bg-white rounded-2xl sm:rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-emerald-200/80 transition-all duration-200 flex flex-col justify-between group space-y-3"
                 >
                   <div className="space-y-3">
-                    <div className="aspect-[16/9] rounded-xl overflow-hidden bg-slate-100 border border-slate-200 relative">
+                    <div className="aspect-[16/9] rounded-xl overflow-hidden bg-slate-100 border border-slate-100 relative">
                       {item.gambar ? (
                         <Image
                           src={item.gambar}
@@ -258,7 +258,7 @@ export default async function DetailBeritaPage({ params }: PageProps) {
                     </div>
 
                     <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200/60">
                         {item.kategori || "Warta Desa"}
                       </span>
                       <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-emerald-800 transition line-clamp-2 leading-snug">
@@ -269,7 +269,7 @@ export default async function DetailBeritaPage({ params }: PageProps) {
 
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-emerald-800">
                     <span>Baca Warta</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" />
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </Link>
               ))}

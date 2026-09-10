@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
@@ -8,7 +8,10 @@ import MobileNav from "@/components/MobileNav";
 import PageTransitionBar from "@/components/PageTransitionBar";
 import { AuthProvider } from "@/context/AuthContext";
 
-const inter = Inter({ subsets: ["latin"] });
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Desa Bogem | Kec. Kawedanan, Kab. Magetan",
@@ -30,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className={`${inter.className} bg-slate-50 min-h-screen flex flex-col antialiased text-slate-800`}>
+      <body className={`${plusJakartaSans.className} bg-slate-50 min-h-screen flex flex-col antialiased text-slate-800`}>
         <AuthProvider>
           <Suspense fallback={null}>
             <PageTransitionBar />
