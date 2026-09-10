@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useBerita } from "@/hooks/useBerita";
 import { formatDateIndonesian } from "@/utils/formatters";
@@ -12,16 +13,107 @@ import {
   Image as ImageIcon,
   Search,
   ArrowLeft,
+  X,
+  Filter,
+  ChevronDown,
+  Check,
 } from "lucide-react";
-import { KATEGORI_BERITA_PRESETS } from "@/types/berita";
 import ImageWithSkeleton from "@/components/ImageWithSkeleton";
 
-export default function BeritaPage() {
-  const { data: listBerita, loading } = useBerita();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Semua");
+interface CategoryFilterItem {
+  label: string;
+  slug: string;
+}
 
-  const categories = ["Semua", ...KATEGORI_BERITA_PRESETS];
+const BERITA_CATEGORIES: CategoryFilterItem[] = [
+  { label: "Semua", slug: "semua" },
+  { label: "Pengumuman Resmi", slug: "pengumuman" },
+  { label: "Kegiatan Warga", slug: "kegiatan" },
+  { label: "Pembangunan & Infrastruktur", slug: "pembangunan" },
+  { label: "Kesehatan & Posyandu", slug: "kesehatan" },
+  { label: "Pemberdayaan UMKM & Ekonomi", slug: "ekonomi" },
+  { label: "Pertanian & Lingkungan", slug: "pertanian" },
+  { label: "Sosial & Budaya", slug: "sosial" },
+];
+
+function resolveCategoryFromSlug(slug: string | null): string {
+  if (!slug || slug.toLowerCase() === "semua") return "Semua";
+  const found = BERITA_CATEGORIES.find(
+    (c) =>
+      c.slug.toLowerCase() === slug.toLowerCase() ||
+      c.label.toLowerCase() === slug.toLowerCase() ||
+      c.label.toLowerCase().replace(/[^a-z0-9]/g, "-").includes(slug.toLowerCase())
+  );
+  return found ? found.label : "Semua";
+}
+
+export default function BeritaPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#F8FAFC] pb-28 pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto py-20 text-center text-slate-400 text-sm">
+            Memuat Warta Desa...
+          </div>
+        </main>
+      }
+    >
+      <BeritaContent />
+    </Suspense>
+  );
+}
+
+function BeritaContent() {
+  const router = useRouter();
+  const { data: listBerita, loading } = useBerita();
+  const searchParams = useSearchParams();
+  const kategoriParam = searchParams.get("kategori");
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(() =>
+    resolveCategoryFromSlug(kategoriParam)
+  );
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+
+  // Sinkronisasi otomatis saat URL berubah (misal: tombol Back/Forward browser)
+  useEffect(() => {
+    setSelectedCategory(resolveCategoryFromSlug(kategoriParam));
+  }, [kategoriParam]);
+
+  // Lock body scroll saat Bottom Sheet terbuka di HP
+  useEffect(() => {
+    if (isBottomSheetOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsBottomSheetOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isBottomSheetOpen]);
+
+  // Dynamic counter per kategori berita
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { Semua: listBerita.length };
+    listBerita.forEach((item) => {
+      if (item.kategori) {
+        counts[item.kategori] = (counts[item.kategori] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [listBerita]);
+
+  const handleCategorySelect = (catLabel: string, slug: string) => {
+    setSelectedCategory(catLabel);
+    setIsBottomSheetOpen(false);
+    const targetHref = slug === "semua" ? "/berita" : `/berita?kategori=${slug}`;
+    router.replace(targetHref, { scroll: false });
+  };
 
   const filteredBerita = listBerita.filter((item) => {
     const matchSearch =
@@ -55,7 +147,7 @@ export default function BeritaPage() {
             }}
           />
 
-          <div className="relative z-10 space-y-3 sm:space-y-4 max-w-3xl">
+          <div className="relative z-10 max-w-3xl space-y-3 sm:space-y-4">
             {/* Clean Breadcrumb */}
             <div className="flex items-center space-x-2 text-xs text-emerald-200/80 font-medium">
               <Link
@@ -66,7 +158,7 @@ export default function BeritaPage() {
                 <span>Beranda</span>
               </Link>
               <span className="text-emerald-500/60">/</span>
-              <span className="text-white font-medium">Kabar Berita</span>
+              <span className="text-white font-medium">Warta Desa</span>
             </div>
 
             <div className="space-y-2">
@@ -80,37 +172,185 @@ export default function BeritaPage() {
           </div>
         </div>
 
-        {/* Search & Category Filter Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-          {/* Segmented Control Pill Container */}
-          <div className="bg-white/80 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200/80 shadow-xs inline-flex items-center gap-1.5 max-w-full overflow-x-auto scrollbar-none">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap active:scale-95 flex-shrink-0 ${
-                  selectedCategory === cat
-                    ? "bg-[#063321] text-white shadow-sm"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+        {/* Search & Category Filter Section */}
+        <div className="space-y-3">
+          {/* 1. KHUSUS MOBILE (HP): 1 Baris Ringkas & Minimalis (Search + Kategori Dropdown Trigger) */}
+          <div className="flex items-center gap-2 sm:hidden">
+            {/* Search Input Bar - Flex 1 */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Cari judul warta..."
+                className="w-full pl-8 pr-7 py-2 bg-white border border-slate-200/90 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-700 text-xs shadow-2xs placeholder:text-slate-400 font-medium"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            {/* Tombol Pemicu Kategori Dropdown / Bottom Sheet */}
+            <button
+              type="button"
+              onClick={() => setIsBottomSheetOpen(true)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all flex-shrink-0 active:scale-95 shadow-2xs ${
+                selectedCategory !== "Semua"
+                  ? "bg-emerald-50 border-emerald-300 text-[#063321]"
+                  : "bg-white border-slate-200/90 text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <Filter className={`w-3.5 h-3.5 flex-shrink-0 ${selectedCategory !== "Semua" ? "text-emerald-700" : "text-slate-400"}`} />
+              <span className="max-w-[110px] truncate">
+                {selectedCategory === "Semua" ? "Kategori" : selectedCategory}
+              </span>
+              <ChevronDown className={`w-3.5 h-3.5 flex-shrink-0 ${selectedCategory !== "Semua" ? "text-emerald-700" : "text-slate-400"}`} />
+            </button>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Cari judul warta..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs bg-white border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-700 shadow-xs placeholder:text-slate-400"
-            />
+          {/* 2. KHUSUS LAPTOP / DESKTOP: Horizontal Segmented Bar Jadi Satu Rapi & Minimalis */}
+          <div className="hidden sm:flex items-center justify-between gap-4">
+            <div
+              role="tablist"
+              aria-label="Filter Kategori Berita"
+              className="bg-white/90 backdrop-blur-sm p-1 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-1 overflow-x-auto scrollbar-none"
+            >
+              {BERITA_CATEGORIES.map((cat) => {
+                const isActive = selectedCategory.toLowerCase() === cat.label.toLowerCase();
+                const count = categoryCounts[cat.label] ?? (cat.slug === "semua" ? listBerita.length : 0);
+                const targetHref = cat.slug === "semua" ? "/berita" : `/berita?kategori=${cat.slug}`;
+
+                return (
+                  <Link
+                    key={cat.slug}
+                    href={targetHref}
+                    replace
+                    scroll={false}
+                    onClick={() => setSelectedCategory(cat.label)}
+                    role="tab"
+                    aria-selected={isActive}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 whitespace-nowrap active:scale-95 flex-shrink-0 flex items-center gap-1.5 ${
+                      isActive
+                        ? "bg-[#063321] text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
+                    }`}
+                  >
+                    <span>{cat.label}</span>
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                        isActive
+                          ? "bg-white/15 text-emerald-200"
+                          : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Search Input Bar Desktop */}
+            <div className="relative w-72 flex-shrink-0">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Cari judul warta..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 bg-white border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-700 text-xs shadow-xs placeholder:text-slate-400 font-medium transition-all"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* CUSTOM BOTTOM SHEET KHUSUS MOBILE (HP) - Simple, Bersih & Minimalis */}
+        {isBottomSheetOpen && (
+          <div className="fixed inset-0 z-50 sm:hidden">
+            {/* Backdrop Blur */}
+            <div
+              onClick={() => setIsBottomSheetOpen(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            />
+
+            {/* Drawer Sheet */}
+            <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[80vh] flex flex-col animate-in slide-in-from-bottom duration-250 pb-6">
+              {/* Drag Handle Indicator */}
+              <div className="pt-3 pb-1 flex justify-center">
+                <div className="w-10 h-1 bg-slate-300/80 rounded-full" />
+              </div>
+
+              {/* Sheet Header - Minimalist */}
+              <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-900">Kategori Berita</h3>
+                  <span className="text-[11px] font-semibold text-slate-400">
+                    ({BERITA_CATEGORIES.length})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsBottomSheetOpen(false)}
+                  className="w-7 h-7 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Sheet Category Options List - Simple & Clean */}
+              <div className="p-3 space-y-1 overflow-y-auto overscroll-contain">
+                {BERITA_CATEGORIES.map((cat) => {
+                  const isActive = selectedCategory.toLowerCase() === cat.label.toLowerCase();
+                  const count = categoryCounts[cat.label] ?? (cat.slug === "semua" ? listBerita.length : 0);
+
+                  return (
+                    <button
+                      key={cat.slug}
+                      type="button"
+                      onClick={() => handleCategorySelect(cat.label, cat.slug)}
+                      className={`w-full px-3.5 py-2.5 rounded-xl transition-all flex items-center justify-between text-left active:scale-[0.99] ${
+                        isActive
+                          ? "bg-emerald-50 text-[#063321] font-bold"
+                          : "text-slate-700 hover:bg-slate-50 font-medium"
+                      }`}
+                    >
+                      <span className="text-xs sm:text-sm truncate pr-2">
+                        {cat.label}
+                      </span>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span
+                          className={`text-xs font-semibold ${
+                            isActive ? "text-emerald-700" : "text-slate-400"
+                          }`}
+                        >
+                          {count}
+                        </span>
+                        {isActive && <Check className="w-4 h-4 text-emerald-700 stroke-[2.5]" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Loading Spinner */}
         {loading ? (

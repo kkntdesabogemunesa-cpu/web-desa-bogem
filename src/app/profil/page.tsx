@@ -7,9 +7,9 @@ import {
   Compass,
   History,
   Network,
-  Layers,
   MapPin,
   ArrowLeft,
+  LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import VillageMap from "@/components/VillageMap";
@@ -21,6 +21,29 @@ import {
   defaultBatasWilayah,
 } from "@/services/profilService";
 import { ProfilDesaData } from "@/types/profil";
+
+type TabType = "visi-misi" | "bagan" | "sejarah" | "geografis";
+
+interface TabConfig {
+  id: TabType;
+  label: string;
+  mobileLabel: string;
+  icon: LucideIcon;
+}
+
+const TABS: TabConfig[] = [
+  { id: "visi-misi", label: "Visi & Misi", mobileLabel: "Visi & Misi", icon: Target },
+  { id: "bagan", label: "Struktur Organisasi (SOTK)", mobileLabel: "Struktur (SOTK)", icon: Network },
+  { id: "sejarah", label: "Sejarah Desa", mobileLabel: "Sejarah Desa", icon: History },
+  { id: "geografis", label: "Wilayah & Geografis", mobileLabel: "Wilayah & Geografis", icon: Compass },
+];
+
+function getValidTab(t: string | null): TabType {
+  if (t === "bagan" || t === "sotk" || t === "perangkat") return "bagan";
+  if (t === "sejarah") return "sejarah";
+  if (t === "geografis") return "geografis";
+  return "visi-misi";
+}
 
 export default function ProfilPage() {
   return (
@@ -42,16 +65,12 @@ function ProfilContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
 
-  const getValidTab = (t: string | null): "visi-misi" | "bagan" | "sejarah" | "geografis" | "semua" => {
-    if (t === "bagan" || t === "sotk" || t === "perangkat") return "bagan";
-    if (t === "sejarah") return "sejarah";
-    if (t === "geografis") return "geografis";
-    if (t === "semua") return "semua";
-    return "visi-misi";
-  };
+  const [activeTab, setActiveTab] = useState<TabType>(() => getValidTab(tabParam));
 
-  const [selectedTab, setSelectedTab] = useState<"visi-misi" | "bagan" | "sejarah" | "geografis" | "semua" | null>(null);
-  const activeTab = selectedTab ?? getValidTab(tabParam);
+  // Sinkronisasi otomatis saat URL berubah (misal: tombol Back/Forward browser)
+  useEffect(() => {
+    setActiveTab(getValidTab(tabParam));
+  }, [tabParam]);
 
   const [profilData, setProfilData] = useState<ProfilDesaData>(defaultProfilDesa);
 
@@ -113,67 +132,80 @@ function ProfilContent() {
           </div>
         </div>
 
-        {/* Segmented Control Navigation Tabs */}
-        <div className="bg-white/80 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200/80 shadow-xs inline-flex items-center gap-1.5 max-w-full overflow-x-auto scrollbar-none">
-          <button
-            onClick={() => setSelectedTab("visi-misi")}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 flex-shrink-0 ${
-              activeTab === "visi-misi"
-                ? "bg-[#063321] text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
-            }`}
-          >
-            <Target className="w-4 h-4" />
-            <span>Visi & Misi</span>
-          </button>
-          <button
-            onClick={() => setSelectedTab("bagan")}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 flex-shrink-0 ${
-              activeTab === "bagan"
-                ? "bg-[#063321] text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
-            }`}
-          >
-            <Network className="w-4 h-4" />
-            <span>Struktur Organisasi (SOTK)</span>
-          </button>
-          <button
-            onClick={() => setSelectedTab("sejarah")}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 flex-shrink-0 ${
-              activeTab === "sejarah"
-                ? "bg-[#063321] text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
-            }`}
-          >
-            <History className="w-4 h-4" />
-            <span>Sejarah Desa</span>
-          </button>
-          <button
-            onClick={() => setSelectedTab("geografis")}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 flex-shrink-0 ${
-              activeTab === "geografis"
-                ? "bg-[#063321] text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
-            }`}
-          >
-            <Compass className="w-4 h-4" />
-            <span>Wilayah & Geografis</span>
-          </button>
-          <button
-            onClick={() => setSelectedTab("semua")}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 flex-shrink-0 ${
-              activeTab === "semua"
-                ? "bg-[#063321] text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            <span>Semua</span>
-          </button>
+        {/* Mobile Navigation Tabs (HP): Tampilan 2x2 Grid rapi, proporsional, ramah sentuhan, tanpa scroll horizontal */}
+        <div
+          role="tablist"
+          aria-label="Kategori Profil Desa Mobile"
+          className="grid grid-cols-2 gap-2 sm:hidden w-full bg-white/90 backdrop-blur-sm p-2 rounded-2xl border border-slate-200/80 shadow-xs"
+        >
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <Link
+                key={tab.id}
+                href={`/profil?tab=${tab.id}`}
+                replace
+                scroll={false}
+                onClick={() => setActiveTab(tab.id)}
+                role="tab"
+                aria-selected={isActive}
+                className={`flex items-center space-x-2.5 p-2.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${
+                  isActive
+                    ? "bg-[#063321] text-white shadow-sm shadow-emerald-950/20"
+                    : "bg-slate-50 text-slate-700 hover:bg-slate-100/80 border border-slate-200/60"
+                }`}
+              >
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                    isActive
+                      ? "bg-white/15 text-emerald-300"
+                      : "bg-emerald-100/80 text-emerald-800"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-[11px] font-bold leading-tight">
+                  {tab.mobileLabel}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Desktop / Laptop Segmented Control: Tetap horizontal bar minimalis elegan */}
+        <div
+          role="tablist"
+          aria-label="Kategori Profil Desa"
+          className="hidden sm:inline-flex bg-white/80 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200/80 shadow-xs items-center gap-1.5 max-w-full overflow-x-auto scrollbar-none"
+        >
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <Link
+                key={tab.id}
+                href={`/profil?tab=${tab.id}`}
+                replace
+                scroll={false}
+                onClick={() => setActiveTab(tab.id)}
+                role="tab"
+                aria-selected={isActive}
+                className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 flex-shrink-0 ${
+                  isActive
+                    ? "bg-[#063321] text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+              </Link>
+            );
+          })}
         </div>
 
         {/* 1. SECTION: VISI & MISI */}
-        {(activeTab === "semua" || activeTab === "visi-misi") && (
+        {activeTab === "visi-misi" && (
           <section id="visi-misi" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
             <div className="pb-3 border-b border-slate-100">
               <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2">
@@ -220,7 +252,7 @@ function ProfilContent() {
         )}
 
         {/* 2. SECTION: BAGAN STRUKTUR ORGANISASI (SOTK) DENGAN GARIS-GARIS */}
-        {(activeTab === "semua" || activeTab === "bagan") && (
+        {activeTab === "bagan" && (
           <section id="bagan">
             <BaganStrukturDesa
               kadesName={profilData.nama_kades}
@@ -232,7 +264,7 @@ function ProfilContent() {
         )}
 
         {/* 3. SECTION: SEJARAH DESA */}
-        {(activeTab === "semua" || activeTab === "sejarah") && (
+        {activeTab === "sejarah" && (
           <section id="sejarah" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-5">
             <div className="pb-3 border-b border-slate-100">
               <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2">
@@ -251,7 +283,7 @@ function ProfilContent() {
         )}
 
         {/* 4. SECTION: WILAYAH & GEOGRAFIS */}
-        {(activeTab === "semua" || activeTab === "geografis") && (
+        {activeTab === "geografis" && (
           <section id="geografis" className="space-y-6">
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
               <div className="pb-3 border-b border-slate-100">

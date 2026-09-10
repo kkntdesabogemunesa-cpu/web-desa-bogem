@@ -13,17 +13,12 @@ export default function VisiMisiSection({ profilData }: VisiMisiSectionProps) {
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16">
-      <div className="bg-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-sm border border-slate-200/80 space-y-6">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-10 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-slate-100 space-y-6">
         {/* Section Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center flex-shrink-0 border border-emerald-100">
-              <Compass className="w-5 h-5 text-emerald-700" />
-            </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-              Visi & Misi Pembangunan
-            </h2>
-          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-[#004329] tracking-tight">
+            Visi & Misi Pembangunan
+          </h2>
 
           <Link
             href="/profil"

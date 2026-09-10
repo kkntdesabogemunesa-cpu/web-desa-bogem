@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Users,
   PieChart,
@@ -9,6 +10,7 @@ import {
   User,
   TrendingUp,
   ArrowLeft,
+  LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -500,8 +502,68 @@ function APBDesSection({ apbdes }: { apbdes: InfografisData["apbdes"] }) {
   );
 }
 
+type InfografisTabType = "penduduk" | "organisasi" | "apbd";
+
+interface InfografisTabConfig {
+  id: InfografisTabType;
+  label: string;
+  mobileLabel: string;
+  icon: LucideIcon;
+}
+
+const TABS: InfografisTabConfig[] = [
+  {
+    id: "penduduk",
+    label: "Demografi Penduduk",
+    mobileLabel: "Demografi",
+    icon: Users,
+  },
+  {
+    id: "organisasi",
+    label: "Kelembagaan & Organisasi",
+    mobileLabel: "Kelembagaan",
+    icon: Building2,
+  },
+  {
+    id: "apbd",
+    label: "APBDes & Transparansi Anggaran",
+    mobileLabel: "APBDes",
+    icon: Wallet,
+  },
+];
+
+function getValidTab(t: string | null): InfografisTabType {
+  if (t === "organisasi" || t === "kelembagaan" || t === "lembaga") return "organisasi";
+  if (t === "apbd" || t === "apbdes" || t === "anggaran") return "apbd";
+  return "penduduk";
+}
+
 export default function InfografisPage() {
-  const [activeTab, setActiveTab] = useState<"penduduk" | "organisasi" | "apbd">("penduduk");
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#F8FAFC] pb-28 pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto py-20 text-center text-slate-400 text-sm">
+            Memuat Data Infografis...
+          </div>
+        </main>
+      }
+    >
+      <InfografisContent />
+    </Suspense>
+  );
+}
+
+function InfografisContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
+  const [activeTab, setActiveTab] = useState<InfografisTabType>(() => getValidTab(tabParam));
+
+  // Sinkronisasi otomatis saat URL berubah (misal tombol Back/Forward browser)
+  useEffect(() => {
+    setActiveTab(getValidTab(tabParam));
+  }, [tabParam]);
   
   // Safe initial state matches SSR
   const [data, setData] = useState<InfografisData>(defaultInfografisData);
@@ -566,41 +628,76 @@ export default function InfografisPage() {
           </div>
         </div>
 
-        {/* Modern Segmented Control Navigation Tabs */}
-        <div className="bg-white/80 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200/80 shadow-xs inline-flex items-center gap-1.5 max-w-full overflow-x-auto scrollbar-none">
-          <button
-            onClick={() => setActiveTab("penduduk")}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 flex-shrink-0 ${
-              activeTab === "penduduk"
-                ? "bg-[#063321] text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Demografi Penduduk</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("organisasi")}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 flex-shrink-0 ${
-              activeTab === "organisasi"
-                ? "bg-[#063321] text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
-            }`}
-          >
-            <Building2 className="w-4 h-4" />
-            <span>Kelembagaan & Organisasi</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("apbd")}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 flex-shrink-0 ${
-              activeTab === "apbd"
-                ? "bg-[#063321] text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
-            }`}
-          >
-            <Wallet className="w-4 h-4" />
-            <span>APBDes & Transparansi Anggaran</span>
-          </button>
+        {/* Mobile Navigation Tabs (HP): 3 Kolom Rapi, Proporsional & Tanpa Scroll Horizontal */}
+        <div
+          role="tablist"
+          aria-label="Kategori Infografis Mobile"
+          className="grid grid-cols-3 gap-1.5 sm:hidden w-full bg-white/90 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200/80 shadow-xs"
+        >
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <Link
+                key={tab.id}
+                href={`/infografis?tab=${tab.id}`}
+                replace
+                scroll={false}
+                onClick={() => setActiveTab(tab.id)}
+                role="tab"
+                aria-selected={isActive}
+                className={`flex flex-col items-center justify-center p-2 rounded-xl text-xs font-bold transition-all active:scale-95 text-center ${
+                  isActive
+                    ? "bg-[#063321] text-white shadow-sm shadow-emerald-950/20"
+                    : "bg-slate-50 text-slate-700 hover:bg-slate-100/80 border border-slate-200/60"
+                }`}
+              >
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center mb-1 transition-colors ${
+                    isActive
+                      ? "bg-white/15 text-emerald-300"
+                      : "bg-emerald-100/80 text-emerald-800"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-[11px] font-bold leading-tight line-clamp-1">
+                  {tab.mobileLabel}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Desktop / Laptop Segmented Control Navigation Tabs */}
+        <div
+          role="tablist"
+          aria-label="Kategori Infografis"
+          className="hidden sm:inline-flex bg-white/80 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200/80 shadow-xs items-center gap-1.5 max-w-full overflow-x-auto scrollbar-none"
+        >
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <Link
+                key={tab.id}
+                href={`/infografis?tab=${tab.id}`}
+                replace
+                scroll={false}
+                onClick={() => setActiveTab(tab.id)}
+                role="tab"
+                aria-selected={isActive}
+                className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 flex-shrink-0 ${
+                  isActive
+                    ? "bg-[#063321] text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+              </Link>
+            );
+          })}
         </div>
 
         {/* Tab 1: Demografi Penduduk */}

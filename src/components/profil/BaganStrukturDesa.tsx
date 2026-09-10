@@ -167,11 +167,11 @@ export default function BaganStrukturDesa({
           </p>
         </div>
 
-        {/* View Toggle Buttons */}
-        <div className="bg-slate-100/90 p-1 rounded-xl border border-slate-200/70 inline-flex items-center gap-1 self-start sm:self-auto">
+        {/* View Toggle Buttons - Responsif di HP & Laptop */}
+        <div className="bg-slate-100/90 p-1 rounded-xl border border-slate-200/70 inline-flex items-center gap-1 w-full sm:w-auto overflow-x-auto">
           <button
             onClick={() => setViewMode("tree")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
+            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-1.5 whitespace-nowrap ${
               viewMode === "tree"
                 ? "bg-white text-slate-900 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
@@ -182,7 +182,7 @@ export default function BaganStrukturDesa({
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
+            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-1.5 whitespace-nowrap ${
               viewMode === "list"
                 ? "bg-white text-slate-900 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
@@ -194,7 +194,7 @@ export default function BaganStrukturDesa({
           {hasDocImage && (
             <button
               onClick={() => setViewMode("doc")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
+              className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-1.5 whitespace-nowrap ${
                 viewMode === "doc"
                   ? "bg-white text-slate-900 shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
@@ -209,57 +209,69 @@ export default function BaganStrukturDesa({
 
       {/* VIEW 1: ORGANIZATIONAL TREE WITH CONNECTING LINES */}
       {viewMode === "tree" && (
-        <div className="bg-white rounded-3xl p-4 sm:p-8 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-8 overflow-x-auto">
-          <div className="min-w-[760px] max-w-5xl mx-auto py-2">
-            
-            {/* TINGKAT 1: KEPALA DESA & BPD (DENGAN GARIS KOORDINASI) */}
-            <div className="relative flex items-center justify-center">
-              {/* Node BPD (Mitra Konsultasi) di sisi kiri */}
-              <div className="absolute left-4 lg:left-12 top-1/2 -translate-y-1/2 z-10">
-                <div className="bg-slate-50 hover:bg-slate-100/90 border border-slate-200/90 rounded-2xl p-3.5 shadow-xs w-56 text-left transition-all">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                    Mitra Kemitraan
-                  </span>
-                  <h4 className="text-xs sm:text-sm font-extrabold text-slate-800 leading-snug">
-                    BPD
-                  </h4>
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    Badan Permusyawaratan Desa
-                  </p>
-                </div>
-              </div>
+        <div className="space-y-3">
+          {/* Petunjuk Geser Khusus HP agar user tahu bagan bisa digeser */}
+          <div className="sm:hidden flex items-center justify-between bg-emerald-50/90 text-emerald-900 border border-emerald-200/80 px-3.5 py-2 rounded-2xl text-xs font-semibold">
+            <span className="flex items-center gap-1.5">
+              <span>👉</span>
+              <span>Geser ke samping untuk bagan penuh</span>
+            </span>
+            <span className="text-[10px] text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-lg font-bold">
+              Geser Horisontal
+            </span>
+          </div>
 
-              {/* Garis Horizontal Putus-Putus Koordinasi antara Kades dan BPD */}
-              <div className="absolute left-60 lg:left-68 right-1/2 top-1/2 -translate-y-1/2 border-t-2 border-dashed border-slate-300 flex items-center justify-center">
-                <span className="bg-white px-2 text-[9px] font-bold text-slate-400 uppercase tracking-wider -translate-y-1/2">
-                  Koordinasi
-                </span>
-              </div>
-
-              {/* Node Utama: KEPALA DESA (Pusat Pimpinan) */}
-              <div className="relative z-10">
-                <div className="bg-gradient-to-br from-[#063321] to-[#0A4D33] text-white rounded-2xl p-4 sm:p-5 shadow-sm border border-emerald-800/60 flex items-center space-x-4 w-80 hover:shadow-md transition-all">
-                  <div className="w-14 h-14 rounded-full overflow-hidden bg-emerald-900 border-2 border-emerald-400/50 flex-shrink-0 flex items-center justify-center">
-                    {kadesFoto ? (
-                      <img
-                        src={kadesFoto}
-                        alt={kadesName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <UserCheck className="w-7 h-7 text-emerald-300" />
-                    )}
+          <div className="bg-white rounded-3xl p-4 sm:p-8 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-8 overflow-x-auto touch-pan-x">
+            <div className="min-w-[920px] max-w-5xl mx-auto py-2">
+              
+              {/* TINGKAT 1: KEPALA DESA & BPD (DENGAN GARIS KOORDINASI PRESISI TANPA OVERLAP) */}
+              <div className="relative flex items-center justify-center min-h-[110px]">
+                {/* Node BPD (Mitra Konsultasi) di sisi kiri */}
+                <div className="absolute left-6 lg:left-10 top-1/2 -translate-y-1/2 z-10">
+                  <div className="bg-slate-50 hover:bg-slate-100/90 border border-slate-200/90 rounded-2xl p-3.5 shadow-xs w-52 text-left transition-all">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                      Mitra Kemitraan
+                    </span>
+                    <h4 className="text-xs sm:text-sm font-extrabold text-slate-800 leading-snug">
+                      BPD
+                    </h4>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Badan Permusyawaratan Desa
+                    </p>
                   </div>
-                  <div className="space-y-0.5 min-w-0">
-                    <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">
-                      Kepala Desa
-                    </span>
-                    <h3 className="text-sm font-extrabold text-white leading-tight truncate">
-                      {kadesName}
-                    </h3>
-                    <span className="text-[10px] text-emerald-100/70 block">
-                      Pimpinan Penyelenggara Desa
-                    </span>
+                </div>
+
+                {/* Garis Horizontal Putus-Putus Koordinasi antara Kades dan BPD (Tidak menabrak kartu) */}
+                <div className="absolute left-[232px] right-[calc(50%+145px)] top-1/2 -translate-y-1/2 border-t-2 border-dashed border-slate-300 flex items-center justify-center">
+                  <span className="bg-white px-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider -translate-y-1/2 whitespace-nowrap">
+                    Koordinasi
+                  </span>
+                </div>
+
+                {/* Node Utama: KEPALA DESA (Pusat Pimpinan) */}
+                <div className="relative z-10">
+                  <div className="bg-gradient-to-br from-[#063321] to-[#0A4D33] text-white rounded-2xl p-4 sm:p-5 shadow-sm border border-emerald-800/60 flex items-center space-x-4 w-72 sm:w-80 hover:shadow-md transition-all">
+                    <div className="w-14 h-14 rounded-full overflow-hidden bg-emerald-900 border-2 border-emerald-400/50 flex-shrink-0 flex items-center justify-center">
+                      {kadesFoto ? (
+                        <img
+                          src={kadesFoto}
+                          alt={kadesName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <UserCheck className="w-7 h-7 text-emerald-300" />
+                      )}
+                    </div>
+                    <div className="space-y-0.5 min-w-0">
+                      <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">
+                        Kepala Desa
+                      </span>
+                      <h3 className="text-sm font-extrabold text-white leading-tight truncate">
+                        {kadesName}
+                      </h3>
+                      <span className="text-[10px] text-emerald-100/70 block">
+                        Pimpinan Penyelenggara Desa
+                      </span>
                   </div>
                 </div>
               </div>
@@ -465,6 +477,7 @@ export default function BaganStrukturDesa({
 
           </div>
         </div>
+      </div>
       )}
 
       {/* VIEW 2: DIRECTORY LIST HIERARCHY (SEMPURNA UNTUK MOBILE) */}
@@ -503,7 +516,11 @@ export default function BaganStrukturDesa({
               {/* Sekdes */}
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center space-x-3">
                 <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-200 flex-shrink-0 flex items-center justify-center">
-                  <UserCheck className="w-4 h-4 text-slate-500" />
+                  {sekdes?.foto ? (
+                    <img src={sekdes.foto} alt={sekdes.nama} className="w-full h-full object-cover" />
+                  ) : (
+                    <UserCheck className="w-4 h-4 text-slate-500" />
+                  )}
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-emerald-800 uppercase block">Sekretaris Desa</span>
@@ -515,7 +532,11 @@ export default function BaganStrukturDesa({
               {displayKaurs.map((kaur) => (
                 <div key={kaur.id} className="bg-white border border-slate-200/80 rounded-xl p-2.5 flex items-center space-x-3">
                   <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center">
-                    <UserCheck className="w-4 h-4 text-slate-400" />
+                    {kaur.foto ? (
+                      <img src={kaur.foto} alt={kaur.nama} className="w-full h-full object-cover" />
+                    ) : (
+                      <UserCheck className="w-4 h-4 text-slate-400" />
+                    )}
                   </div>
                   <div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase block">{kaur.jabatan}</span>

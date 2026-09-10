@@ -1,19 +1,132 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUMKM } from "@/hooks/useUMKM";
 import { UMKMItem } from "@/types/umkm";
-import { UMKM_CATEGORIES } from "@/utils/constants";
 import { formatWhatsAppLink } from "@/utils/formatters";
-import { Search, ShoppingBag, Phone, Store, User, Filter, X, Tag, MapPin, ArrowLeft } from "lucide-react";
+import {
+  Search,
+  ShoppingBag,
+  Phone,
+  Store,
+  User,
+  X,
+  Tag,
+  MapPin,
+  ArrowLeft,
+  Filter,
+  ChevronDown,
+  Check,
+} from "lucide-react";
 import ImageWithSkeleton from "@/components/ImageWithSkeleton";
 
+interface UMKMCategoryItem {
+  label: string;
+  slug: string;
+}
+
+const POTENSI_CATEGORIES: UMKMCategoryItem[] = [
+  { label: "Semua", slug: "semua" },
+  { label: "Makanan & Minuman", slug: "kuliner" },
+  { label: "Kerajinan Tangan", slug: "kerajinan" },
+  { label: "Jasa", slug: "jasa" },
+  { label: "Pertanian / Peternakan", slug: "pertanian" },
+  { label: "Lainnya", slug: "lainnya" },
+];
+
+function resolveUMKMCategoryFromSlug(slug: string | null): string {
+  if (!slug || slug.toLowerCase() === "semua") return "Semua";
+  const s = slug.toLowerCase();
+  if (
+    s === "kuliner" ||
+    s === "makanan" ||
+    s === "minuman" ||
+    s === "makanan-dan-minuman" ||
+    s === "makanan-minuman"
+  ) {
+    return "Makanan & Minuman";
+  }
+  if (s === "kerajinan" || s === "kerajinan-tangan") {
+    return "Kerajinan Tangan";
+  }
+  if (s === "jasa") {
+    return "Jasa";
+  }
+  if (s === "pertanian" || s === "peternakan" || s === "pertanian-peternakan") {
+    return "Pertanian / Peternakan";
+  }
+  if (s === "lainnya" || s === "lain") {
+    return "Lainnya";
+  }
+  const found = POTENSI_CATEGORIES.find((c) => c.label.toLowerCase() === s);
+  return found ? found.label : "Semua";
+}
+
 export default function PotensiDesa() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#F8FAFC] pb-28 pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto py-20 text-center text-slate-400 text-sm">
+            Memuat Produk UMKM Desa...
+          </div>
+        </main>
+      }
+    >
+      <PotensiContent />
+    </Suspense>
+  );
+}
+
+function PotensiContent() {
+  const router = useRouter();
   const { data: dataUMKM, loading } = useUMKM();
+  const searchParams = useSearchParams();
+  const kategoriParam = searchParams.get("kategori");
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Semua");
+  const [selectedCategory, setSelectedCategory] = useState(() =>
+    resolveUMKMCategoryFromSlug(kategoriParam)
+  );
   const [selectedItem, setSelectedItem] = useState<UMKMItem | null>(null);
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+
+  // Sinkronisasi otomatis saat URL berubah (misal tombol Back/Forward browser)
+  useEffect(() => {
+    setSelectedCategory(resolveUMKMCategoryFromSlug(kategoriParam));
+  }, [kategoriParam]);
+
+  // Lock body scroll when bottom sheet is open on mobile
+  useEffect(() => {
+    if (isBottomSheetOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isBottomSheetOpen]);
+
+  // Dynamic counter per kategori
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { Semua: dataUMKM.length };
+    dataUMKM.forEach((item) => {
+      if (item.kategori) {
+        counts[item.kategori] = (counts[item.kategori] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [dataUMKM]);
+
+  const handleCategorySelect = (catLabel: string, slug: string) => {
+    setSelectedCategory(catLabel);
+    setIsBottomSheetOpen(false);
+    const targetHref = slug === "semua" ? "/potensi" : `/potensi?kategori=${slug}`;
+    router.replace(targetHref, { scroll: false });
+  };
 
   // Filter products by category & search term
   const filteredUMKM = dataUMKM.filter((item) => {
@@ -84,44 +197,184 @@ export default function PotensiDesa() {
         </div>
 
         {/* Search & Category Filter Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-          {/* Segmented Control Category Filter Pills */}
-          <div className="bg-white/80 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200/80 shadow-xs inline-flex items-center gap-1.5 max-w-full overflow-x-auto scrollbar-none">
-            {UMKM_CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap active:scale-95 flex-shrink-0 ${
-                  selectedCategory === cat
-                    ? "bg-[#063321] text-white shadow-sm"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+        <div className="space-y-3">
+          {/* 1. KHUSUS MOBILE (HP): 1 Baris Ringkas & Minimalis (Search + Kategori Dropdown Trigger) */}
+          <div className="flex items-center gap-2 sm:hidden">
+            {/* Search Input Bar - Flex 1 */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Cari nama usaha, produk..."
+                className="w-full pl-8 pr-7 py-2 bg-white border border-slate-200/90 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-700 text-xs shadow-2xs placeholder:text-slate-400 font-medium"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            {/* Tombol Pemicu Kategori Dropdown / Bottom Sheet */}
+            <button
+              type="button"
+              onClick={() => setIsBottomSheetOpen(true)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all flex-shrink-0 active:scale-95 shadow-2xs ${
+                selectedCategory !== "Semua"
+                  ? "bg-emerald-50 border-emerald-300 text-[#063321]"
+                  : "bg-white border-slate-200/90 text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <Filter className={`w-3.5 h-3.5 flex-shrink-0 ${selectedCategory !== "Semua" ? "text-emerald-700" : "text-slate-400"}`} />
+              <span className="max-w-[110px] truncate">
+                {selectedCategory === "Semua" ? "Kategori" : selectedCategory}
+              </span>
+              <ChevronDown className={`w-3.5 h-3.5 flex-shrink-0 ${selectedCategory !== "Semua" ? "text-emerald-700" : "text-slate-400"}`} />
+            </button>
           </div>
 
-          {/* Search Input Bar */}
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Cari nama usaha, produk..."
-              className="w-full pl-9 pr-8 py-2 bg-white border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-700 text-xs shadow-xs placeholder:text-slate-400"
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+          {/* 2. KHUSUS LAPTOP / DESKTOP: Horizontal Segmented Bar Jadi Satu Rapi & Minimalis */}
+          <div className="hidden sm:flex items-center justify-between gap-4">
+            <div
+              role="tablist"
+              aria-label="Filter Kategori UMKM"
+              className="bg-white/90 backdrop-blur-sm p-1 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-1 overflow-x-auto scrollbar-none"
+            >
+              {POTENSI_CATEGORIES.map((cat) => {
+                const isActive = selectedCategory.toLowerCase() === cat.label.toLowerCase();
+                const count = categoryCounts[cat.label] ?? (cat.slug === "semua" ? dataUMKM.length : 0);
+                const targetHref = cat.slug === "semua" ? "/potensi" : `/potensi?kategori=${cat.slug}`;
+
+                return (
+                  <Link
+                    key={cat.slug}
+                    href={targetHref}
+                    replace
+                    scroll={false}
+                    onClick={() => setSelectedCategory(cat.label)}
+                    role="tab"
+                    aria-selected={isActive}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 whitespace-nowrap active:scale-95 flex-shrink-0 flex items-center gap-1.5 ${
+                      isActive
+                        ? "bg-[#063321] text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
+                    }`}
+                  >
+                    <span>{cat.label}</span>
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                        isActive
+                          ? "bg-white/15 text-emerald-200"
+                          : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Search Input Bar Desktop */}
+            <div className="relative w-72 flex-shrink-0">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Cari nama usaha, produk..."
+                className="w-full pl-9 pr-8 py-2 bg-white border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-700 text-xs shadow-xs placeholder:text-slate-400 font-medium transition-all"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* CUSTOM BOTTOM SHEET KHUSUS MOBILE (HP) - Simple, Bersih & Minimalis */}
+        {isBottomSheetOpen && (
+          <div className="fixed inset-0 z-50 sm:hidden">
+            {/* Backdrop Blur */}
+            <div
+              onClick={() => setIsBottomSheetOpen(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            />
+
+            {/* Drawer Sheet */}
+            <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[80vh] flex flex-col animate-in slide-in-from-bottom duration-250 pb-6">
+              {/* Drag Handle Indicator */}
+              <div className="pt-3 pb-1 flex justify-center">
+                <div className="w-10 h-1 bg-slate-300/80 rounded-full" />
+              </div>
+
+              {/* Sheet Header - Minimalist */}
+              <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-900">Kategori UMKM</h3>
+                  <span className="text-[11px] font-semibold text-slate-400">
+                    ({POTENSI_CATEGORIES.length})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsBottomSheetOpen(false)}
+                  className="w-7 h-7 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Sheet Category Options List - Simple & Clean */}
+              <div className="p-3 space-y-1 overflow-y-auto overscroll-contain">
+                {POTENSI_CATEGORIES.map((cat) => {
+                  const isActive = selectedCategory.toLowerCase() === cat.label.toLowerCase();
+                  const count = categoryCounts[cat.label] ?? (cat.slug === "semua" ? dataUMKM.length : 0);
+
+                  return (
+                    <button
+                      key={cat.slug}
+                      type="button"
+                      onClick={() => handleCategorySelect(cat.label, cat.slug)}
+                      className={`w-full px-3.5 py-2.5 rounded-xl transition-all flex items-center justify-between text-left active:scale-[0.99] ${
+                        isActive
+                          ? "bg-emerald-50 text-[#063321] font-bold"
+                          : "text-slate-700 hover:bg-slate-50 font-medium"
+                      }`}
+                    >
+                      <span className="text-xs sm:text-sm truncate pr-2">
+                        {cat.label}
+                      </span>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span
+                          className={`text-xs font-semibold ${
+                            isActive ? "text-emerald-700" : "text-slate-400"
+                          }`}
+                        >
+                          {count}
+                        </span>
+                        {isActive && <Check className="w-4 h-4 text-emerald-700 stroke-[2.5]" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Loading Spinner */}
         {loading ? (

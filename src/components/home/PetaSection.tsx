@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Navigation, ExternalLink, Building2, Phone, Compass } from "lucide-react";
+import { Navigation, ExternalLink, Building2, Phone } from "lucide-react";
 import VillageMap from "@/components/VillageMap";
 import { fetchProfilDesa, defaultProfilDesa, defaultBatasWilayah } from "@/services/profilService";
 import { ProfilDesaData } from "@/types/profil";
@@ -42,9 +42,8 @@ export default function PetaSection() {
         {/* Header Section: Bersih, Minimalis & Elegan */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#004329] tracking-tight flex items-center space-x-2">
-              <Compass className="w-6 h-6 text-emerald-700" />
-              <span>Peta Lokasi Desa</span>
+            <h2 className="text-xl sm:text-2xl font-bold text-[#004329] tracking-tight">
+              Peta Lokasi Desa
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
               Wilayah administratif dan batas teritorial Desa Bogem, Kec. Kawedanan, Kab. Magetan.

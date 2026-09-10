@@ -62,7 +62,7 @@ export default function QuickShortcuts() {
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-12 sm:pb-16 relative z-10">
       {/* Section Header */}
       <div className="mb-5 sm:mb-6">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#004329] tracking-tight">
           Layanan Utama Desa Bogem
         </h2>
       </div>
