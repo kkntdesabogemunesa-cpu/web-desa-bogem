@@ -37,12 +37,12 @@ export async function fetchOpsiSuratList(): Promise<OpsiSurat[]> {
       return defaultOpsiSuratList;
     }
 
-    return data.map((d: any) => ({
-      id: d.id,
-      nama_surat: d.nama_surat,
-      deskripsi: d.deskripsi || "",
-      syarat: d.syarat || "",
-      custom_fields: d.custom_fields || [],
+    return (data as Array<Record<string, unknown>>).map((d) => ({
+      id: String(d.id || ""),
+      nama_surat: String(d.nama_surat || ""),
+      deskripsi: String(d.deskripsi || ""),
+      syarat: String(d.syarat || ""),
+      custom_fields: Array.isArray(d.custom_fields) ? (d.custom_fields as OpsiSurat["custom_fields"]) : [],
     }));
   } catch (err) {
     console.error("fetchOpsiSuratList error:", err);
@@ -282,7 +282,7 @@ export async function updateStatusDanFileSurat(
   try {
     if (!supabase) return { success: false, error: "Database client is not available." };
 
-    const payload: Record<string, any> = {
+    const payload: Record<string, unknown> = {
       status: updates.status,
       updated_at: new Date().toISOString(),
     };

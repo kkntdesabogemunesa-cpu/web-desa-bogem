@@ -30,7 +30,7 @@ export default function MobileNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-[#05281a]/95 backdrop-blur-md border-t border-emerald-900/60 px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-xl touch-manipulation select-none"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-card/90 backdrop-blur-md border-t border-border px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-lg touch-manipulation select-none"
       style={{
         transform: "translateZ(0)",
         WebkitTransform: "translateZ(0)",
@@ -53,12 +53,20 @@ export default function MobileNav() {
               onClick={(e) => handleNavClick(item.href, e)}
               className={`flex flex-col items-center justify-center min-h-[46px] py-1 px-0.5 rounded-xl transition-all duration-150 active:scale-95 cursor-pointer ${
                 isActive
-                  ? "text-emerald-300 font-bold"
-                  : "text-emerald-200/70 hover:text-white"
+                  ? "text-primary font-bold"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <div className={`p-1 sm:p-1.5 rounded-xl transition-colors ${isActive ? "bg-emerald-800/80 shadow-sm" : ""}`}>
-                <Icon className={`w-4.5 h-4.5 sm:w-5 sm:h-5 ${isActive ? "stroke-[2.25]" : "stroke-[1.75]"}`} />
+              <div
+                className={`p-1 sm:p-1.5 rounded-xl transition-colors ${
+                  isActive ? "bg-primary/10 text-primary" : ""
+                }`}
+              >
+                <Icon
+                  className={`size-4.5 sm:size-5 ${
+                    isActive ? "stroke-[2.25]" : "stroke-[1.75]"
+                  }`}
+                />
               </div>
               <span className="text-[9px] sm:text-[10px] tracking-tight mt-0.5 truncate max-w-full text-center">
                 {item.name}

@@ -5,6 +5,11 @@ import Link from "next/link";
 import { Mail, ArrowRight, AlertCircle, CheckCircle2, Loader2, ArrowLeft, KeyRound, CreditCard } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { isValidGmail } from "@/utils/validators";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 function ForgotPasswordForm() {
   const [identifier, setIdentifier] = useState("");
@@ -85,9 +90,8 @@ function ForgotPasswordForm() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 py-12">
+    <main className="min-h-screen bg-slate-50/60 flex items-center justify-center p-4 py-12">
       <div className="max-w-md w-full space-y-6">
-        
         {/* Header Logo */}
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center justify-center group mb-1">
@@ -99,105 +103,106 @@ function ForgotPasswordForm() {
               />
             </div>
           </Link>
-          <h1 className="text-2xl font-bold text-slate-900">Pemulihan Kata Sandi</h1>
-          <p className="text-xs text-slate-500">
+          <h1 className="text-2xl font-bold text-foreground">Pemulihan Kata Sandi</h1>
+          <p className="text-xs text-muted-foreground">
             Masukkan NIK KTP atau Email untuk menerima tautan reset kata sandi
           </p>
         </div>
 
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-6">
-          
-          {successEmail ? (
-            <div className="space-y-5 text-center animate-in zoom-in-95 duration-200 py-2">
-              <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto border border-emerald-200 shadow-sm">
-                <CheckCircle2 className="w-8 h-8 text-emerald-700" />
-              </div>
-
-              <div className="space-y-2">
-                <h2 className="text-lg font-bold text-slate-900">
-                  Tautan Reset Telah Dikirim!
-                </h2>
-                <p className="text-xs text-slate-600 leading-relaxed max-w-sm mx-auto">
-                  Kami telah mengirimkan tautan reset kata sandi ke: <br />
-                  <strong className="text-slate-900 font-mono text-xs bg-slate-100 px-2 py-0.5 rounded inline-block mt-1">{successEmail}</strong>
-                </p>
-                <p className="text-[11px] text-slate-500 max-w-xs mx-auto pt-1">
-                  Silakan buka inbox atau folder spam email Anda, lalu klik tautan tersebut untuk membuat kata sandi baru.
-                </p>
-              </div>
-
-              <div className="pt-3">
-                <Link
-                  href="/login"
-                  className="w-full bg-[#004329] hover:bg-[#00321F] text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 text-xs shadow-md active:scale-95"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Kembali ke Halaman Masuk</span>
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <>
-              {error && (
-                <div className="p-3.5 bg-rose-50 text-rose-700 rounded-2xl border border-rose-200 text-xs font-medium flex items-center space-x-2.5 animate-in fade-in">
-                  <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />
-                  <span>{error}</span>
+        <Card className="rounded-2xl sm:rounded-3xl border-border/70 shadow-sm overflow-hidden">
+          <CardContent className="p-6 sm:p-8 space-y-6">
+            {successEmail ? (
+              <div className="space-y-5 text-center animate-in zoom-in-95 duration-200 py-2">
+                <div className="w-16 h-16 rounded-3xl bg-primary/10 text-primary flex items-center justify-center mx-auto border border-primary/20 shadow-xs">
+                  <CheckCircle2 className="w-8 h-8 text-primary" />
                 </div>
-              )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center justify-between">
-                    <span>NIK KTP atau Alamat Email</span>
-                    <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80">
-                      16 Digit / Email
-                    </span>
-                  </label>
-                  <div className="relative">
-                    <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type="text"
-                      required
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder="Contoh: 3520xxxxxxxxxxxx atau budi@gmail.com"
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600 text-xs text-slate-800 font-medium"
-                    />
+                <div className="space-y-2">
+                  <h2 className="text-lg font-bold text-foreground">
+                    Tautan Reset Telah Dikirim!
+                  </h2>
+                  <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                    Kami telah mengirimkan tautan reset kata sandi ke: <br />
+                    <strong className="text-foreground font-mono text-xs bg-muted px-2 py-0.5 rounded inline-block mt-1">{successEmail}</strong>
+                  </p>
+                  <p className="text-[11px] text-muted-foreground max-w-xs mx-auto pt-1">
+                    Silakan buka inbox atau folder spam email Anda, lalu klik tautan tersebut untuk membuat kata sandi baru.
+                  </p>
+                </div>
+
+                <div className="pt-3">
+                  <Button asChild className="w-full py-2.5 rounded-xl font-bold shadow-xs active:scale-95">
+                    <Link href="/login" className="inline-flex items-center justify-center gap-2">
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Kembali ke Halaman Masuk</span>
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {error && (
+                  <div className="p-3.5 bg-rose-50 text-rose-700 rounded-xl border border-rose-200 text-xs font-medium flex items-center gap-2.5 animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />
+                    <span>{error}</span>
                   </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-foreground uppercase mb-1.5 flex items-center justify-between">
+                      <span>NIK KTP atau Alamat Email</span>
+                      <Badge variant="secondary" className="text-[10px] text-emerald-800 font-semibold bg-emerald-50 border-emerald-200/80">
+                        16 Digit / Email
+                      </Badge>
+                    </label>
+                    <div className="relative">
+                      <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        required
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
+                        placeholder="Contoh: 3520xxxxxxxxxxxx atau budi@gmail.com"
+                        className="pl-10 text-xs rounded-xl bg-muted/40"
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 text-xs shadow-sm mt-2 active:scale-95"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Mengirim Tautan...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Kirim Tautan Reset Kata Sandi</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+
+                <Separator />
+
+                <div className="text-center">
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Ingat kata sandi? Masuk di sini</span>
+                  </Link>
                 </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-[#004329] hover:bg-[#00321F] text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 text-xs shadow-md mt-2 disabled:opacity-70 active:scale-95"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Mengirim Tautan...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Kirim Tautan Reset Kata Sandi</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </form>
-
-              <div className="text-center pt-2 border-t border-slate-100">
-                <Link
-                  href="/login"
-                  className="inline-flex items-center space-x-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-950 hover:underline"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Ingat kata sandi? Masuk di sini</span>
-                </Link>
-              </div>
-            </>
-          )}
-
-        </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </main>
   );
@@ -207,7 +212,7 @@ export default function ForgotPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="min-h-screen bg-background flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-[#004329]" />
         </div>
       }

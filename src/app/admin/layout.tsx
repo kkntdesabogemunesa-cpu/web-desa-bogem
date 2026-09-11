@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Lock,
@@ -11,9 +12,13 @@ import {
   LogOut,
   AlertCircle,
   Loader2,
-  ShieldCheck,
+  ExternalLink,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 export default function AdminLayout({
   children,
@@ -58,9 +63,9 @@ export default function AdminLayout({
   // Loading state while verifying auth session
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center space-y-3">
-        <Loader2 className="w-8 h-8 text-[#063321] animate-spin" />
-        <div className="text-slate-600 text-xs font-semibold">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-3">
+        <Loader2 className="size-8 text-primary animate-spin" />
+        <div className="text-muted-foreground text-xs font-semibold">
           Memverifikasi Hak Akses Pengelola Desa...
         </div>
       </div>
@@ -73,44 +78,51 @@ export default function AdminLayout({
       <main className="min-h-screen bg-[#063321] flex flex-col justify-center items-center p-4 sm:p-6 text-white relative overflow-hidden">
         <div className="w-full max-w-md space-y-6 relative z-10">
           {/* Back to Public Web */}
-          <Link
-            href="/"
-            className="inline-flex items-center space-x-2 text-xs font-semibold text-emerald-100 hover:text-white transition bg-white/10 hover:bg-white/20 px-3.5 py-1.5 rounded-full border border-white/10 active:scale-95"
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="rounded-full bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs font-semibold gap-1.5"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Kembali ke Website Utama</span>
-          </Link>
+            <Link href="/">
+              <ArrowLeft className="size-3.5" />
+              <span>Kembali ke Website Utama</span>
+            </Link>
+          </Button>
 
           {/* Login Card */}
-          <div className="bg-white text-slate-900 rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-200/80 space-y-6 animate-in fade-in zoom-in duration-200">
+          <Card className="p-6 sm:p-8 shadow-xl border-border space-y-6 animate-in fade-in zoom-in-95 duration-200 bg-card text-card-foreground">
             {/* Header */}
             <div className="text-center space-y-2">
-              <div className="w-14 h-16 flex items-center justify-center mx-auto">
-                <img
+              <div className="w-14 h-16 relative mx-auto flex items-center justify-center">
+                <Image
                   src="/images/logo-magetan.png"
                   alt="Logo Kabupaten Magetan"
+                  width={56}
+                  height={64}
                   className="w-full h-full object-contain"
+                  priority
                 />
               </div>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">
                 Login Pengelola Desa
               </h1>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 Pemerintah Desa Bogem, Kec. Kawedanan, Kab. Magetan
               </p>
             </div>
 
             {/* Error message */}
             {errorMsg && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-800 text-xs p-3.5 rounded-2xl flex items-start space-x-2.5">
-                <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+              <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs p-3.5 rounded-2xl flex items-start space-x-2.5">
+                <AlertCircle className="size-4 shrink-0 mt-0.5" />
                 <span>{errorMsg}</span>
               </div>
             )}
 
             {user && user.role !== "admin" && (
-              <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs p-3.5 rounded-2xl flex items-start space-x-2.5">
-                <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs p-3.5 rounded-2xl flex items-start space-x-2.5">
+                <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
                 <span>Akun Anda ({user.email}) terdaftar sebagai Warga, bukan Admin Desa. Silakan masuk menggunakan akun pengelola yang berwenang.</span>
               </div>
             )}
@@ -118,53 +130,55 @@ export default function AdminLayout({
             {/* Form */}
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 block uppercase">
+                <label className="text-xs font-bold text-foreground block uppercase">
                   Email Admin
                 </label>
-                <input
+                <Input
                   type="email"
                   required
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
                   placeholder="admin@desabogem.id"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600 transition"
+                  className="rounded-xl h-10 text-xs sm:text-sm"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 block uppercase">
+                <label className="text-xs font-bold text-foreground block uppercase">
                   Kata Sandi
                 </label>
                 <div className="relative">
-                  <input
+                  <Input
                     type={showPassword ? "text" : "password"}
                     required
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
                     placeholder="Masukkan kata sandi..."
-                    className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600 transition"
+                    className="rounded-xl h-10 pl-3 pr-10 text-xs sm:text-sm"
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-xs"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     aria-label="Toggle kata sandi"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </Button>
                 </div>
               </div>
 
-              <button
+              <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#063321] hover:bg-[#073d28] text-white font-bold py-3 px-4 rounded-xl text-xs sm:text-sm transition shadow-sm active:scale-95 disabled:opacity-50 flex items-center justify-center space-x-2 mt-2"
+                className="w-full h-10 rounded-xl text-xs sm:text-sm font-bold gap-2 bg-[#063321] hover:bg-[#073d28] text-white shadow-xs"
               >
-                <Lock className="w-4 h-4" />
+                <Lock className="size-4" />
                 <span>{loading ? "Memverifikasi..." : "Masuk ke Panel Pengelola"}</span>
-              </button>
+              </Button>
             </form>
-          </div>
+          </Card>
         </div>
       </main>
     );
@@ -172,19 +186,21 @@ export default function AdminLayout({
 
   // If authenticated as admin, render Admin Layout with top control bar
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col text-foreground">
       {/* Admin Top Sticky Bar */}
-      <header className="bg-[#063321] text-white sticky top-0 z-40 shadow-sm border-b border-emerald-900/60 px-4 sm:px-6 lg:px-8 py-2.5">
+      <header className="bg-[#063321] text-white sticky top-0 z-40 shadow-xs border-b border-emerald-900/60 px-4 sm:px-6 lg:px-8 py-2.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Link
               href="/admin"
               className="flex items-center space-x-2.5 text-white font-bold text-xs sm:text-sm hover:text-emerald-200 transition"
             >
-              <div className="w-6 h-7 flex-shrink-0 flex items-center justify-center">
-                <img
+              <div className="w-6 h-7 shrink-0 relative flex items-center justify-center">
+                <Image
                   src="/images/logo-magetan.png"
                   alt="Logo Magetan"
+                  width={24}
+                  height={28}
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -194,24 +210,30 @@ export default function AdminLayout({
           </div>
 
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <span className="hidden md:inline-flex text-xs text-emerald-200/90 font-medium">
+            <Badge variant="outline" className="hidden md:inline-flex text-xs text-emerald-200 border-emerald-700/60 bg-emerald-950/40 font-medium">
               {user.email}
-            </span>
-            <Link
-              href="/"
-              target="_blank"
-              className="text-[11px] sm:text-xs text-emerald-100 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl transition border border-white/10"
+            </Badge>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="text-[11px] sm:text-xs text-emerald-100 hover:text-white bg-white/10 hover:bg-white/20 rounded-xl border-white/10 gap-1"
             >
-              Buka Web Publik ↗
-            </Link>
-            <button
+              <Link href="/" target="_blank">
+                <span>Web Publik</span>
+                <ExternalLink className="size-3" />
+              </Link>
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
               onClick={handleLogout}
-              className="text-[11px] sm:text-xs text-rose-200 hover:text-white bg-rose-900/40 hover:bg-rose-900/80 px-3 py-1.5 rounded-xl transition flex items-center space-x-1 border border-rose-500/20 active:scale-95"
+              className="text-[11px] sm:text-xs rounded-xl gap-1"
               title="Keluar dari Panel Admin"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="size-3.5" />
               <span>Keluar</span>
-            </button>
+            </Button>
           </div>
         </div>
       </header>

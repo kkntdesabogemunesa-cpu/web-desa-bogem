@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import Image from "next/image";
 import { fetchBeritaById, fetchBeritaList } from "@/services/beritaService";
 import { formatDateIndonesian } from "@/utils/formatters";
@@ -16,6 +15,11 @@ import {
   BookOpen,
 } from "lucide-react";
 import ShareButtons from "@/components/berita/ShareButtons";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -70,25 +74,24 @@ export default async function DetailBeritaPage({ params }: PageProps) {
 
   if (!berita) {
     return (
-      <main className="min-h-screen bg-[#F8FAFC] pb-28 pt-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-        <div className="max-w-md w-full text-center bg-white rounded-3xl p-8 sm:p-10 shadow-sm border border-slate-200/80 space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto border border-emerald-100">
-            <Newspaper className="w-7 h-7 text-emerald-700" />
+      <main className="min-h-screen bg-slate-50/60 pb-28 pt-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <Card className="max-w-md w-full text-center p-8 sm:p-10 shadow-sm border-border/70 space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto border border-primary/20">
+            <Newspaper className="w-7 h-7 text-primary" />
           </div>
-          <h1 className="text-xl font-bold text-slate-900">Warta Tidak Ditemukan</h1>
-          <p className="text-xs text-slate-500 leading-relaxed">
+          <h1 className="text-xl font-bold text-foreground">Warta Tidak Ditemukan</h1>
+          <p className="text-xs text-muted-foreground leading-relaxed">
             Berita atau pengumuman yang Anda cari mungkin telah diperbarui, dipindahkan, atau belum dipublikasikan.
           </p>
           <div className="pt-2">
-            <Link
-              href="/berita"
-              className="inline-flex items-center space-x-2 bg-[#063321] hover:bg-[#073d28] text-white font-bold text-xs px-5 py-3 rounded-xl transition shadow-sm active:scale-95"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Kembali ke Halaman Berita</span>
-            </Link>
+            <Button asChild size="sm">
+              <Link href="/berita" className="inline-flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                <span>Kembali ke Halaman Berita</span>
+              </Link>
+            </Button>
           </div>
-        </div>
+        </Card>
       </main>
     );
   }
@@ -106,172 +109,181 @@ export default async function DetailBeritaPage({ params }: PageProps) {
     : [];
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] pb-28 pt-6 sm:pt-10 px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-slate-50/60 pb-28 pt-6 sm:pt-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
         {/* Breadcrumb Navigation */}
-        <nav className="flex items-center space-x-2 text-xs font-medium text-slate-500 overflow-x-auto whitespace-nowrap scrollbar-none py-1">
-          <Link href="/" className="hover:text-emerald-800 transition">
+        <nav className="flex items-center space-x-2 text-xs font-medium text-muted-foreground overflow-x-auto whitespace-nowrap scrollbar-none py-1">
+          <Link href="/" className="hover:text-primary transition-colors">
             Beranda
           </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-          <Link href="/berita" className="hover:text-emerald-800 transition">
+          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0" />
+          <Link href="/berita" className="hover:text-primary transition-colors">
             Kabar Berita
           </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-          <span className="text-slate-900 font-semibold truncate max-w-[160px] sm:max-w-md">
+          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0" />
+          <span className="text-foreground font-semibold truncate max-w-[160px] sm:max-w-md">
             {berita.judul}
           </span>
         </nav>
 
         {/* Back Link Button */}
         <div>
-          <Link
-            href="/berita"
-            className="inline-flex items-center space-x-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-emerald-800 border border-slate-200/80 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Kembali ke Kabar Berita</span>
-          </Link>
+          <Button asChild variant="outline" size="sm" className="rounded-xl shadow-xs">
+            <Link href="/berita" className="inline-flex items-center gap-2">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Kembali ke Kabar Berita</span>
+            </Link>
+          </Button>
         </div>
 
         {/* Article Container */}
-        <article className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-10 lg:p-12 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
-          {/* Header & Meta */}
-          <header className="space-y-4 border-b border-slate-100 pb-6">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/60">
-                <Tag className="w-3 h-3 text-emerald-700" />
-                <span>{berita.kategori || "Pengumuman Resmi"}</span>
-              </span>
+        <Card className="rounded-2xl sm:rounded-3xl border-border/70 shadow-sm overflow-hidden">
+          <CardContent className="p-6 sm:p-10 lg:p-12 space-y-6">
+            {/* Header & Meta */}
+            <header className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" className="font-semibold text-xs py-1 px-3 bg-emerald-50 text-emerald-800 border border-emerald-200/60 flex items-center gap-1.5">
+                  <Tag className="w-3 h-3 text-emerald-700" />
+                  <span>{berita.kategori || "Pengumuman Resmi"}</span>
+                </Badge>
 
-              <span className="inline-flex items-center space-x-1 text-xs text-slate-400">
-                <Clock className="w-3.5 h-3.5" />
-                <span>{readTimeMinutes} menit baca</span>
-              </span>
-            </div>
-
-            <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 leading-snug sm:leading-tight tracking-tight break-words">
-              {berita.judul}
-            </h1>
-
-            {/* Author & Publish Info Bar */}
-            <div className="flex items-center space-x-3 pt-2 text-xs text-slate-500">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold border border-emerald-100/80 flex-shrink-0">
-                <User className="w-4 h-4 text-emerald-700" />
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>{readTimeMinutes} menit baca</span>
+                </span>
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="font-bold text-slate-800 truncate">
-                  {berita.penulis || "Pemerintah Desa Bogem"}
-                </div>
-                <div className="text-[11px] text-slate-400 flex items-center space-x-1">
-                  <Calendar className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">{formatDateIndonesian(berita.created_at)}</span>
+
+              <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-foreground leading-snug sm:leading-tight tracking-tight break-words">
+                {berita.judul}
+              </h1>
+
+              {/* Author & Publish Info Bar */}
+              <div className="flex items-center gap-3 pt-2 text-xs text-muted-foreground">
+                <Avatar className="w-9 h-9 border border-border">
+                  <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                    <User className="w-4 h-4" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-foreground truncate">
+                    {berita.penulis || "Pemerintah Desa Bogem"}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Calendar className="w-3 h-3 flex-shrink-0" />
+                    <span className="truncate">{formatDateIndonesian(berita.created_at)}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </header>
+            </header>
 
-          {/* Banner Photo */}
-          {berita.gambar && (
-            <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shadow-xs">
-              <Image
-                src={berita.gambar}
-                alt={berita.judul}
-                fill
-                priority
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 896px"
-              />
-            </div>
-          )}
+            <Separator />
 
-          {/* Lead Summary (if present) */}
-          {berita.ringkasan && (
-            <div className="bg-emerald-50/50 border-l-4 border-emerald-700 p-4 sm:p-5 rounded-r-2xl text-slate-700 text-xs sm:text-sm font-medium italic leading-relaxed break-words">
-              &ldquo;{berita.ringkasan}&rdquo;
-            </div>
-          )}
+            {/* Banner Photo */}
+            {berita.gambar && (
+              <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-muted border border-border/60 shadow-xs">
+                <Image
+                  src={berita.gambar}
+                  alt={berita.judul}
+                  fill
+                  priority
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 896px"
+                />
+              </div>
+            )}
 
-          {/* Article Full Body */}
-          <div className="space-y-4 sm:space-y-5 text-slate-700 text-sm sm:text-base leading-relaxed sm:leading-loose">
-            {paragraphs.map((p, idx) => (
-              <p key={idx} className="text-left font-normal break-words leading-relaxed">
-                {p}
-              </p>
-            ))}
-          </div>
+            {/* Lead Summary (if present) */}
+            {berita.ringkasan && (
+              <div className="bg-emerald-50/50 border-l-4 border-primary p-4 sm:p-5 rounded-r-2xl text-foreground text-xs sm:text-sm font-medium italic leading-relaxed break-words">
+                &ldquo;{berita.ringkasan}&rdquo;
+              </div>
+            )}
 
-          {/* Footer of Article */}
-          <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="text-xs text-slate-500">
-              Kategori: <strong className="text-slate-800">{berita.kategori || "Pengumuman Resmi"}</strong>
+            {/* Article Full Body */}
+            <div className="space-y-4 sm:space-y-5 text-foreground/90 text-sm sm:text-base leading-relaxed sm:leading-loose">
+              {paragraphs.map((p, idx) => (
+                <p key={idx} className="text-left font-normal break-words leading-relaxed">
+                  {p}
+                </p>
+              ))}
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full sm:w-auto">
-              <span className="text-xs font-semibold text-slate-600">Bagikan Warta Ini:</span>
-              <ShareButtons title={berita.judul} />
+            <Separator />
+
+            {/* Footer of Article */}
+            <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="text-xs text-muted-foreground">
+                Kategori: <strong className="text-foreground">{berita.kategori || "Pengumuman Resmi"}</strong>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full sm:w-auto">
+                <span className="text-xs font-semibold text-muted-foreground">Bagikan Warta Ini:</span>
+                <ShareButtons title={berita.judul} />
+              </div>
             </div>
-          </div>
-        </article>
+          </CardContent>
+        </Card>
 
         {/* Other Latest News Section */}
         {otherNews.length > 0 && (
           <section className="space-y-4 sm:space-y-6 pt-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <BookOpen className="w-5 h-5 text-emerald-800" />
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-primary" />
+                <h2 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">
                   Warta & Berita Desa Lainnya
                 </h2>
               </div>
-              <Link
-                href="/berita"
-                className="text-xs font-bold text-emerald-800 hover:text-emerald-950 transition flex items-center space-x-1"
-              >
-                <span>Lihat Semua</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              <Button asChild variant="ghost" size="sm" className="text-primary hover:text-primary font-semibold text-xs">
+                <Link href="/berita" className="inline-flex items-center gap-1">
+                  <span>Lihat Semua</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
               {otherNews.map((item) => (
-                <Link
+                <Card
                   key={item.id}
-                  href={`/berita/${item.id}`}
-                  className="bg-white rounded-2xl sm:rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-emerald-200/80 transition-all duration-200 flex flex-col justify-between group space-y-3"
+                  className="overflow-hidden border-border/70 hover:border-primary/40 hover:shadow-md transition-all duration-200 group flex flex-col justify-between"
                 >
-                  <div className="space-y-3">
-                    <div className="aspect-[16/9] rounded-xl overflow-hidden bg-slate-100 border border-slate-100 relative">
-                      {item.gambar ? (
-                        <Image
-                          src={item.gambar}
-                          alt={item.judul}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          sizes="(max-width: 768px) 100vw, 300px"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-300">
-                          <Newspaper className="w-8 h-8" />
-                        </div>
-                      )}
+                  <CardContent className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="aspect-[16/9] rounded-xl overflow-hidden bg-muted border border-border/60 relative">
+                        {item.gambar ? (
+                          <Image
+                            src={item.gambar}
+                            alt={item.judul}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            sizes="(max-width: 768px) 100vw, 300px"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                            <Newspaper className="w-8 h-8" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <Badge variant="secondary" className="text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+                          {item.kategori || "Warta Desa"}
+                        </Badge>
+                        <h3 className="text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                          {item.judul}
+                        </h3>
+                      </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200/60">
-                        {item.kategori || "Warta Desa"}
-                      </span>
-                      <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-emerald-800 transition line-clamp-2 leading-snug">
-                        {item.judul}
-                      </h3>
+                    <div className="pt-3 border-t border-border/60 flex items-center justify-between text-[11px] font-semibold text-primary">
+                      <Link href={`/berita/${item.id}`} className="inline-flex items-center justify-between w-full">
+                        <span>Baca Warta</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </Link>
                     </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-emerald-800">
-                    <span>Baca Warta</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                </Link>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </section>
@@ -280,3 +292,4 @@ export default async function DetailBeritaPage({ params }: PageProps) {
     </main>
   );
 }
+

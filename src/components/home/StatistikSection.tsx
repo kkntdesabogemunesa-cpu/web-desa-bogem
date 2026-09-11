@@ -6,6 +6,8 @@ import { ArrowRight } from "lucide-react";
 import { defaultInfografisData, fetchInfografisData } from "@/services/infografisService";
 import { InfografisData } from "@/types/infografis";
 import PendudukCards from "@/components/home/PendudukCards";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function StatistikSection() {
   const [data, setData] = useState<InfografisData>(defaultInfografisData);
@@ -42,7 +44,6 @@ export default function StatistikSection() {
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16 space-y-6">
-      
       {/* 4 Kartu Kependudukan */}
       <PendudukCards
         totalPenduduk={demografi.total_penduduk}
@@ -51,8 +52,8 @@ export default function StatistikSection() {
         lakiLaki={demografi.pria}
       />
 
-      {/* Banner Ringkasan Statistik Wilayah & Kemandirian - Glowing & Minimalist */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#063321] via-[#083E28] to-[#0A4D33] border border-emerald-800/40 shadow-sm p-6 sm:p-8 lg:p-10 text-white space-y-6">
+      {/* Banner Ringkasan Statistik Wilayah & Kemandirian */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#063321] via-[#083E28] to-[#0A4D33] border border-emerald-800/40 shadow-xs p-6 sm:p-8 lg:p-10 text-white space-y-6">
         {/* Ambient Lighting & Glows */}
         <div className="absolute -top-20 -right-20 w-72 h-72 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -76,33 +77,39 @@ export default function StatistikSection() {
               Capaian status kemandirian IDM, pembagian wilayah administrasi, dan tata kelola lingkungan Desa Bogem.
             </p>
           </div>
-          <Link
-            href="/infografis"
-            className="inline-flex items-center space-x-2 bg-white text-[#063321] hover:bg-emerald-50 font-bold text-xs px-4 py-2.5 rounded-xl transition shadow-xs self-start sm:self-auto active:scale-95 flex-shrink-0"
+          <Button
+            asChild
+            size="sm"
+            className="bg-white text-[#063321] hover:bg-emerald-50 font-bold text-xs rounded-xl shadow-xs self-start sm:self-auto"
           >
-            <span>Infografis Lengkap</span>
-            <ArrowRight className="w-3.5 h-3.5 text-emerald-700" />
-          </Link>
+            <Link href="/infografis">
+              <span>Infografis Lengkap</span>
+              <ArrowRight className="w-3.5 h-3.5 text-emerald-700" />
+            </Link>
+          </Button>
         </div>
 
-        {/* 6 Metrik Kewilayahan - Minimalist Glass Cards */}
+        {/* 6 Metrik Kewilayahan */}
         <div className="relative z-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-3.5">
           {TERRITORIAL_STATS.map((stat, idx) => {
             const Content = (
               <div
-                className={`rounded-2xl p-3.5 sm:p-4 text-center space-y-1 transition-all duration-200 border ${
+                className={`rounded-2xl p-3.5 sm:p-4 text-center space-y-1.5 transition-all duration-200 border ${
                   stat.isSpecial
                     ? "bg-emerald-400/15 border-emerald-400/40 hover:bg-emerald-400/25 shadow-xs"
                     : "bg-white/10 backdrop-blur-sm border-white/10 hover:bg-white/15 hover:border-white/20"
                 }`}
               >
-                <span
-                  className={`text-[10px] uppercase tracking-wider block font-semibold truncate ${
-                    stat.isSpecial ? "text-emerald-200" : "text-emerald-200/80"
-                  }`}
-                >
-                  {stat.label}
-                </span>
+                <div className="flex justify-center">
+                  <Badge
+                    variant="outline"
+                    className={`text-[9px] uppercase tracking-wider font-semibold border-0 py-0 px-1.5 ${
+                      stat.isSpecial ? "bg-emerald-400/20 text-emerald-200" : "bg-white/10 text-emerald-200/90"
+                    }`}
+                  >
+                    {stat.label}
+                  </Badge>
+                </div>
                 <div className="text-lg sm:text-xl font-extrabold text-white tracking-tight tabular-nums truncate">
                   {stat.value}
                 </div>
@@ -121,7 +128,6 @@ export default function StatistikSection() {
             );
           })}
         </div>
-
       </div>
     </section>
   );

@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import Image from "next/image";
 import { useCountUp } from "@/hooks";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface PendudukCardsProps {
   totalPenduduk?: number;
@@ -39,104 +42,78 @@ export default function PendudukCards({
   const animatedPerempuan = useCountUp(perempuan, 1300, hasEnteredView);
   const animatedLaki = useCountUp(lakiLaki, 1300, hasEnteredView);
 
+  const stats = [
+    {
+      label: "TOTAL PENDUDUK",
+      value: animatedTotal,
+      img: "/images/penduduk/total-penduduk.png",
+      alt: "Total Penduduk",
+      badge: "Kependudukan",
+    },
+    {
+      label: "KEPALA KELUARGA",
+      value: animatedKk,
+      img: "/images/penduduk/kepala-keluarga.png",
+      alt: "Kepala Keluarga",
+      badge: "Kartu Keluarga",
+    },
+    {
+      label: "PEREMPUAN",
+      value: animatedPerempuan,
+      img: "/images/penduduk/perempuan.png",
+      alt: "Perempuan",
+      badge: "Warga",
+    },
+    {
+      label: "LAKI-LAKI",
+      value: animatedLaki,
+      img: "/images/penduduk/laki-laki.png",
+      alt: "Laki-Laki",
+      badge: "Warga",
+    },
+  ];
+
   return (
     <div ref={containerRef} className="space-y-4">
-      {/* Title Bersih & Elegan Sesuai Lampiran 4 */}
-      <h3 className="text-xl sm:text-2xl font-bold text-[#004329] tracking-tight">
+      {/* Title */}
+      <h3 className="text-xl sm:text-2xl font-bold text-[#004329] dark:text-emerald-400 tracking-tight">
         Jumlah Penduduk dan Kepala Keluarga
       </h3>
 
-      {/* Grid 4 Kartu Kependudukan Sesuai Desain Referensi */}
+      {/* Grid 4 Kartu Kependudukan */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-        
-        {/* ================= 1. TOTAL PENDUDUK ================= */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-md hover:border-emerald-200/80 hover:-translate-y-0.5 transition-all duration-200 flex items-center space-x-4 sm:space-x-5 group">
-          {/* Avatar */}
-          <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-            <img
-              src="/images/penduduk/total-penduduk.png"
-              alt="Total Penduduk"
-              className="w-full h-full object-contain filter drop-shadow-sm"
-            />
-          </div>
-
-          <div className="space-y-0.5 sm:space-y-1">
-            <span className="text-xs sm:text-[13px] font-semibold text-slate-500 uppercase tracking-wider block">
-              TOTAL PENDUDUK
-            </span>
-            <div className="text-2xl sm:text-3xl font-extrabold text-[#0D6E4A] tracking-tight">
-              {animatedTotal.toLocaleString("id-ID")}{" "}
-              <span className="text-base sm:text-lg font-semibold text-slate-700">Jiwa</span>
+        {stats.map((item, idx) => (
+          <Card
+            key={idx}
+            className="p-4 sm:p-5 border-border/80 shadow-xs hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-700 hover:-translate-y-0.5 transition-all duration-200 flex flex-row items-center space-x-4 sm:space-x-5 group"
+          >
+            {/* Avatar image */}
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+              <Image
+                src={item.img}
+                alt={item.alt}
+                width={96}
+                height={96}
+                className="w-full h-full object-contain filter drop-shadow-xs"
+              />
             </div>
-          </div>
-        </div>
 
-        {/* ================= 2. KEPALA KELUARGA ================= */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-md hover:border-emerald-200/80 hover:-translate-y-0.5 transition-all duration-200 flex items-center space-x-4 sm:space-x-5 group">
-          {/* Avatar: Kepala Keluarga */}
-          <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-            <img
-              src="/images/penduduk/kepala-keluarga.png"
-              alt="Kepala Keluarga"
-              className="w-full h-full object-contain filter drop-shadow-sm"
-            />
-          </div>
-
-          <div className="space-y-0.5 sm:space-y-1">
-            <span className="text-xs sm:text-[13px] font-semibold text-slate-500 uppercase tracking-wider block">
-              KEPALA KELUARGA
-            </span>
-            <div className="text-2xl sm:text-3xl font-extrabold text-[#0D6E4A] tracking-tight">
-              {animatedKk.toLocaleString("id-ID")}{" "}
-              <span className="text-base sm:text-lg font-semibold text-slate-700">Jiwa</span>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-[13px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                  {item.label}
+                </span>
+                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-4 font-normal">
+                  {item.badge}
+                </Badge>
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#0D6E4A] dark:text-emerald-400 tracking-tight">
+                {item.value.toLocaleString("id-ID")}{" "}
+                <span className="text-base sm:text-lg font-semibold text-muted-foreground">Jiwa</span>
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* ================= 3. PEREMPUAN ================= */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-md hover:border-emerald-200/80 hover:-translate-y-0.5 transition-all duration-200 flex items-center space-x-4 sm:space-x-5 group">
-          {/* Avatar: Perempuan */}
-          <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-            <img
-              src="/images/penduduk/perempuan.png"
-              alt="Perempuan"
-              className="w-full h-full object-contain filter drop-shadow-sm"
-            />
-          </div>
-
-          <div className="space-y-0.5 sm:space-y-1">
-            <span className="text-xs sm:text-[13px] font-semibold text-slate-500 uppercase tracking-wider block">
-              PEREMPUAN
-            </span>
-            <div className="text-2xl sm:text-3xl font-extrabold text-[#0D6E4A] tracking-tight">
-              {animatedPerempuan.toLocaleString("id-ID")}{" "}
-              <span className="text-base sm:text-lg font-semibold text-slate-700">Jiwa</span>
-            </div>
-          </div>
-        </div>
-
-        {/* ================= 4. LAKI-LAKI ================= */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-md hover:border-emerald-200/80 hover:-translate-y-0.5 transition-all duration-200 flex items-center space-x-4 sm:space-x-5 group">
-          {/* Avatar: Laki-Laki */}
-          <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-            <img
-              src="/images/penduduk/laki-laki.png"
-              alt="Laki-Laki"
-              className="w-full h-full object-contain filter drop-shadow-sm"
-            />
-          </div>
-
-          <div className="space-y-0.5 sm:space-y-1">
-            <span className="text-xs sm:text-[13px] font-semibold text-slate-500 uppercase tracking-wider block">
-              LAKI-LAKI
-            </span>
-            <div className="text-2xl sm:text-3xl font-extrabold text-[#0D6E4A] tracking-tight">
-              {animatedLaki.toLocaleString("id-ID")}{" "}
-              <span className="text-base sm:text-lg font-semibold text-slate-700">Jiwa</span>
-            </div>
-          </div>
-        </div>
-
+          </Card>
+        ))}
       </div>
     </div>
   );

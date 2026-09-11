@@ -30,7 +30,7 @@ export default function HomeClientView({
   initialProfil,
 }: HomeClientViewProps) {
   return (
-    <main className="min-h-screen bg-[#F8FAFC] overflow-x-hidden">
+    <main className="min-h-screen bg-background overflow-x-hidden">
       {/* 1. Hero Slider Banner */}
       <HeroSlider />
 

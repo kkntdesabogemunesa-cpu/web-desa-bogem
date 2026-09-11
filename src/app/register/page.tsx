@@ -2,26 +2,28 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { isValidGmail, isValidPhone, isValidNIK, validatePassword } from "@/utils/validators";
+import { isValidGmail, validatePassword } from "@/utils/validators";
 import {
-  User,
   Lock,
   Mail,
-  Phone,
   ArrowRight,
   CheckCircle2,
   AlertCircle,
   Eye,
   EyeOff,
   Loader2,
-  CreditCard,
   MailCheck,
   RefreshCw,
   LogIn,
 } from "lucide-react";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 function GoogleIcon() {
   return (
@@ -73,7 +75,8 @@ function RegisterForm() {
   useEffect(() => {
     const urlError = searchParams.get("error");
     if (urlError) {
-      setError(decodeURIComponent(urlError));
+      const decoded = decodeURIComponent(urlError);
+      queueMicrotask(() => setError(decoded));
     }
   }, [searchParams]);
 
@@ -176,291 +179,302 @@ function RegisterForm() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 py-12">
+    <main className="min-h-screen bg-slate-50/60 flex items-center justify-center p-4 py-12">
       <div className="max-w-md w-full space-y-6">
-        
-        {/* Header Logo */}
-        <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center justify-center group mb-1">
+        {/* Header Logo & Step Badge */}
+        <div className="flex flex-col items-center text-center space-y-3">
+          <Link href="/" className="inline-flex items-center justify-center group">
             <div className="relative w-12 h-14 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <img
+              <Image
                 src="/images/logo-magetan.png"
                 alt="Logo Kabupaten Magetan"
+                width={48}
+                height={56}
                 className="w-full h-full object-contain drop-shadow"
+                priority
               />
             </div>
           </Link>
-          <div className="inline-flex items-center space-x-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
-            <span>Tahap 1: Registrasi Akun Warga</span>
+          <Badge
+            variant="secondary"
+            className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[11px] font-bold uppercase tracking-wider px-3 py-1"
+          >
+            Tahap 1: Registrasi Akun Warga
+          </Badge>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold text-foreground">Daftar Akun Baru</h1>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+              Daftarkan email Anda untuk verifikasi akun & akses layanan digital desa
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Daftar Akun Baru</h1>
-          <p className="text-xs text-slate-500">
-            Daftarkan email Anda untuk verifikasi akun & akses layanan digital desa
-          </p>
         </div>
 
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-6">
-          
-          {/* SCREEN: EMAIL CONFIRMATION SENT */}
-          {emailConfirmationRequired ? (
-            <div className="space-y-6 text-center animate-in zoom-in-95 duration-200 py-2">
-              <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto border border-emerald-200 shadow-sm">
-                <MailCheck className="w-8 h-8 text-emerald-700" />
-              </div>
+        <Card className="rounded-2xl sm:rounded-3xl border-border/70 shadow-sm overflow-hidden">
+          <CardContent className="p-6 sm:p-8 space-y-6">
+            {/* SCREEN: EMAIL CONFIRMATION SENT */}
+            {emailConfirmationRequired ? (
+              <div className="space-y-6 text-center animate-in zoom-in-95 duration-200 py-2">
+                <div className="w-16 h-16 rounded-3xl bg-primary/10 text-primary flex items-center justify-center mx-auto border border-primary/20 shadow-xs">
+                  <MailCheck className="w-8 h-8 text-primary" />
+                </div>
 
-              <div className="space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full inline-block border border-emerald-200">
-                  Verifikasi Email Dikirim
-                </span>
-                <h2 className="text-xl font-bold text-slate-900">
-                  Periksa Kotak Masuk Gmail Anda
-                </h2>
-                <p className="text-xs text-slate-600 leading-relaxed max-w-sm mx-auto">
-                  Tautan aktivasi akun telah dikirimkan ke: <br />
-                  <strong className="text-slate-900 font-mono text-sm bg-slate-100 px-2.5 py-1 rounded inline-block mt-1.5 border border-slate-200">
-                    {registeredEmail || email}
-                  </strong>
-                </p>
-                
-                <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-3 text-left space-y-1 mt-3">
-                  <div className="flex items-center space-x-1.5 text-amber-900 font-bold text-[11px]">
-                    <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-                    <span>Langkah Selanjutnya:</span>
+                <div className="space-y-2">
+                  <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 border-emerald-200">
+                    Verifikasi Email Dikirim
+                  </Badge>
+                  <h2 className="text-xl font-bold text-foreground">
+                    Periksa Kotak Masuk Gmail Anda
+                  </h2>
+                  <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                    Tautan aktivasi akun telah dikirimkan ke: <br />
+                    <strong className="text-foreground font-mono text-sm bg-muted px-2.5 py-1 rounded inline-block mt-1.5 border border-border">
+                      {registeredEmail || email}
+                    </strong>
+                  </p>
+
+                  <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-3.5 text-left space-y-1.5 mt-3">
+                    <div className="flex items-center space-x-1.5 text-amber-900 font-bold text-[11px]">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                      <span>Langkah Selanjutnya:</span>
+                    </div>
+                    <ol className="text-[11px] text-amber-800 list-decimal list-inside space-y-1 pl-0.5">
+                      <li>Buka Gmail (periksa folder <strong>Inbox / Spam / Promosi</strong>).</li>
+                      <li>Klik tombol <strong>&quot;Confirm your mail&quot;</strong> pada email yang masuk.</li>
+                      <li>Setelah aktif, Anda akan langsung diarahkan untuk <strong>mengisi data kependudukan (NIK KTP)</strong>.</li>
+                    </ol>
                   </div>
-                  <ol className="text-[11px] text-amber-800 list-decimal list-inside space-y-1 pl-0.5">
-                    <li>Buka Gmail (periksa folder <strong>Inbox / Spam / Promosi</strong>).</li>
-                    <li>Klik tombol <strong>&quot;Confirm your mail&quot;</strong> pada email yang masuk.</li>
-                    <li>Setelah aktif, Anda akan langsung diarahkan untuk <strong>mengisi data kependudukan (NIK KTP)</strong>.</li>
-                  </ol>
                 </div>
-              </div>
 
-              {resendStatus && (
-                <div className={`p-3 rounded-xl text-xs font-semibold border ${
-                  resendStatus.startsWith("✓") ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
-                }`}>
-                  {resendStatus}
-                </div>
-              )}
-
-              <div className="space-y-2.5 pt-2">
-                <a
-                  href="https://mail.google.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full bg-[#004329] hover:bg-[#00321F] text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 text-xs shadow-md active:scale-95"
-                >
-                  <span>Buka Web / Aplikasi Gmail ↗</span>
-                </a>
-
-                <button
-                  type="button"
-                  onClick={handleResendEmail}
-                  disabled={resending || resendCooldown > 0}
-                  className="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold py-2.5 px-4 rounded-xl border border-slate-200 transition flex items-center justify-center space-x-1.5 text-xs active:scale-95 disabled:opacity-60"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${resending ? "animate-spin text-emerald-700" : ""}`} />
-                  <span>
-                    {resending
-                      ? "Mengirim Ulang..."
-                      : resendCooldown > 0
-                      ? `Kirim Ulang Email (${resendCooldown}s)`
-                      : "Kirim Ulang Email Konfirmasi"}
-                  </span>
-                </button>
-
-                <div className="pt-2">
-                  <Link
-                    href={`/login${redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : ""}`}
-                    className="inline-flex items-center space-x-1 text-xs font-semibold text-emerald-800 hover:underline"
-                  >
-                    <LogIn className="w-3.5 h-3.5" />
-                    <span>Sudah klik konfirmasi di Gmail? Masuk di sini</span>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* FORM DAFTAR AKUN WARGA (TAHAP 1: EMAIL & PASSWORD) */
-            <>
-              {/* 1-Click Google Sign Up */}
-              <button
-                type="button"
-                onClick={handleGoogleSignup}
-                disabled={googleLoading}
-                className="w-full bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2.5 px-4 rounded-xl border border-slate-300/90 transition flex items-center justify-center space-x-3 text-xs shadow-sm active:scale-95 disabled:opacity-60"
-              >
-                {googleLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-slate-600" />
-                ) : (
-                  <GoogleIcon />
+                {resendStatus && (
+                  <div className={`p-3 rounded-xl text-xs font-semibold border ${
+                    resendStatus.startsWith("✓") ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
+                  }`}>
+                    {resendStatus}
+                  </div>
                 )}
-                <span>{googleLoading ? "Menghubungkan ke Google..." : "Daftar Cepat dengan Akun Google"}</span>
-              </button>
 
-              <div className="relative flex items-center justify-center">
-                <div className="border-t border-slate-200 w-full" />
-                <span className="bg-white px-3 text-[11px] text-slate-400 font-medium uppercase tracking-wider absolute">
-                  atau gunakan email gmail
-                </span>
-              </div>
+                <div className="space-y-2.5 pt-2">
+                  <Button asChild className="w-full py-2.5 rounded-xl font-bold shadow-xs active:scale-95">
+                    <a
+                      href="https://mail.google.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Buka Web / Aplikasi Gmail ↗
+                    </a>
+                  </Button>
 
-              {success && (
-                <div className="p-4 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 text-xs font-semibold flex items-center space-x-2 animate-in fade-in">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                  <span>Pendaftaran Berhasil! Membuka halaman berikutnya...</span>
-                </div>
-              )}
-
-              {error && (
-                <div className="p-3.5 bg-rose-50 text-rose-700 rounded-2xl border border-rose-200 text-xs font-medium flex items-center space-x-2.5 animate-in fade-in">
-                  <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                
-                {/* Email (@gmail.com) */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center justify-between">
-                    <span>Alamat Email Gmail</span>
-                    <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80">
-                      @gmail.com
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleResendEmail}
+                    disabled={resending || resendCooldown > 0}
+                    className="w-full py-2 rounded-xl text-xs font-semibold active:scale-95"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${resending ? "animate-spin text-primary" : ""}`} />
+                    <span>
+                      {resending
+                        ? "Mengirim Ulang..."
+                        : resendCooldown > 0
+                        ? `Kirim Ulang Email (${resendCooldown}s)`
+                        : "Kirim Ulang Email Konfirmasi"}
                     </span>
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="namaanda@gmail.com"
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600 text-xs text-slate-800 font-medium"
-                    />
+                  </Button>
+
+                  <div className="pt-2">
+                    <Link
+                      href={`/login${redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : ""}`}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                    >
+                      <LogIn className="w-3.5 h-3.5" />
+                      <span>Sudah klik konfirmasi di Gmail? Masuk di sini</span>
+                    </Link>
                   </div>
-                  <span className="text-[10px] text-slate-400 block mt-1">
-                    Tautan konfirmasi aktivasi akun akan dikirimkan ke Gmail ini.
+                </div>
+              </div>
+            ) : (
+              /* FORM DAFTAR AKUN WARGA (TAHAP 1: EMAIL & PASSWORD) */
+              <>
+                {/* 1-Click Google Sign Up */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleGoogleSignup}
+                  disabled={googleLoading}
+                  className="w-full py-2.5 rounded-xl border-border/80 flex items-center justify-center gap-3 text-xs font-semibold shadow-xs active:scale-95"
+                >
+                  {googleLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <GoogleIcon />
+                  )}
+                  <span>{googleLoading ? "Menghubungkan ke Google..." : "Daftar Cepat dengan Akun Google"}</span>
+                </Button>
+
+                <div className="relative flex items-center justify-center">
+                  <Separator />
+                  <span className="bg-card px-3 text-[11px] text-muted-foreground font-medium uppercase tracking-wider absolute">
+                    atau gunakan email gmail
                   </span>
                 </div>
 
-                {/* Password Input */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center justify-between">
-                    <span>Kata Sandi</span>
-                    <span className="text-[10px] text-slate-400 font-normal">Min. 8 Karakter</span>
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600 text-xs text-slate-800 font-medium"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                {success && (
+                  <div className="p-4 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                    <span>Pendaftaran Berhasil! Membuka halaman berikutnya...</span>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="p-3.5 bg-rose-50 text-rose-700 rounded-xl border border-rose-200 text-xs font-medium flex items-center gap-2.5 animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Email (@gmail.com) */}
+                  <div>
+                    <label className="block text-xs font-bold text-foreground uppercase mb-1.5 flex items-center justify-between">
+                      <span>Alamat Email Gmail</span>
+                      <Badge variant="secondary" className="text-[10px] text-emerald-800 font-semibold bg-emerald-50 border-emerald-200/80">
+                        @gmail.com
+                      </Badge>
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="namaanda@gmail.com"
+                        className="pl-10 text-xs rounded-xl bg-muted/40"
+                      />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground block mt-1">
+                      Tautan konfirmasi aktivasi akun akan dikirimkan ke Gmail ini.
+                    </span>
                   </div>
 
-                  {/* Real-time Password Requirements Checklist */}
-                  {password.length > 0 && (
-                    <div className="mt-2.5 p-2.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1.5 animate-in fade-in duration-200">
-                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
-                        Standar Kata Sandi Aman:
-                      </span>
-                      <div className="grid grid-cols-2 gap-1.5 text-[11px]">
-                        <div className={`flex items-center space-x-1.5 ${passReqs.hasMinLength ? "text-emerald-700 font-bold" : "text-slate-400"}`}>
-                          <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passReqs.hasMinLength ? "bg-emerald-100 text-emerald-800 font-bold" : "bg-slate-200 text-slate-500"}`}>
-                            {passReqs.hasMinLength ? "✓" : "•"}
-                          </span>
-                          <span>Min. 8 karakter</span>
-                        </div>
-                        <div className={`flex items-center space-x-1.5 ${passReqs.hasUpperCase ? "text-emerald-700 font-bold" : "text-slate-400"}`}>
-                          <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passReqs.hasUpperCase ? "bg-emerald-100 text-emerald-800 font-bold" : "bg-slate-200 text-slate-500"}`}>
-                            {passReqs.hasUpperCase ? "✓" : "•"}
-                          </span>
-                          <span>Huruf besar (A-Z)</span>
-                        </div>
-                        <div className={`flex items-center space-x-1.5 ${passReqs.hasLowerCase ? "text-emerald-700 font-bold" : "text-slate-400"}`}>
-                          <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passReqs.hasLowerCase ? "bg-emerald-100 text-emerald-800 font-bold" : "bg-slate-200 text-slate-500"}`}>
-                            {passReqs.hasLowerCase ? "✓" : "•"}
-                          </span>
-                          <span>Huruf kecil (a-z)</span>
-                        </div>
-                        <div className={`flex items-center space-x-1.5 ${passReqs.hasNumber ? "text-emerald-700 font-bold" : "text-slate-400"}`}>
-                          <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passReqs.hasNumber ? "bg-emerald-100 text-emerald-800 font-bold" : "bg-slate-200 text-slate-500"}`}>
-                            {passReqs.hasNumber ? "✓" : "•"}
-                          </span>
-                          <span>Angka (0-9)</span>
+                  {/* Password Input */}
+                  <div>
+                    <label className="block text-xs font-bold text-foreground uppercase mb-1.5 flex items-center justify-between">
+                      <span>Kata Sandi</span>
+                      <span className="text-[10px] text-muted-foreground font-normal">Min. 8 Karakter</span>
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Minimal 8 karakter"
+                        className="pl-10 pr-10 text-xs rounded-xl bg-muted/40"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+
+                    {/* Real-time Password Requirements Checklist */}
+                    {password.length > 0 && (
+                      <div className="mt-2.5 p-2.5 bg-muted/40 rounded-xl border border-border/70 space-y-1.5 animate-in fade-in duration-200">
+                        <span className="text-[10px] font-bold text-foreground/80 uppercase tracking-wider block">
+                          Standar Kata Sandi Aman:
+                        </span>
+                        <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                          <div className={`flex items-center space-x-1.5 ${passReqs.hasMinLength ? "text-emerald-700 font-bold" : "text-muted-foreground"}`}>
+                            <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passReqs.hasMinLength ? "bg-emerald-100 text-emerald-800 font-bold" : "bg-muted text-muted-foreground"}`}>
+                              {passReqs.hasMinLength ? "✓" : "•"}
+                            </span>
+                            <span>Min. 8 karakter</span>
+                          </div>
+                          <div className={`flex items-center space-x-1.5 ${passReqs.hasUpperCase ? "text-emerald-700 font-bold" : "text-muted-foreground"}`}>
+                            <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passReqs.hasUpperCase ? "bg-emerald-100 text-emerald-800 font-bold" : "bg-muted text-muted-foreground"}`}>
+                              {passReqs.hasUpperCase ? "✓" : "•"}
+                            </span>
+                            <span>Huruf besar (A-Z)</span>
+                          </div>
+                          <div className={`flex items-center space-x-1.5 ${passReqs.hasLowerCase ? "text-emerald-700 font-bold" : "text-muted-foreground"}`}>
+                            <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passReqs.hasLowerCase ? "bg-emerald-100 text-emerald-800 font-bold" : "bg-muted text-muted-foreground"}`}>
+                              {passReqs.hasLowerCase ? "✓" : "•"}
+                            </span>
+                            <span>Huruf kecil (a-z)</span>
+                          </div>
+                          <div className={`flex items-center space-x-1.5 ${passReqs.hasNumber ? "text-emerald-700 font-bold" : "text-muted-foreground"}`}>
+                            <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${passReqs.hasNumber ? "bg-emerald-100 text-emerald-800 font-bold" : "bg-muted text-muted-foreground"}`}>
+                              {passReqs.hasNumber ? "✓" : "•"}
+                            </span>
+                            <span>Angka (0-9)</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Confirm Password */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
-                    Konfirmasi Kata Sandi
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Ulangi kata sandi"
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600 text-xs text-slate-800 font-medium"
-                    />
+                    )}
                   </div>
-                  {confirmPassword && password !== confirmPassword && (
-                    <span className="text-[10px] text-rose-500 mt-1 block">Konfirmasi kata sandi belum cocok.</span>
-                  )}
-                </div>
 
-                <button
-                  type="submit"
-                  disabled={loading || success}
-                  className="w-full bg-[#004329] hover:bg-[#00321F] text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 text-xs shadow-md mt-2 disabled:opacity-70 active:scale-95"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Mendaftarkan & Mengirim Email...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Daftar & Kirim Email Verifikasi</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </form>
+                  {/* Confirm Password */}
+                  <div>
+                    <label className="block text-xs font-bold text-foreground uppercase mb-1.5">
+                      Konfirmasi Kata Sandi
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Ulangi kata sandi"
+                        className="pl-10 text-xs rounded-xl bg-muted/40"
+                      />
+                    </div>
+                    {confirmPassword && password !== confirmPassword && (
+                      <span className="text-[10px] text-rose-500 mt-1 block">Konfirmasi kata sandi belum cocok.</span>
+                    )}
+                  </div>
 
-              <div className="pt-2 text-center border-t border-slate-100">
-                <p className="text-xs text-slate-500">
-                  Sudah memiliki akun warga?{" "}
-                  <Link
-                    href={`/login${redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : ""}`}
-                    className="text-[#004329] font-bold hover:underline"
+                  <Button
+                    type="submit"
+                    disabled={loading || success}
+                    className="w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 text-xs shadow-sm mt-2 active:scale-95"
                   >
-                    Masuk di sini
-                  </Link>
-                </p>
-              </div>
-            </>
-          )}
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Mendaftarkan & Mengirim Email...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Daftar & Kirim Email Verifikasi</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </Button>
+                </form>
 
-        </div>
+                <Separator />
+
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">
+                    Sudah memiliki akun warga?{" "}
+                    <Link
+                      href={`/login${redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : ""}`}
+                      className="text-primary font-bold hover:underline"
+                    >
+                      Masuk di sini
+                    </Link>
+                  </p>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </main>
   );
@@ -470,7 +484,7 @@ export default function RegisterPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="min-h-screen bg-background flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-[#004329]" />
         </div>
       }

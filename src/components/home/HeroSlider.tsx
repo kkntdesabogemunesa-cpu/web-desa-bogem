@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Landmark, ShoppingBag, Users, ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface HeroSlide {
   title: string;
@@ -92,13 +94,15 @@ export default function HeroSlider() {
 
       <div className="max-w-7xl mx-auto pt-24 sm:pt-28 lg:pt-32 pb-20 sm:pb-24 lg:pb-28 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12">
-          
           {/* Main Hero Content */}
           <div className="max-w-2xl space-y-4 text-center lg:text-left">
-            <div className="inline-flex items-center space-x-2 bg-emerald-800/70 border border-emerald-500/30 text-emerald-100 px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide shadow-sm backdrop-blur-sm">
+            <Badge
+              variant="outline"
+              className="bg-emerald-800/70 border-emerald-500/30 text-emerald-100 px-3 py-1 rounded-full text-xs font-semibold tracking-wide backdrop-blur-sm gap-1.5 shadow-xs"
+            >
               <SlideIcon className="w-3.5 h-3.5 text-emerald-300 flex-shrink-0" />
               <span>{slide.badge}</span>
-            </div>
+            </Badge>
 
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
               {slide.title}
@@ -112,22 +116,29 @@ export default function HeroSlider() {
               {slide.description}
             </p>
 
-            {/* Action Buttons */}
+            {/* Action Buttons using shadcn Button */}
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-3">
-              <Link
-                href="/layanan-surat"
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white text-[#063321] hover:bg-emerald-50 font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-black/10 hover:shadow-xl transition-all text-xs sm:text-sm active:scale-95"
+              <Button
+                asChild
+                size="lg"
+                className="w-full sm:w-auto bg-white text-[#063321] hover:bg-emerald-50 font-bold rounded-xl shadow-md transition-all active:scale-95"
               >
-                <FileText className="w-4 h-4 text-emerald-700" />
-                <span>Ajukan Surat Online</span>
-              </Link>
-              <Link
-                href="/potensi"
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-emerald-800/40 hover:bg-emerald-800/70 text-white border border-emerald-500/40 font-semibold py-3.5 px-6 rounded-xl backdrop-blur-sm transition-all text-xs sm:text-sm active:scale-95"
+                <Link href="/layanan-surat">
+                  <FileText className="w-4 h-4 text-emerald-700" />
+                  <span>Ajukan Surat Online</span>
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="w-full sm:w-auto bg-emerald-800/40 hover:bg-emerald-800/70 text-white border-emerald-500/40 font-semibold rounded-xl backdrop-blur-sm transition-all active:scale-95"
               >
-                <ShoppingBag className="w-4 h-4 text-emerald-300" />
-                <span>Produk UMKM Desa</span>
-              </Link>
+                <Link href="/potensi">
+                  <ShoppingBag className="w-4 h-4 text-emerald-300" />
+                  <span>Produk UMKM Desa</span>
+                </Link>
+              </Button>
             </div>
           </div>
 
@@ -138,7 +149,7 @@ export default function HeroSlider() {
                 <button
                   key={idx}
                   onClick={() => setCurrentSlide(idx)}
-                  className={`h-2 rounded-full transition-all duration-300 ${
+                  className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                     currentSlide === idx ? "w-7 bg-emerald-300" : "w-2 bg-white/30 hover:bg-white/60"
                   }`}
                   aria-label={`Slide ${idx + 1}`}
@@ -147,23 +158,26 @@ export default function HeroSlider() {
             </div>
 
             <div className="flex items-center space-x-2">
-              <button
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={prevSlide}
-                className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition active:scale-90"
+                className="rounded-xl bg-white/10 hover:bg-white/20 text-white border-white/20 active:scale-90"
                 aria-label="Previous Slide"
               >
-                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-              <button
+                <ChevronLeft className="size-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={nextSlide}
-                className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition active:scale-90"
+                className="rounded-xl bg-white/10 hover:bg-white/20 text-white border-white/20 active:scale-90"
                 aria-label="Next Slide"
               >
-                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
+                <ChevronRight className="size-4" />
+              </Button>
             </div>
           </div>
-
         </div>
       </div>
 
@@ -173,7 +187,7 @@ export default function HeroSlider() {
           viewBox="0 0 1440 80"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-8 sm:h-12 md:h-16 text-[#F8FAFC]"
+          className="w-full h-8 sm:h-12 md:h-16 text-background"
           preserveAspectRatio="none"
         >
           <path

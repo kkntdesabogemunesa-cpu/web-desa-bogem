@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   Phone,
@@ -16,6 +17,7 @@ import {
 import { fetchProfilDesa, defaultProfilDesa } from "@/services/profilService";
 import { recordWebsiteVisit, VisitorStats } from "@/services/visitorService";
 import { ProfilDesaData } from "@/types/profil";
+import { Separator } from "@/components/ui/separator";
 
 export default function Footer() {
   const pathname = usePathname();
@@ -35,9 +37,11 @@ export default function Footer() {
 
   // Initial fetch profil desa & pencatatan kunjungan saat mount
   useEffect(() => {
-    fetchProfilDesa().then((data) => {
-      if (data) setProfil(data);
-    }).catch(() => {});
+    fetchProfilDesa()
+      .then((data) => {
+        if (data) setProfil(data);
+      })
+      .catch(() => {});
 
     recordWebsiteVisit().then((realStats) => {
       if (realStats) {
@@ -61,17 +65,17 @@ export default function Footer() {
   return (
     <footer className="bg-[#05281a] text-emerald-100/90 border-t border-emerald-900/60 pb-28 md:pb-8 pt-8 sm:pt-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
         {/* ===================== TAMPILAN LAPTOP & DESKTOP (>= md) ===================== */}
         <div className="hidden md:grid grid-cols-4 gap-8 mb-10 items-start">
-          
           {/* Kolom 1: Info Identitas Desa */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="relative w-11 h-14 flex-shrink-0 flex items-center justify-center">
-                <img
+              <div className="relative w-11 h-14 shrink-0 flex items-center justify-center">
+                <Image
                   src="/images/logo-magetan.png"
                   alt="Logo Kabupaten Magetan"
+                  width={44}
+                  height={56}
                   className="w-full h-full object-contain drop-shadow"
                 />
               </div>
@@ -93,19 +97,19 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2.5 text-xs text-emerald-200/90">
               <li className="flex items-start space-x-2.5">
-                <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <span className="leading-relaxed">
                   {profil.alamat_kantor || "Jl. Bakti Mulya No. 241, Desa Bogem, Kec. Kawedanan, Kab. Magetan"}
                 </span>
               </li>
               <li className="flex items-center space-x-2.5">
-                <Phone className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
                 <a href={`tel:${cleanPhone}`} className="hover:text-white transition">
                   {rawPhone}
                 </a>
               </li>
               <li className="flex items-center space-x-2.5">
-                <Mail className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
                 <a href={`mailto:${profil.email_kantor || "desabogemjaya@gmail.com"}`} className="hover:text-white transition">
                   {profil.email_kantor || "desabogemjaya@gmail.com"}
                 </a>
@@ -113,14 +117,14 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Kolom 3: Jam Pelayanan (Kontak Darurat Dihapus sesuai permintaan user) */}
+          {/* Kolom 3: Jam Pelayanan */}
           <div className="space-y-3">
             <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">
               Jam Pelayanan Kantor
             </h4>
             <div className="space-y-2.5 text-xs text-emerald-200/90">
               <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <Clock className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span className="font-semibold text-white">{profil.jam_pelayanan || "Senin - Jumat: 08.00 - 15.00 WIB"}</span>
               </div>
               <p className="text-[11px] text-emerald-400/80 leading-relaxed">
@@ -132,10 +136,10 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Kolom 4: Kunjungan Website (Menyatu dengan Footer sesuai screenshot) */}
+          {/* Kolom 4: Kunjungan Website */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2.5">
-              <Globe className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+              <Globe className="w-5 h-5 text-emerald-400 shrink-0" />
               <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">
                 Kunjungan Website
               </h4>
@@ -186,18 +190,18 @@ export default function Footer() {
               </div>
             </div>
           </div>
-
         </div>
 
-        {/* ===================== TAMPILAN MOBILE (< md) ACCORDION SESUAI LAMPIRAN 2 ===================== */}
+        {/* ===================== TAMPILAN MOBILE (< md) ACCORDION ===================== */}
         <div className="md:hidden space-y-4 mb-8">
-          
-          {/* Header Mobile: Logo & Nama Desa Sesuai Lampiran 2 */}
+          {/* Header Mobile */}
           <div className="flex items-center space-x-3 pb-3 border-b border-emerald-900/60">
-            <div className="w-12 h-14 flex-shrink-0 flex items-center justify-center">
-              <img
+            <div className="w-12 h-14 shrink-0 flex items-center justify-center">
+              <Image
                 src="/images/logo-magetan.png"
                 alt="Logo Kabupaten Magetan"
+                width={48}
+                height={56}
                 className="w-full h-full object-contain drop-shadow"
               />
             </div>
@@ -209,10 +213,9 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* List Accordion Mobile (Kontak Darurat Dihapus sesuai permintaan user) */}
+          {/* List Accordion Mobile */}
           <div className="space-y-2 text-sm">
-            
-            {/* 1. Accordion: Kunjungan Website (Data Real) */}
+            {/* 1. Accordion: Kunjungan Website */}
             <div className="border-b border-emerald-900/50 pb-2">
               <button
                 type="button"
@@ -353,7 +356,7 @@ export default function Footer() {
               )}
             </div>
 
-            {/* 4. Accordion: Jelajahi Sesuai Konten Website */}
+            {/* 4. Accordion: Jelajahi */}
             <div className="border-b border-emerald-900/50 pb-2">
               <button
                 type="button"
@@ -383,16 +386,15 @@ export default function Footer() {
                 </div>
               )}
             </div>
-
           </div>
         </div>
 
-        {/* ===================== BOTTOM COPYRIGHT ===================== */}
-        <div className="pt-6 border-t border-emerald-900/60 flex flex-col md:flex-row items-center justify-between text-xs text-emerald-400/80 gap-2 text-center md:text-left">
+        {/* Bottom Copyright */}
+        <Separator className="bg-emerald-900/60 mb-6" />
+        <div className="flex flex-col md:flex-row items-center justify-between text-xs text-emerald-400/80 gap-2 text-center md:text-left">
           <p>© {new Date().getFullYear()} Pemerintah Desa Bogem, Kec. Kawedanan, Kab. Magetan. Hak Cipta Dilindungi.</p>
           <span>Portal Pelayanan & Informasi Publik Desa Bogem</span>
         </div>
-
       </div>
     </footer>
   );

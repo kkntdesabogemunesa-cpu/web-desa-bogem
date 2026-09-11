@@ -38,7 +38,7 @@ import { useSearchParams } from "next/navigation";
 export default function KelolaProfilDesaAdmin() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="animate-pulse text-emerald-800 text-sm font-bold">Memuat Pengaturan Profil...</div>
       </div>
     }>
@@ -209,7 +209,7 @@ function KelolaProfilDesaContent() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] pb-24 pt-8 px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-background text-foreground pb-24 pt-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
         
         {/* Navigation Header */}

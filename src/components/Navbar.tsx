@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import {
   Newspaper,
   User,
@@ -16,6 +17,9 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -27,17 +31,18 @@ export default function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.scrollY > 20);
     };
 
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Close menu on route change
+  useEffect(() => {
+    queueMicrotask(() => setIsOpen(false));
+  }, [pathname]);
 
   // Hide public navbar inside admin panel
   if (pathname?.startsWith("/admin")) {
@@ -47,12 +52,12 @@ export default function Navbar() {
   const isTransparent = isHomePage && !isScrolled && !isOpen;
 
   const headerClass = isHomePage
-    ? `fixed top-0 left-0 right-0 z-50 transition-all duration-300 text-white ${
+    ? `fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
         isTransparent
-          ? "bg-transparent border-b border-transparent shadow-none"
-          : "bg-[#063321]/95 backdrop-blur-md shadow-md border-b border-emerald-900/50"
+          ? "bg-transparent text-white border-b border-transparent shadow-none"
+          : "bg-[#063321]/95 text-white backdrop-blur-md shadow-sm border-b border-emerald-900/40"
       }`
-    : "sticky top-0 z-50 bg-[#063321] text-white shadow-sm border-b border-emerald-900/40";
+    : "sticky top-0 z-50 bg-[#063321] text-white shadow-xs border-b border-emerald-900/40";
 
   const navLinks = [
     { name: "Beranda", href: "/", icon: Home },
@@ -68,21 +73,23 @@ export default function Navbar() {
     <header className={headerClass}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
-          
           {/* Logo & Brand Info */}
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="relative w-8 h-10 sm:w-10 sm:h-12 flex-shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <img
+            <div className="relative w-8 h-10 sm:w-9 sm:h-11 flex-shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+              <Image
                 src="/images/logo-magetan.png"
                 alt="Logo Kabupaten Magetan"
+                width={36}
+                height={44}
                 className="w-full h-full object-contain drop-shadow"
+                priority
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-base sm:text-lg lg:text-xl font-bold tracking-tight text-white group-hover:text-emerald-300 transition leading-tight">
+              <span className="text-base sm:text-lg font-extrabold tracking-tight text-white group-hover:text-emerald-300 transition-colors leading-tight">
                 Desa Bogem
               </span>
-              <span className="text-[10px] sm:text-xs text-emerald-300/80 font-normal">
+              <span className="text-[10px] sm:text-xs text-emerald-200/80 font-medium">
                 Kec. Kawedanan, Kab. Magetan
               </span>
             </div>
@@ -101,7 +108,7 @@ export default function Navbar() {
                   prefetch={true}
                   className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 ${
                     isActive
-                      ? "bg-emerald-800 text-white shadow-sm"
+                      ? "bg-emerald-800 text-white shadow-xs"
                       : link.isHighlighted
                       ? "bg-emerald-700/60 text-emerald-100 hover:bg-emerald-700 hover:text-white border border-emerald-500/30"
                       : "text-emerald-100/90 hover:bg-emerald-800/40 hover:text-white"
@@ -118,161 +125,193 @@ export default function Navbar() {
               {user ? (
                 <>
                   {!user.isProfileComplete && (
-                    <Link
-                      href="/lengkapi-profil"
-                      className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/40 px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center space-x-1 transition animate-pulse"
-                      title="Profil belum lengkap, klik untuk mengisi NIK KTP"
-                    >
-                      <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Lengkapi NIK</span>
+                    <Link href="/lengkapi-profil">
+                      <Badge
+                        variant="outline"
+                        className="bg-amber-500/20 text-amber-200 border-amber-400/40 hover:bg-amber-500/30 font-semibold text-[11px] gap-1 cursor-pointer"
+                      >
+                        <AlertCircle className="w-3 h-3 text-amber-300" />
+                        <span>Lengkapi NIK</span>
+                      </Badge>
                     </Link>
                   )}
-                  <div className="flex items-center space-x-2 bg-emerald-950/70 px-3 py-1.5 rounded-xl border border-emerald-800/70 text-xs">
-                    <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[10px] overflow-hidden">
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
+                  <div className="flex items-center space-x-2 bg-emerald-950/70 px-2.5 py-1.5 rounded-xl border border-emerald-800/70 text-xs">
+                    <Avatar className="size-6 bg-emerald-600 text-white text-[10px] font-bold">
+                      <AvatarFallback className="bg-emerald-600 text-white">
+                        {user.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="flex flex-col">
-                      <span className="font-bold text-white max-w-[100px] truncate leading-tight">{user.name}</span>
-                      <span className="text-[9px] text-emerald-300 capitalize">{user.role}</span>
+                      <span className="font-bold text-white max-w-[100px] truncate leading-tight text-[11px]">
+                        {user.name}
+                      </span>
+                      <span className="text-[9px] text-emerald-300/90 capitalize">{user.role}</span>
                     </div>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => logout()}
-                      className="text-emerald-400 hover:text-rose-300 p-1 transition ml-1"
+                      className="text-emerald-300 hover:text-rose-300 hover:bg-rose-950/40 ml-0.5"
                       title="Keluar"
                     >
-                      <LogOut className="w-3.5 h-3.5" />
-                    </button>
+                      <LogOut className="size-3.5" />
+                    </Button>
                   </div>
                 </>
               ) : (
-                <Link
-                  href="/login"
-                  className="flex items-center space-x-1.5 bg-emerald-700 hover:bg-emerald-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-sm active:scale-95"
+                <Button
+                  asChild
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-xs"
                 >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Masuk</span>
-                </Link>
+                  <Link href="/login">
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>Masuk</span>
+                  </Link>
+                </Button>
               )}
             </div>
           </nav>
 
-          {/* Mobile & Tablet 2-Line Animated Hamburger Button */}
+          {/* Mobile & Tablet Hamburger Button */}
           <div className="lg:hidden flex items-center space-x-2">
             {user && (
-              <div className="flex items-center space-x-1.5 bg-emerald-950/60 px-2.5 py-1 rounded-xl text-xs border border-emerald-800/60">
-                <span className="font-bold text-emerald-200 text-[11px] max-w-[80px] truncate">{user.name}</span>
-              </div>
+              <Badge
+                variant="outline"
+                className="bg-emerald-950/60 text-emerald-200 border-emerald-800/60 text-[10px] font-semibold max-w-[80px] truncate"
+              >
+                {user.name}
+              </Badge>
             )}
+            {/* Minimalist 2-line Animated Toggle Button (Stays 100% static in place) */}
             <button
+              type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="relative w-10 h-10 flex flex-col items-center justify-center gap-1.5 focus:outline-none select-none active:scale-90 transition-transform duration-200"
+              className="relative w-10 h-10 shrink-0 select-none rounded-xl flex items-center justify-center text-white hover:bg-emerald-800/40 focus:outline-none"
               aria-label="Toggle Navigation"
+              aria-expanded={isOpen}
             >
-              {/* Line 1 (Top) */}
-              <span
-                className={`w-5 h-[2px] bg-emerald-100 rounded-full transition-transform duration-300 ease-in-out origin-center ${
-                  isOpen ? "translate-y-[4px] rotate-45 bg-white" : ""
-                }`}
-              />
-              {/* Line 2 (Bottom) */}
-              <span
-                className={`w-5 h-[2px] bg-emerald-100 rounded-full transition-transform duration-300 ease-in-out origin-center ${
-                  isOpen ? "-translate-y-[4px] -rotate-45 bg-white" : ""
-                }`}
-              />
+              <div className="relative w-5 h-5 flex items-center justify-center pointer-events-none">
+                {/* Line 1 (Top / Cross 1) */}
+                <span
+                  className={`absolute w-5 h-0.5 bg-white rounded-full transition-all duration-300 ease-in-out origin-center ${
+                    isOpen ? "translate-y-0 rotate-45" : "-translate-y-1"
+                  }`}
+                />
+                {/* Line 2 (Bottom / Cross 2) */}
+                <span
+                  className={`absolute w-5 h-0.5 bg-white rounded-full transition-all duration-300 ease-in-out origin-center ${
+                    isOpen ? "translate-y-0 -rotate-45" : "translate-y-1"
+                  }`}
+                />
+              </div>
             </button>
           </div>
-
         </div>
       </div>
 
-      {/* Mobile Drawer Menu (Borderless, Smooth Flow) */}
+      {/* Mobile Backdrop Overlay & Drawer Menu */}
       {isOpen && (
-        <div className="lg:hidden bg-[#063321] px-4 pt-2 pb-6 space-y-1.5 animate-in slide-in-from-top-2 fade-in duration-300 ease-out shadow-lg">
-          
-          {/* Mobile User Profile Header */}
-          {user ? (
-            <div className="bg-emerald-950/50 p-3.5 rounded-2xl border border-emerald-800/60 mb-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3 text-xs">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-800 text-white flex items-center justify-center font-bold text-sm overflow-hidden">
-                    {user.name.charAt(0).toUpperCase()}
+        <>
+          {/* Backdrop overlay to keep focus and allow click outside to close */}
+          <div
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 top-16 sm:top-20 z-40 bg-black/60 backdrop-blur-xs lg:hidden animate-in fade-in duration-200"
+            aria-hidden="true"
+          />
+
+          <div className="relative z-50 lg:hidden bg-[#063321] px-4 pt-2 pb-6 space-y-2 animate-in slide-in-from-top-2 fade-in duration-200 border-b border-emerald-900/60 shadow-2xl max-h-[calc(100vh-5rem)] overflow-y-auto">
+            {user ? (
+              <div className="bg-emerald-950/60 p-3.5 rounded-2xl border border-emerald-800/60 mb-2 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2.5 text-xs">
+                    <Avatar className="size-8 bg-emerald-700 text-white font-bold">
+                      <AvatarFallback className="bg-emerald-700 text-white">
+                        {user.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <span className="font-bold text-white block text-xs">{user.name}</span>
+                      <span className="text-[10px] text-emerald-300/80 font-mono">
+                        {user.nik ? `NIK: ${user.nik}` : user.email}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-bold text-white block">{user.name}</span>
-                    <span className="text-[11px] text-emerald-300/90 font-mono">
-                      {user.nik ? `NIK: ${user.nik}` : user.email}
-                    </span>
-                  </div>
+                  <Button
+                    variant="destructive"
+                    size="xs"
+                    onClick={() => {
+                      logout();
+                      setIsOpen(false);
+                    }}
+                    className="font-bold text-xs gap-1"
+                  >
+                    <LogOut className="w-3 h-3" />
+                    <span>Keluar</span>
+                  </Button>
                 </div>
-                <button
-                  onClick={() => {
-                    logout();
-                    setIsOpen(false);
-                  }}
-                  className="bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs font-bold px-3 py-1.5 rounded-xl border border-rose-800/60 transition flex items-center space-x-1"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Keluar</span>
-                </button>
+
+                {!user.isProfileComplete && (
+                  <Link
+                    href="/lengkapi-profil"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/40 text-xs font-bold py-1.5 px-2.5 rounded-xl flex items-center justify-center space-x-1.5 transition"
+                  >
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Profil Belum Lengkap — Isi NIK</span>
+                  </Link>
+                )}
               </div>
-
-              {!user.isProfileComplete && (
-                <Link
-                  href="/lengkapi-profil"
-                  onClick={() => setIsOpen(false)}
-                  className="w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/40 text-xs font-bold py-2 px-3 rounded-xl flex items-center justify-center space-x-1.5 transition"
+            ) : (
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <Button
+                  asChild
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl active:scale-95 shadow-xs"
                 >
-                  <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Profil Belum Lengkap — Lengkapi NIK KTP</span>
+                  <Link href="/login" onClick={() => setIsOpen(false)} className="flex items-center justify-center gap-1.5">
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>Masuk</span>
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  size="sm"
+                  className="bg-white hover:bg-emerald-50 text-[#063321] font-bold rounded-xl shadow-xs border border-white active:scale-95 transition-all"
+                >
+                  <Link href="/register" onClick={() => setIsOpen(false)} className="flex items-center justify-center gap-1.5 text-[#063321]">
+                    <User className="w-3.5 h-3.5 text-[#063321]" />
+                    <span className="font-bold text-[#063321]">Daftar</span>
+                  </Link>
+                </Button>
+              </div>
+            )}
+
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = pathname === link.href;
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  prefetch={true}
+                  onClick={() => setIsOpen(false)}
+                  className={`flex items-center space-x-3 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-150 ${
+                    isActive
+                      ? "bg-emerald-800 text-white"
+                      : link.isHighlighted
+                      ? "bg-emerald-700/60 text-white hover:bg-emerald-700"
+                      : "text-emerald-100/90 hover:text-white hover:bg-emerald-800/40"
+                  }`}
+                >
+                  <Icon className="w-4 h-4 text-emerald-300" />
+                  <span>{link.name}</span>
                 </Link>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <Link
-                href="/login"
-                onClick={() => setIsOpen(false)}
-                className="bg-emerald-700 hover:bg-emerald-600 text-white text-center py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5"
-              >
-                <LogIn className="w-4 h-4 text-emerald-200" />
-                <span>Masuk Akun</span>
-              </Link>
-              <Link
-                href="/register"
-                onClick={() => setIsOpen(false)}
-                className="bg-emerald-950/60 hover:bg-emerald-950 text-emerald-200 text-center py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5"
-              >
-                <User className="w-4 h-4 text-emerald-300" />
-                <span>Daftar Akun</span>
-              </Link>
-            </div>
-          )}
-
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            const isActive = pathname === link.href;
-
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                prefetch={true}
-                onClick={() => setIsOpen(false)}
-                className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? "bg-emerald-800 text-white font-semibold"
-                    : link.isHighlighted
-                    ? "bg-emerald-700/60 text-white font-semibold hover:bg-emerald-700"
-                    : "text-emerald-100/90 hover:text-white hover:bg-emerald-800/40"
-                }`}
-              >
-                <Icon className="w-4 h-4 text-emerald-300" />
-                <span>{link.name}</span>
-              </Link>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </header>
   );

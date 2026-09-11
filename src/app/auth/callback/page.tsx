@@ -3,6 +3,7 @@
 import { useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
 
 function AuthCallbackContent() {
@@ -29,7 +30,7 @@ function AuthCallbackContent() {
       }
     };
 
-    const handleRedirectForUser = async (user: any) => {
+    const handleRedirectForUser = async (user: User | null) => {
       cleanup();
       if (!user) {
         router.replace(`/login?error=${encodeURIComponent("Sesi login tidak valid. Silakan coba masuk kembali.")}`);
@@ -144,7 +145,7 @@ function AuthCallbackContent() {
   }, [router, redirectPath, searchParams]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center space-y-4 p-4 text-center">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4 p-4 text-center">
       <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-[#004329] flex items-center justify-center shadow-inner border border-emerald-200">
         <Loader2 className="w-8 h-8 animate-spin text-emerald-700" />
       </div>
@@ -160,7 +161,7 @@ export default function AuthCallbackPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="min-h-screen bg-background flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-[#004329]" />
         </div>
       }

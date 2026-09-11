@@ -6,6 +6,11 @@ import { useAuth } from "@/context/AuthContext";
 import { isValidGmail } from "@/utils/validators";
 import { User, Lock, Mail, ArrowRight, Store, AlertCircle, Eye, EyeOff, Loader2, CreditCard } from "lucide-react";
 import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 function GoogleIcon() {
   return (
@@ -125,9 +130,8 @@ function LoginForm() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 py-12">
+    <main className="min-h-screen bg-slate-50/60 flex items-center justify-center p-4 py-12">
       <div className="max-w-md w-full space-y-6">
-        
         {/* Header Logo */}
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center justify-center group mb-1">
@@ -139,145 +143,149 @@ function LoginForm() {
               />
             </div>
           </Link>
-          <h1 className="text-2xl font-bold text-slate-900">Masuk Akun Warga</h1>
-          <p className="text-xs text-slate-500">
+          <h1 className="text-2xl font-bold text-foreground">Masuk Akun Warga</h1>
+          <p className="text-xs text-muted-foreground">
             Masuk dengan Akun Google atau NIK KTP (16 Digit) & Email
           </p>
         </div>
 
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-6">
-          
-          {/* 1-Click Google Sign In */}
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={googleLoading}
-            className="w-full bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2.5 px-4 rounded-xl border border-slate-300/90 transition flex items-center justify-center space-x-3 text-xs shadow-sm active:scale-95 disabled:opacity-60"
-          >
-            {googleLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin text-slate-600" />
-            ) : (
-              <GoogleIcon />
-            )}
-            <span>{googleLoading ? "Menghubungkan ke Google..." : "Masuk Cepat dengan Akun Google"}</span>
-          </button>
+        <Card className="rounded-2xl sm:rounded-3xl border-border/70 shadow-sm overflow-hidden">
+          <CardContent className="p-6 sm:p-8 space-y-6">
+            {/* 1-Click Google Sign In */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGoogleLogin}
+              disabled={googleLoading}
+              className="w-full py-2.5 rounded-xl border-border/80 flex items-center justify-center gap-3 text-xs font-semibold shadow-xs active:scale-95"
+            >
+              {googleLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              ) : (
+                <GoogleIcon />
+              )}
+              <span>{googleLoading ? "Menghubungkan ke Google..." : "Masuk Cepat dengan Akun Google"}</span>
+            </Button>
 
-          {/* Divider */}
-          <div className="relative flex items-center justify-center">
-            <div className="border-t border-slate-200/80 w-full"></div>
-            <span className="bg-white px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              atau via NIK / Email
-            </span>
-            <div className="border-t border-slate-200/80 w-full"></div>
-          </div>
+            {/* Divider */}
+            <div className="relative flex items-center justify-center">
+              <Separator />
+              <span className="absolute bg-card px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                atau via NIK / Email
+              </span>
+            </div>
 
-          {error && (
-            <div className="p-3.5 bg-rose-50 text-rose-700 rounded-2xl border border-rose-200 text-xs font-medium flex flex-col space-y-2 animate-in fade-in">
-              <div className="flex items-start space-x-2.5">
-                <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
-                <span>{error}</span>
+            {error && (
+              <div className="p-3.5 bg-rose-50 text-rose-700 rounded-xl border border-rose-200 text-xs font-medium flex flex-col space-y-2 animate-in fade-in">
+                <div className="flex items-start space-x-2.5">
+                  <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+                {unconfirmedEmail && (
+                  <div className="pt-1 border-t border-rose-200/60 flex flex-col space-y-1.5">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleResendFromLogin}
+                      disabled={resending}
+                      className="self-start text-[11px] font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 h-8 rounded-lg"
+                    >
+                      {resending ? "Mengirim Ulang..." : "Kirim Ulang Email Aktivasi ke Gmail"}
+                    </Button>
+                    {resendMessage && (
+                      <span className="text-[11px] font-semibold text-emerald-900">{resendMessage}</span>
+                    )}
+                  </div>
+                )}
               </div>
-              {unconfirmedEmail && (
-                <div className="pt-1 border-t border-rose-200/60 flex flex-col space-y-1.5">
+            )}
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-foreground uppercase mb-1.5 flex items-center justify-between">
+                  <span>NIK KTP atau Alamat Email</span>
+                  <Badge variant="secondary" className="text-[10px] text-emerald-800 font-semibold bg-emerald-50 border-emerald-200/80">
+                    16 Digit / Email
+                  </Badge>
+                </label>
+                <div className="relative">
+                  <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    required
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="Contoh: 3520xxxxxxxxxxxx atau budi@gmail.com"
+                    className="pl-10 text-xs rounded-xl bg-muted/40"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-foreground uppercase">
+                    Kata Sandi
+                  </label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-[11px] font-semibold text-primary hover:underline"
+                  >
+                    Lupa kata sandi?
+                  </Link>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="pl-10 pr-10 text-xs rounded-xl bg-muted/40"
+                  />
                   <button
                     type="button"
-                    onClick={handleResendFromLogin}
-                    disabled={resending}
-                    className="self-start text-[11px] font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-lg transition disabled:opacity-60"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
                   >
-                    {resending ? "Mengirim Ulang..." : "Kirim Ulang Email Aktivasi ke Gmail"}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
-                  {resendMessage && (
-                    <span className="text-[11px] font-semibold text-emerald-900">{resendMessage}</span>
-                  )}
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center justify-between">
-                <span>NIK KTP atau Alamat Email</span>
-                <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80">
-                  16 Digit / Email
-                </span>
-              </label>
-              <div className="relative">
-                <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  required
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="Contoh: 3520xxxxxxxxxxxx atau budi@gmail.com"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600 text-xs text-slate-800 font-medium"
-                />
               </div>
-            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold text-slate-700 uppercase">
-                  Kata Sandi
-                </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 hover:underline"
-                >
-                  Lupa kata sandi?
+              <Button
+                type="submit"
+                disabled={loading || googleLoading}
+                className="w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 text-xs shadow-sm mt-2 active:scale-95"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Memeriksa Akun...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Masuk ke Akun Warga</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </Button>
+            </form>
+
+            <Separator />
+
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground">
+                Belum punya akun warga?{" "}
+                <Link href={`/register${redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : ""}`} className="font-bold text-primary hover:underline">
+                  Daftar Akun Baru
                 </Link>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600 text-xs text-slate-800 font-medium"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
+              </p>
             </div>
-
-            <button
-              type="submit"
-              disabled={loading || googleLoading}
-              className="w-full bg-[#063321] hover:bg-[#073d28] text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 text-xs shadow-sm mt-2 disabled:opacity-70 active:scale-95"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Memeriksa Akun...</span>
-                </>
-              ) : (
-                <>
-                  <span>Masuk ke Akun Warga</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="text-center pt-2 border-t border-slate-100">
-            <p className="text-xs text-slate-500">
-              Belum punya akun warga?{" "}
-              <Link href={`/register${redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : ""}`} className="font-bold text-emerald-800 hover:underline">
-                Daftar Akun Baru
-              </Link>
-            </p>
-          </div>
-
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );
@@ -286,7 +294,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[#004329]" />
       </div>
     }>

@@ -217,7 +217,7 @@ export default function KelolaBeritaAdmin() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] pb-24 pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-background pb-24 pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8 text-foreground">
       <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
         
         {/* Navigation & Header */}

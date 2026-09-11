@@ -17,6 +17,13 @@ import {
   LogOut,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 function LengkapiProfilForm() {
   const router = useRouter();
@@ -184,7 +191,7 @@ function LengkapiProfilForm() {
 
   if (checkingSession && authLoading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center space-y-3">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-3">
         <Loader2 className="w-8 h-8 animate-spin text-[#004329]" />
         <span className="text-xs font-bold text-slate-600">Menyiapkan Form Data Warga...</span>
       </div>
@@ -195,164 +202,173 @@ function LengkapiProfilForm() {
   const activeName = currentUser?.name || user?.name || "Akun Google";
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 py-12">
+    <main className="min-h-screen bg-slate-50/60 flex items-center justify-center p-4 py-12">
       <div className="max-w-lg w-full space-y-6">
-        
         {/* Header Logo & Title */}
-        <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center justify-center group mb-1">
+        <div className="flex flex-col items-center text-center space-y-3">
+          <Link href="/" className="inline-flex items-center justify-center group">
             <div className="relative w-12 h-14 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <img
+              <Image
                 src="/images/logo-magetan.png"
                 alt="Logo Kabupaten Magetan"
+                width={48}
+                height={56}
                 className="w-full h-full object-contain drop-shadow"
+                priority
               />
             </div>
           </Link>
-          <div className="inline-flex items-center space-x-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+          <Badge variant="secondary" className="bg-emerald-50 text-emerald-800 border-emerald-200 px-3 py-1 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-primary" />
             <span>Tahap 2: Data Kependudukan Warga</span>
+          </Badge>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold text-foreground">Lengkapi Data Profil</h1>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+              Email Anda telah terverifikasi. Masukkan NIK KTP Anda untuk mengaktifkan akses Layanan Surat Mandiri Desa Bogem secara resmi.
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Lengkapi Data Profil</h1>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Email Anda telah terverifikasi. Masukkan NIK KTP Anda untuk mengaktifkan akses Layanan Surat Mandiri Desa Bogem secara resmi.
-          </p>
         </div>
 
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-6 animate-in fade-in zoom-in-95 duration-200">
-          
-          {/* Email Verified Badge Card */}
-          <div className="bg-emerald-50/80 border border-emerald-200/80 p-3.5 rounded-2xl flex items-center justify-between text-xs">
-            <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden flex-shrink-0">
-                <span>{activeName.charAt(0).toUpperCase()}</span>
+        <Card className="rounded-2xl sm:rounded-3xl border-border/70 shadow-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <CardContent className="p-6 sm:p-8 space-y-6">
+            {/* Email Verified Badge Card */}
+            <div className="bg-emerald-50/80 border border-emerald-200/80 p-3.5 rounded-2xl flex items-center justify-between text-xs">
+              <div className="flex items-center space-x-3">
+                <Avatar className="w-9 h-9 border border-emerald-300/60">
+                  <AvatarFallback className="bg-emerald-700 text-white font-bold text-xs">
+                    {activeName.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <span className="font-bold text-emerald-950 block truncate">{activeName}</span>
+                  <span className="text-[11px] text-emerald-700 font-mono block truncate">{activeEmail}</span>
+                </div>
               </div>
-              <div className="min-w-0">
-                <span className="font-bold text-emerald-950 block truncate">{activeName}</span>
-                <span className="text-[11px] text-emerald-700 font-mono block truncate">{activeEmail}</span>
+              <Badge variant="secondary" className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border-emerald-200 flex items-center gap-1 flex-shrink-0">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                <span>Email Terverifikasi</span>
+              </Badge>
+            </div>
+
+            {success && (
+              <div className="p-4 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                <span>Data profil berhasil disimpan! Mengalihkan ke layanan surat...</span>
               </div>
-            </div>
-            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center space-x-1 flex-shrink-0">
-              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-              <span>Email Terverifikasi</span>
-            </span>
-          </div>
+            )}
 
-          {success && (
-            <div className="p-4 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 text-xs font-semibold flex items-center space-x-2 animate-in fade-in">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-              <span>Data profil berhasil disimpan! Mengalihkan ke layanan surat...</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="p-3.5 bg-rose-50 text-rose-700 rounded-2xl border border-rose-200 text-xs font-medium flex items-center space-x-2.5 animate-in fade-in">
-              <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            
-            {/* NIK Input */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center justify-between">
-                <span>NIK KTP (16 Digit)</span>
-                <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80">
-                  Wajib Sesuai KTP
-                </span>
-              </label>
-              <div className="relative">
-                <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  required
-                  maxLength={16}
-                  value={nik}
-                  onChange={(e) => setNik(e.target.value.replace(/[^0-9]/g, ""))}
-                  placeholder="Contoh: 3520xxxxxxxxxxxx"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600 text-xs text-slate-800 font-bold tracking-wider font-mono"
-                />
+            {error && (
+              <div className="p-3.5 bg-rose-50 text-rose-700 rounded-xl border border-rose-200 text-xs font-medium flex items-center gap-2.5 animate-in fade-in">
+                <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />
+                <span>{error}</span>
               </div>
-              <span className="text-[10px] text-slate-400 block mt-1">NIK diperlukan untuk validasi legalitas dokumen permohonan surat warga.</span>
-            </div>
+            )}
 
-            {/* Nama Lengkap */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
-                Nama Lengkap (Sesuai KTP)
-              </label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  required
-                  value={nama}
-                  onChange={(e) => setNama(e.target.value)}
-                  placeholder="Contoh: Budi Santoso"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600 text-xs text-slate-800 font-medium"
-                />
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* NIK Input */}
+              <div>
+                <label className="block text-xs font-bold text-foreground uppercase mb-1.5 flex items-center justify-between">
+                  <span>NIK KTP (16 Digit)</span>
+                  <Badge variant="secondary" className="text-[10px] text-emerald-800 font-semibold bg-emerald-50 border-emerald-200/80">
+                    Wajib Sesuai KTP
+                  </Badge>
+                </label>
+                <div className="relative">
+                  <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    required
+                    maxLength={16}
+                    value={nik}
+                    onChange={(e) => setNik(e.target.value.replace(/[^0-9]/g, ""))}
+                    placeholder="Contoh: 3520xxxxxxxxxxxx"
+                    className="pl-10 text-xs rounded-xl bg-muted/40 font-bold tracking-wider font-mono"
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground block mt-1">NIK diperlukan untuk validasi legalitas dokumen permohonan surat warga.</span>
               </div>
-            </div>
 
-            {/* No. WhatsApp */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center justify-between">
-                <span>No. WhatsApp / HP Aktif</span>
-                <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80">
-                  Untuk Notifikasi Surat
-                </span>
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Contoh: 081234567890"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600 text-xs text-slate-800 font-medium font-mono"
-                />
+              {/* Nama Lengkap */}
+              <div>
+                <label className="block text-xs font-bold text-foreground uppercase mb-1.5">
+                  Nama Lengkap (Sesuai KTP)
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    required
+                    value={nama}
+                    onChange={(e) => setNama(e.target.value)}
+                    placeholder="Contoh: Budi Santoso"
+                    className="pl-10 text-xs rounded-xl bg-muted/40 font-medium"
+                  />
+                </div>
               </div>
+
+              {/* No. WhatsApp */}
+              <div>
+                <label className="block text-xs font-bold text-foreground uppercase mb-1.5 flex items-center justify-between">
+                  <span>No. WhatsApp / HP Aktif</span>
+                  <Badge variant="secondary" className="text-[10px] text-emerald-800 font-semibold bg-emerald-50 border-emerald-200/80">
+                    Untuk Notifikasi Surat
+                  </Badge>
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Contoh: 081234567890"
+                    className="pl-10 text-xs rounded-xl bg-muted/40 font-mono"
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={saving || success}
+                className="w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 text-xs shadow-sm mt-2 active:scale-95"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Menyimpan Data Profil...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Simpan Data Profil & Lanjutkan</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </Button>
+            </form>
+
+            <Separator />
+
+            {/* Switch Account / Logout option */}
+            <div className="text-center">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  await logout();
+                  router.replace("/login");
+                }}
+                className="text-muted-foreground hover:text-destructive text-xs font-medium"
+              >
+                <LogOut className="w-3.5 h-3.5 mr-1.5" />
+                <span>Gunakan Akun Google Lain / Keluar</span>
+              </Button>
             </div>
-
-            <button
-              type="submit"
-              disabled={saving || success}
-              className="w-full bg-[#004329] hover:bg-[#00321F] text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 text-xs shadow-md mt-2 disabled:opacity-70 active:scale-95"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Menyimpan Data Profil...</span>
-                </>
-              ) : (
-                <>
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Simpan Data Profil & Lanjutkan</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Switch Account / Logout option */}
-          <div className="pt-2 text-center border-t border-slate-100">
-            <button
-              type="button"
-              onClick={async () => {
-                await logout();
-                router.replace("/login");
-              }}
-              className="inline-flex items-center space-x-1.5 text-xs text-slate-400 hover:text-rose-600 transition font-medium"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Gunakan Akun Google Lain / Keluar</span>
-            </button>
-          </div>
-
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );
@@ -362,7 +378,7 @@ export default function LengkapiProfilPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="min-h-screen bg-background flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-[#004329]" />
         </div>
       }

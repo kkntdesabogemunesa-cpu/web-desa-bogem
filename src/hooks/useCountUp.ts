@@ -12,7 +12,6 @@ export function useCountUp(
 
   useEffect(() => {
     if (!startNow || targetNumber <= 0) {
-      setCount(targetNumber);
       return;
     }
 
@@ -43,6 +42,10 @@ export function useCountUp(
     animationFrameId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationFrameId);
   }, [targetNumber, durationMs, startNow, decimals]);
+
+  if (!startNow || targetNumber <= 0) {
+    return targetNumber;
+  }
 
   return count;
 }

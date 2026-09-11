@@ -196,7 +196,7 @@ export async function updateInfografisData(
         ? newData.organisasi
         : (current.organisasi || defaultOrganisasiList);
 
-    const basePayload: Record<string, any> = {
+    const basePayload: Record<string, unknown> = {
       id: "main",
       demografi: newData.demografi || current.demografi,
       apbdes: newData.apbdes || current.apbdes,
@@ -220,7 +220,7 @@ export async function updateInfografisData(
     // fallback to storing organisasi data safely in 'pekerjaan' column without corrupting other fields!
     if (primaryError.code === "42703" || primaryError.message?.toLowerCase().includes("organisasi")) {
       console.warn("Column 'organisasi' not found in table. Using fallback storage in 'pekerjaan' column.");
-      const fallbackPayload: Record<string, any> = {
+      const fallbackPayload: Record<string, unknown> = {
         ...basePayload,
         pendidikan: newData.pendidikan !== undefined ? newData.pendidikan : current.pendidikan,
       };

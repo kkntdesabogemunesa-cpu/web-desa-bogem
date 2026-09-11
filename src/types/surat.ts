@@ -106,7 +106,7 @@ export interface PermohonanSurat {
   email?: string;
   jenis_surat: string;
   // Dynamic form values submitted by citizen
-  data_formulir: Record<string, any>;
+  data_formulir: Record<string, unknown>;
   status: StatusSurat;
   file_surat_selesai?: string; // Data URL or URL of the uploaded finished letter file
   nama_file_selesai?: string; // e.g. "Surat_Keterangan_Usaha_Yusa.pdf"

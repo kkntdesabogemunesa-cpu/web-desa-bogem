@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans, Geist } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
@@ -7,6 +7,9 @@ import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
 import PageTransitionBar from "@/components/PageTransitionBar";
 import { AuthProvider } from "@/context/AuthContext";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -32,8 +35,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
-      <body className={`${plusJakartaSans.className} bg-slate-50 min-h-screen flex flex-col antialiased text-slate-800`}>
+    <html lang="id" className={cn("font-sans", geist.variable)}>
+      <body className={`${plusJakartaSans.className} bg-background text-foreground min-h-screen flex flex-col antialiased`}>
         <AuthProvider>
           <Suspense fallback={null}>
             <PageTransitionBar />

@@ -267,7 +267,7 @@ export default function AdminKelolaSuratPage() {
   const countSelesai = listSurat.filter((s) => s.status === "SELESAI").length;
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] pb-24 pt-8 px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-background text-foreground pb-24 pt-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
         
         {/* Navigation & Header */}

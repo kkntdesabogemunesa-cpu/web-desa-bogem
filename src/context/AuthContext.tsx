@@ -264,7 +264,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const emailRedirectTo = `${origin}/auth/callback?redirect=/lengkapi-profil`;
 
-      const userMetadata: Record<string, any> = {
+      const userMetadata: Record<string, unknown> = {
         role: "warga", // Mutlak dipaksa sebagai warga, peran admin hanya via database langsung
       };
       if (data.nama) {
@@ -420,7 +420,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 2. Upsert into profiles table
-      const basePayload: Record<string, any> = {
+      const basePayload: Record<string, unknown> = {
         id: currentUser.id,
         nik: cleanNik,
         nama: cleanNama,
