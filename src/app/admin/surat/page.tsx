@@ -552,7 +552,7 @@ export default function AdminKelolaSuratPage() {
                       isSelesai ? "SELESAI" : "DITERIMA & SEDANG DIPROSES"
                     }*.\n\nKode Tiket: ${item.id}\n${
                       isSelesai
-                        ? "File surat resmi sudah dapat Anda unduh langsung melalui portal web desa di https://desabogem.id/layanan-surat."
+                        ? "File surat resmi sudah dapat Anda unduh langsung melalui portal web desa di https://desabogem.my.id/layanan-surat."
                         : ""
                     }\n\nTerima kasih.`
                   );

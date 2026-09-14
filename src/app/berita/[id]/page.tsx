@@ -4,6 +4,11 @@ import Image from "next/image";
 import { fetchBeritaById, fetchBeritaList } from "@/services/beritaService";
 import { formatDateIndonesian } from "@/utils/formatters";
 import {
+  getSiteUrl,
+  generateNewsArticleSchema,
+  generateBreadcrumbSchema,
+} from "@/utils/seo";
+import {
   ArrowLeft,
   Calendar,
   User,
@@ -41,26 +46,50 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const berita = await fetchBeritaById(id);
+  const siteUrl = getSiteUrl();
 
   if (!berita) {
     return {
       title: "Warta Tidak Ditemukan | Desa Bogem",
       description: "Artikel warta atau pengumuman desa tidak ditemukan.",
+      robots: {
+        index: false,
+        follow: false,
+      },
     };
   }
 
-  const cleanDescription = berita.ringkasan || berita.konten.slice(0, 160).replace(/\n/g, " ");
+  const cleanDescription =
+    berita.ringkasan || berita.konten.slice(0, 160).replace(/\n/g, " ");
+  const articleUrl = `${siteUrl}/berita/${encodeURIComponent(String(berita.id))}`;
+  const ogImage = berita.gambar || `${siteUrl}/opengraph-image`;
 
   return {
-    title: `${berita.judul} | Desa Bogem`,
+    title: berita.judul,
     description: cleanDescription,
+    alternates: {
+      canonical: `/berita/${encodeURIComponent(String(berita.id))}`,
+    },
     openGraph: {
       title: berita.judul,
       description: cleanDescription,
+      url: articleUrl,
       type: "article",
       publishedTime: berita.created_at,
       authors: [berita.penulis || "Pemerintah Desa Bogem"],
-      images: berita.gambar ? [{ url: berita.gambar, alt: berita.judul }] : [],
+      images: [
+        {
+          url: ogImage,
+          alt: berita.judul,
+        },
+      ],
+      section: berita.kategori || "Berita Desa",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: berita.judul,
+      description: cleanDescription,
+      images: [ogImage],
     },
   };
 }
@@ -108,8 +137,37 @@ export default async function DetailBeritaPage({ params }: PageProps) {
     ? berita.konten.split("\n").filter((p) => p.trim() !== "")
     : [];
 
+  const newsArticleSchema = generateNewsArticleSchema({
+    title: berita.judul,
+    description:
+      berita.ringkasan || berita.konten.slice(0, 160).replace(/\n/g, " "),
+    url: `${getSiteUrl()}/berita/${encodeURIComponent(String(berita.id))}`,
+    datePublished: berita.created_at || new Date().toISOString(),
+    image: berita.gambar,
+    author: berita.penulis,
+    category: berita.kategori,
+  });
+
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: "Beranda", path: "/" },
+    { name: "Warta Berita", path: "/berita" },
+    { name: berita.judul, path: `/berita/${encodeURIComponent(String(berita.id))}` },
+  ]);
+
   return (
     <main className="min-h-screen bg-slate-50/60 pb-28 pt-6 sm:pt-10 px-4 sm:px-6 lg:px-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(newsArticleSchema).replace(/</g, "\\u003c"),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbSchema).replace(/</g, "\\u003c"),
+        }}
+      />
       <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center space-x-2 text-xs font-medium text-muted-foreground overflow-x-auto whitespace-nowrap scrollbar-none py-1">

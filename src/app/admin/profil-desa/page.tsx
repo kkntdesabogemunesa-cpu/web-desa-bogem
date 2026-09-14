@@ -86,7 +86,7 @@ function KelolaProfilDesaContent() {
   const [jamPelayananNote, setJamPelayananNote] = useState("*Sabtu & Minggu: Libur / Pelayanan Darurat");
   const [alamatKantor, setAlamatKantor] = useState("Jl. Bakti Mulya No. 241, Desa Bogem, Kec. Kawedanan, Kab. Magetan");
   const [teleponKantor, setTeleponKantor] = useState("+62 812-3456-7890");
-  const [emailKantor, setEmailKantor] = useState("info@desabogem.id");
+  const [emailKantor, setEmailKantor] = useState("info@desabogem.my.id");
 
   const [status, setStatus] = useState<"idle" | "loading" | "sukses" | "error">("idle");
   const [feedbackMessage, setFeedbackMessage] = useState("");
@@ -901,7 +901,7 @@ function KelolaProfilDesaContent() {
                           value={emailKantor}
                           onChange={(e) => setEmailKantor(e.target.value)}
                           className="w-full border border-slate-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 text-xs text-slate-800 font-medium bg-white"
-                          placeholder="Contoh: info@desabogem.id"
+                          placeholder="Contoh: info@desabogem.my.id"
                         />
                       </div>
                     </div>

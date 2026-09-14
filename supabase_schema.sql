@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS public.profil_desa (
   jam_pelayanan_note TEXT DEFAULT '*Sabtu & Minggu: Libur / Pelayanan Darurat',
   alamat_kantor TEXT DEFAULT 'Jl. Bakti Mulya No. 241, Desa Bogem, Kec. Kawedanan, Kab. Magetan',
   telepon_kantor TEXT DEFAULT '+62 812-3456-7890',
-  email_kantor TEXT DEFAULT 'info@desabogem.id',
+  email_kantor TEXT DEFAULT 'info@desabogem.my.id',
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 

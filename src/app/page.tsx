@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { HomeClientView } from "@/components/home";
 import { fetchBeritaList, fallbackBeritaList } from "@/services/beritaService";
 import { fetchUMKMList, fallbackUMKMList } from "@/services/umkmService";
@@ -7,6 +8,15 @@ import { BeritaItem } from "@/types/berita";
 import { UMKMItem } from "@/types/umkm";
 import { PerangkatItem } from "@/types/perangkat";
 import { ProfilDesaData } from "@/types/profil";
+
+export const metadata: Metadata = {
+  title: "Beranda - Layanan Informasi Publik & Potensi Warga",
+  description:
+    "Portal resmi informasi desa, pelayanan administrasi surat online, transparansi APBDes, data kependudukan, warta berita, dan etalase UMKM Desa Bogem, Kec. Kawedanan, Kab. Magetan.",
+  alternates: {
+    canonical: "/",
+  },
+};
 
 // Dynamic live rendering for real-time admin sync
 export const revalidate = 0;
