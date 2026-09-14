@@ -5,6 +5,8 @@ import {
   StatusSurat,
   OpsiSurat,
   defaultOpsiSuratList,
+  PengaturanSurat,
+  defaultPengaturanSurat,
 } from "@/types/surat";
 
 // Generate unique ticket code: SRT-YYYYMM-XXXXXX (6-char alphanumeric keyspace)
@@ -312,16 +314,127 @@ export async function deletePermohonanSurat(id: string): Promise<{ success: bool
   try {
     if (!supabase) return { success: false, error: "Database client is not available." };
 
-    const { error } = await supabase.from("permohonan_surat").delete().eq("id", id);
+    // 1. Eksekusi DELETE dengan .select() untuk memastikan baris benar-benar terhapus di database
+    const { data, error } = await supabase
+      .from("permohonan_surat")
+      .delete()
+      .eq("id", id)
+      .select();
+
+    if (!error && data && data.length > 0) {
+      return { success: true };
+    }
 
     if (error) {
       console.error("deletePermohonanSurat error:", error.message);
       return { success: false, error: error.message };
     }
 
-    return { success: true };
+    // Jika data kosong tanpa error, berarti RLS Supabase memblokir operasi hapus
+    console.warn("deletePermohonanSurat: 0 rows deleted for id:", id);
+    return {
+      success: false,
+      error: "Gagal menghapus dari database. Izin ditolak oleh RLS Supabase. Pastikan script SQL patch di supabase_patch_surat_keterangan.sql telah di-run di SQL Editor Supabase.",
+    };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat menghapus permohonan surat.";
     return { success: false, error: msg };
   }
+}
+
+// ==========================================
+// 3. PENGELOLAAN FORMAT & PEJABAT SURAT
+// ==========================================
+
+const LOCAL_STORAGE_KEY_PENGATURAN_SURAT = "desa_bogem_pengaturan_surat";
+
+export async function fetchPengaturanSurat(): Promise<PengaturanSurat> {
+  // 1. Coba ambil dari Supabase
+  try {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from("pengaturan_surat")
+        .select("*")
+        .eq("id", "default")
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          nama_instansi: data.nama_instansi || defaultPengaturanSurat.nama_instansi,
+          nama_kecamatan: data.nama_kecamatan || defaultPengaturanSurat.nama_kecamatan,
+          nama_desa: data.nama_desa || defaultPengaturanSurat.nama_desa,
+          alamat_kantor: data.alamat_kantor || defaultPengaturanSurat.alamat_kantor,
+          telepon_kantor: data.telepon_kantor || defaultPengaturanSurat.telepon_kantor,
+          email_kantor: data.email_kantor || defaultPengaturanSurat.email_kantor,
+          kodepos: data.kodepos || defaultPengaturanSurat.kodepos,
+          nama_pejabat: data.nama_pejabat || defaultPengaturanSurat.nama_pejabat,
+          jabatan_pejabat: data.jabatan_pejabat || defaultPengaturanSurat.jabatan_pejabat,
+          nip_pejabat: data.nip_pejabat ?? defaultPengaturanSurat.nip_pejabat,
+          alamat_pejabat: data.alamat_pejabat || defaultPengaturanSurat.alamat_pejabat,
+          kode_klasifikasi: data.kode_klasifikasi || defaultPengaturanSurat.kode_klasifikasi,
+          kode_wilayah: data.kode_wilayah || defaultPengaturanSurat.kode_wilayah,
+          nomor_urut_terakhir: typeof data.nomor_urut_terakhir === "number" ? data.nomor_urut_terakhir : defaultPengaturanSurat.nomor_urut_terakhir,
+        };
+      }
+    }
+  } catch {
+    // Fallback jika tabel belum dibuat di Supabase
+  }
+
+  // 2. Coba ambil dari localStorage jika di browser
+  if (typeof window !== "undefined") {
+    try {
+      const local = localStorage.getItem(LOCAL_STORAGE_KEY_PENGATURAN_SURAT);
+      if (local) {
+        const parsed = JSON.parse(local);
+        return { ...defaultPengaturanSurat, ...parsed };
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // 3. Fallback nilai default resmi Desa Bogem
+  return defaultPengaturanSurat;
+}
+
+export async function savePengaturanSurat(
+  config: PengaturanSurat
+): Promise<{ success: boolean; error?: string }> {
+  // Simpan ke localStorage
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY_PENGATURAN_SURAT, JSON.stringify(config));
+    } catch {
+      // ignore
+    }
+  }
+
+  // Coba simpan ke Supabase jika tabel tersedia
+  try {
+    if (supabase) {
+      const { error } = await supabase.from("pengaturan_surat").upsert({
+        id: "default",
+        ...config,
+        updated_at: new Date().toISOString(),
+      });
+
+      if (error) {
+        console.warn("Simpan ke Supabase pengaturan_surat warning (menggunakan localStorage):", error.message);
+      }
+    }
+    return { success: true };
+  } catch {
+    return { success: true };
+  }
+}
+
+export function formatNomorSurat(
+  pengaturan: PengaturanSurat,
+  nomorUrut?: number | string,
+  tahun?: number | string
+): string {
+  const no = nomorUrut !== undefined && nomorUrut !== "" ? nomorUrut : pengaturan.nomor_urut_terakhir;
+  const th = tahun || new Date().getFullYear();
+  return `${pengaturan.kode_klasifikasi} / ${no} / ${pengaturan.kode_wilayah} / ${th}`;
 }

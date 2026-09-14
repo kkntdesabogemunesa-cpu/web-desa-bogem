@@ -184,3 +184,21 @@ body {
     @apply font-sans;
   }
 }
+
+/* Styling Khusus Cetak Dokumen Surat Resmi A4/F4 Desa Bogem */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm 20mm 15mm 20mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  header, nav, footer, .no-print {
+    display: none !important;
+  }
+}
+

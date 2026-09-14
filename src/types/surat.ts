@@ -30,7 +30,6 @@ export const defaultOpsiSuratList: OpsiSurat[] = [
       { id: "jenis_usaha", label: "Bidang / Jenis Usaha", tipe: "text", placeholder: "Contoh: Kuliner / Perdagangan / Jasa", wajib: true },
       { id: "alamat_usaha", label: "Alamat Tempat Usaha", tipe: "text", placeholder: "Contoh: Jl. Raya Bogem No. 12, RT 02/01", wajib: true },
       { id: "tahun_berdiri", label: "Mulai Usaha Sejak Tahun", tipe: "text", placeholder: "Contoh: 2021", wajib: false },
-      { id: "keperluan", label: "Keperluan Pengajuan SKU", tipe: "textarea", placeholder: "Contoh: Persyaratan Pengajuan KUR Bank BRI", wajib: true },
     ],
   },
   {
@@ -38,12 +37,7 @@ export const defaultOpsiSuratList: OpsiSurat[] = [
     nama_surat: "Surat Keterangan Domisili",
     deskripsi: "Surat bukti keterangan tempat tinggal resmi pemohon di wilayah Desa Bogem.",
     syarat: "Fotokopi KTP, KK, dan Alamat Tempat Tinggal Saat Ini.",
-    custom_fields: [
-      { id: "dusun", label: "Dusun / Lingkungan", tipe: "text", placeholder: "Contoh: Dusun Krajan", wajib: true },
-      { id: "rt_rw", label: "RT / RW", tipe: "text", placeholder: "Contoh: RT 02 / RW 01", wajib: true },
-      { id: "alamat_domisili", label: "Alamat Lengkap Tempat Tinggal", tipe: "textarea", placeholder: "Nama jalan / nomor rumah saat ini", wajib: true },
-      { id: "keperluan", label: "Keperluan Surat Domisili", tipe: "textarea", placeholder: "Contoh: Persyaratan melamar pekerjaan / pembukaan rekening bank", wajib: true },
-    ],
+    custom_fields: [],
   },
   {
     id: "opsi-3",
@@ -51,10 +45,8 @@ export const defaultOpsiSuratList: OpsiSurat[] = [
     deskripsi: "Untuk permohonan beasiswa pendidikan, keringanan biaya rumah sakit, atau bansos.",
     syarat: "Fotokopi KTP, KK, dan Keterangan Keperluan Khusus.",
     custom_fields: [
-      { id: "nama_kepala_keluarga", label: "Nama Kepala Keluarga / Orang Tua", tipe: "text", placeholder: "Nama kepala keluarga sesuai KK", wajib: true },
-      { id: "tujuan_sktm", label: "Tujuan Pengajuan SKTM", tipe: "text", placeholder: "Contoh: Beasiswa Pendidikan Anak / Keringanan Biaya Rumah Sakit", wajib: true },
-      { id: "penghasilan_per_bulan", label: "Rata-Rata Penghasilan per Bulan", tipe: "text", placeholder: "Contoh: Rp 800.000 / bulan", wajib: true },
-      { id: "keperluan", label: "Keterangan Tambahan", tipe: "textarea", placeholder: "Keterangan kondisi ekonomi atau keperluan khusus", wajib: true },
+      { id: "nama_kepala_keluarga", label: "Nama Kepala Keluarga / Orang Tua", tipe: "text", placeholder: "Nama kepala keluarga sesuai KK", wajib: false },
+      { id: "penghasilan_per_bulan", label: "Rata-Rata Penghasilan per Bulan", tipe: "text", placeholder: "Contoh: Rp 800.000 / bulan", wajib: false },
     ],
   },
   {
@@ -62,23 +54,14 @@ export const defaultOpsiSuratList: OpsiSurat[] = [
     nama_surat: "Surat Pengantar SKCK",
     deskripsi: "Surat rekomendasi pengantar dari desa untuk pembuatan SKCK di Polsek Kawedanan/Polres.",
     syarat: "Fotokopi KTP, KK, dan Pas Foto Berwarna.",
-    custom_fields: [
-      { id: "tempat_tgl_lahir", label: "Tempat, Tanggal Lahir", tipe: "text", placeholder: "Contoh: Magetan, 15 Mei 1998", wajib: true },
-      { id: "pekerjaan", label: "Pekerjaan Saat Ini", tipe: "text", placeholder: "Contoh: Wiraswasta / Belum Bekerja", wajib: true },
-      { id: "keperluan", label: "Keperluan Pembuatan SKCK", tipe: "textarea", placeholder: "Contoh: Melamar Pekerjaan di PT XYZ / Pendaftaran CPNS", wajib: true },
-    ],
+    custom_fields: [],
   },
   {
     id: "opsi-5",
     nama_surat: "Surat Keterangan Belum Menikah",
     deskripsi: "Keterangan status lajang/belum pernah menikah untuk persyaratan kerja atau pernikahan.",
     syarat: "Fotokopi KTP dan KK.",
-    custom_fields: [
-      { id: "tempat_tgl_lahir", label: "Tempat, Tanggal Lahir", tipe: "text", placeholder: "Contoh: Magetan, 20 Januari 2000", wajib: true },
-      { id: "agama", label: "Agama", tipe: "text", placeholder: "Contoh: Islam", wajib: true },
-      { id: "pekerjaan", label: "Pekerjaan", tipe: "text", placeholder: "Contoh: Karyawan Swasta", wajib: true },
-      { id: "keperluan", label: "Keperluan Pembuatan Surat", tipe: "textarea", placeholder: "Contoh: Persyaratan administrasi pernikahan / persyaratan kerja", wajib: true },
-    ],
+    custom_fields: [],
   },
   {
     id: "opsi-6",
@@ -93,6 +76,13 @@ export const defaultOpsiSuratList: OpsiSurat[] = [
       { id: "sebab_kematian", label: "Penyebab Meninggal Dunia", tipe: "text", placeholder: "Contoh: Sakit / Usia Lanjut", wajib: true },
       { id: "hubungan_pelapor", label: "Hubungan Pemohon dengan Jenazah", tipe: "text", placeholder: "Contoh: Anak Kandung / Suami / Istri", wajib: true },
     ],
+  },
+  {
+    id: "opsi-7",
+    nama_surat: "Surat Keterangan Umum",
+    deskripsi: "Surat keterangan resmi dari Pemerintah Desa Bogem untuk berbagai keperluan administrasi warga.",
+    syarat: "Fotokopi KTP dan Kartu Keluarga (KK).",
+    custom_fields: [],
   },
 ];
 
@@ -119,3 +109,64 @@ export type CreatePermohonanInput = Omit<
   PermohonanSurat,
   "id" | "status" | "file_surat_selesai" | "nama_file_selesai" | "catatan_admin" | "created_at" | "updated_at"
 >;
+
+export interface PengaturanSurat {
+  nama_instansi: string; // e.g. "PEMERINTAH KABUPATEN MAGETAN"
+  nama_kecamatan: string; // e.g. "KECAMATAN KAWEDANAN"
+  nama_desa: string; // e.g. "DESA BOGEM"
+  alamat_kantor: string; // e.g. "Jl. Bhakti Mulya No.241"
+  telepon_kantor: string; // e.g. "081231400990"
+  email_kantor: string; // e.g. "desabogemjaya@gmail.com"
+  kodepos: string; // e.g. "63382"
+  nama_pejabat: string; // e.g. "TUT WARIYANI, S.KM"
+  jabatan_pejabat: string; // e.g. "Pj Kepala Desa Bogem"
+  nip_pejabat: string; // e.g. "197408222006042016"
+  alamat_pejabat: string; // e.g. "Desa Bogem Kecamatan Kawedanan Kabupaten Magetan"
+  kode_klasifikasi: string; // e.g. "474"
+  kode_wilayah: string; // e.g. "403.405.13"
+  nomor_urut_terakhir: number; // e.g. 196
+}
+
+export const defaultPengaturanSurat: PengaturanSurat = {
+  nama_instansi: "PEMERINTAH KABUPATEN MAGETAN",
+  nama_kecamatan: "KECAMATAN KAWEDANAN",
+  nama_desa: "DESA BOGEM",
+  alamat_kantor: "Jl. Bhakti Mulya No.241",
+  telepon_kantor: "081231400990",
+  email_kantor: "desabogemjaya@gmail.com",
+  kodepos: "63382",
+  nama_pejabat: "TUT WARIYANI, S.KM",
+  jabatan_pejabat: "Pj Kepala Desa Bogem",
+  nip_pejabat: "197408222006042016",
+  alamat_pejabat: "Desa Bogem Kecamatan Kawedanan Kabupaten Magetan",
+  kode_klasifikasi: "474",
+  kode_wilayah: "403.405.13",
+  nomor_urut_terakhir: 196,
+};
+
+export interface DataSuratKeterangan {
+  // Informasi Surat
+  nomor_surat: string;
+  tanggal_surat: string;
+  judul_surat?: string; // e.g. "SURAT KETERANGAN"
+
+  // Pihak yang bertanda tangan
+  nama_pejabat: string;
+  jabatan_pejabat: string;
+  alamat_pejabat: string;
+  nip_pejabat?: string;
+
+  // 11 Poin Data Warga
+  nama_warga: string;
+  tempat_tanggal_lahir: string;
+  jenis_kelamin: string;
+  kebangsaan: string;
+  agama: string;
+  status_perkawinan: string;
+  pekerjaan: string;
+  nomor_ktp: string;
+  alamat_warga: string;
+  keterangan: string;
+  keperluan: string;
+}
+

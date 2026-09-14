@@ -26,6 +26,8 @@ import {
   ListPlus,
   Layers,
   HelpCircle,
+  Printer,
+  Building,
 } from "lucide-react";
 import {
   PermohonanSurat,
@@ -34,6 +36,8 @@ import {
   FormFieldConfig,
   FieldType,
   defaultOpsiSuratList,
+  PengaturanSurat,
+  defaultPengaturanSurat,
 } from "@/types/surat";
 import {
   fetchSuratList,
@@ -41,16 +45,24 @@ import {
   deletePermohonanSurat,
   fetchOpsiSuratList,
   saveOpsiSuratList,
+  fetchPengaturanSurat,
 } from "@/services/suratService";
+import PengaturanSuratTab from "@/components/admin/surat/PengaturanSuratTab";
+import SuratKeteranganModal from "@/components/admin/surat/SuratKeteranganModal";
 import { formatDateIndonesian } from "@/utils/formatters";
 
 export default function AdminKelolaSuratPage() {
-  const [adminTab, setAdminTab] = useState<"inbox" | "opsi">("inbox");
+  const [adminTab, setAdminTab] = useState<"inbox" | "opsi" | "pengaturan">("inbox");
   const [listSurat, setListSurat] = useState<PermohonanSurat[]>([]);
   const [opsiList, setOpsiList] = useState<OpsiSurat[]>(defaultOpsiSuratList);
+  const [pengaturanSurat, setPengaturanSurat] = useState<PengaturanSurat>(defaultPengaturanSurat);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<"SEMUA" | StatusSurat>("SEMUA");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Surat Keterangan Modal State
+  const [isSuratModalOpen, setIsSuratModalOpen] = useState(false);
+  const [selectedSuratForPrint, setSelectedSuratForPrint] = useState<PermohonanSurat | null>(null);
 
   // Processing Modal State
   const [selectedSurat, setSelectedSurat] = useState<PermohonanSurat | null>(null);
@@ -79,12 +91,14 @@ export default function AdminKelolaSuratPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [suratData, opsiData] = await Promise.all([
+      const [suratData, opsiData, pengaturanData] = await Promise.all([
         fetchSuratList(),
         fetchOpsiSuratList(),
+        fetchPengaturanSurat(),
       ]);
       setListSurat(suratData);
       if (opsiData && opsiData.length > 0) setOpsiList(opsiData);
+      if (pengaturanData) setPengaturanSurat(pengaturanData);
     } catch {
       // ignore
     } finally {
@@ -147,9 +161,56 @@ export default function AdminKelolaSuratPage() {
   };
 
   const handleDeleteSurat = async (id: string) => {
-    if (confirm("Hapus permohonan surat ini dari daftar?")) {
-      await deletePermohonanSurat(id);
-      loadData();
+    if (!confirm("Apakah Anda yakin ingin menghapus permohonan surat ini secara permanen?")) return;
+
+    const res = await deletePermohonanSurat(id);
+    if (!res.success) {
+      alert(`Gagal menghapus: ${res.error || "Izin database ditolak (RLS). Pastikan SQL patch telah dijalankan di Supabase."}`);
+      return;
+    }
+
+    // Update state secara optimistik agar baris langsung hilang seketika
+    setListSurat((prev) => prev.filter((item) => item.id !== id));
+    loadData();
+  };
+
+  const handleOpenSuratPreview = (fileDataUrl: string) => {
+    if (fileDataUrl.startsWith("data:text/html")) {
+      const w = window.open();
+      if (w) {
+        let cleanHtml = decodeURIComponent(
+          fileDataUrl.replace("data:text/html;charset=utf-8,", "")
+        );
+        if (!cleanHtml.includes("surat-sheet")) {
+          const fixStyle = `
+            <style>
+              html { background-color: #f1f5f9 !important; }
+              body {
+                max-width: 210mm !important;
+                margin: 24px auto !important;
+                background-color: #ffffff !important;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+                padding: 15mm 20mm !important;
+                box-sizing: border-box !important;
+              }
+              @media print {
+                html, body {
+                  background-color: #ffffff !important;
+                  margin: 0 !important;
+                  max-width: 100% !important;
+                  box-shadow: none !important;
+                }
+              }
+            </style>
+          `;
+          cleanHtml = cleanHtml.replace("</head>", `${fixStyle}</head>`);
+        }
+        w.document.open();
+        w.document.write(cleanHtml);
+        w.document.close();
+      }
+    } else {
+      window.open(fileDataUrl, "_blank");
     }
   };
 
@@ -333,10 +394,10 @@ export default function AdminKelolaSuratPage() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200/80 shadow-sm">
           <button
             onClick={() => setAdminTab("inbox")}
-            className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-xl text-xs sm:text-sm font-bold transition active:scale-95 ${
+            className={`flex-1 min-w-[140px] flex items-center justify-center space-x-2 py-3 rounded-xl text-xs sm:text-sm font-bold transition active:scale-95 ${
               adminTab === "inbox"
                 ? "bg-[#004329] text-white shadow-md"
                 : "text-slate-600 hover:bg-slate-100"
@@ -348,14 +409,26 @@ export default function AdminKelolaSuratPage() {
 
           <button
             onClick={() => setAdminTab("opsi")}
-            className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-xl text-xs sm:text-sm font-bold transition active:scale-95 ${
+            className={`flex-1 min-w-[140px] flex items-center justify-center space-x-2 py-3 rounded-xl text-xs sm:text-sm font-bold transition active:scale-95 ${
               adminTab === "opsi"
                 ? "bg-[#004329] text-white shadow-md"
                 : "text-slate-600 hover:bg-slate-100"
             }`}
           >
             <Sliders className="w-4 h-4" />
-            <span>2. Atur Opsi & Kolom Form Surat ({opsiList.length})</span>
+            <span>2. Atur Opsi & Kolom Form ({opsiList.length})</span>
+          </button>
+
+          <button
+            onClick={() => setAdminTab("pengaturan")}
+            className={`flex-1 min-w-[140px] flex items-center justify-center space-x-2 py-3 rounded-xl text-xs sm:text-sm font-bold transition active:scale-95 ${
+              adminTab === "pengaturan"
+                ? "bg-[#004329] text-white shadow-md"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <Building className="w-4 h-4" />
+            <span>3. Pengaturan Pejabat & Kop Surat</span>
           </button>
         </div>
 
@@ -366,7 +439,7 @@ export default function AdminKelolaSuratPage() {
           <div className="space-y-4">
             
             {/* Filter & Search Bar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm">
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
                 <button
                   onClick={() => setActiveFilter("SEMUA")}
@@ -410,15 +483,29 @@ export default function AdminKelolaSuratPage() {
                 </button>
               </div>
 
-              <div className="relative w-full sm:w-64">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-                <input
-                  type="text"
-                  placeholder="Cari Nama / NIK / Tiket..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
-                />
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <div className="relative w-full sm:w-60">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Cari Nama / NIK / Tiket..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedSuratForPrint(null);
+                    setIsSuratModalOpen(true);
+                  }}
+                  className="inline-flex items-center space-x-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-3.5 py-2 rounded-xl shadow-xs transition whitespace-nowrap active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Buat Surat (Walk-in)</span>
+                </button>
               </div>
             </div>
 
@@ -555,24 +642,48 @@ export default function AdminKelolaSuratPage() {
                           )}
 
                           {item.file_surat_selesai && (
-                            <a
-                              href={item.file_surat_selesai}
-                              download={item.nama_file_selesai || "Surat_Desa.pdf"}
-                              className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition"
-                            >
-                              <Download className="w-3.5 h-3.5 text-slate-600" />
-                              <span>Unduh File Surat</span>
-                            </a>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenSuratPreview(item.file_surat_selesai!)}
+                                className="inline-flex items-center space-x-1.5 text-xs font-bold text-emerald-800 bg-emerald-100/70 hover:bg-emerald-200/80 border border-emerald-300 px-3 py-1.5 rounded-xl transition"
+                              >
+                                <Printer className="w-3.5 h-3.5 text-emerald-700" />
+                                <span>Lihat Surat (A4)</span>
+                              </button>
+                              <a
+                                href={item.file_surat_selesai}
+                                download={item.nama_file_selesai || "Surat_Desa.pdf"}
+                                className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition"
+                              >
+                                <Download className="w-3.5 h-3.5 text-slate-600" />
+                                <span>Unduh File</span>
+                              </a>
+                            </>
                           )}
                         </div>
 
-                        <button
-                          onClick={() => openProcessModal(item)}
-                          className="inline-flex items-center space-x-1.5 text-xs font-bold text-white bg-[#004329] hover:bg-[#00321F] px-4 py-2 rounded-xl transition shadow active:scale-95"
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Proses & Upload File Surat</span>
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedSuratForPrint(item);
+                              setIsSuratModalOpen(true);
+                            }}
+                            className="inline-flex items-center space-x-1.5 text-xs font-bold text-emerald-900 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 px-3.5 py-2 rounded-xl transition shadow-xs active:scale-95"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-emerald-800" />
+                            <span>Format & Cetak Surat</span>
+                          </button>
+
+                          <button
+                            onClick={() => openProcessModal(item)}
+                            className="inline-flex items-center space-x-1.5 text-xs font-bold text-white bg-[#004329] hover:bg-[#00321F] px-4 py-2 rounded-xl transition shadow active:scale-95"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Proses & Upload File</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -879,6 +990,16 @@ export default function AdminKelolaSuratPage() {
           </div>
         )}
 
+        {/* ======================================================== */}
+        {/* TAB 3: PENGATURAN PEJABAT & FORMAT KOP SURAT */}
+        {/* ======================================================== */}
+        {adminTab === "pengaturan" && (
+          <PengaturanSuratTab
+            initialData={pengaturanSurat}
+            onSaved={(updated) => setPengaturanSurat(updated)}
+          />
+        )}
+
       </div>
 
       {/* ======================================================== */}
@@ -1022,6 +1143,18 @@ export default function AdminKelolaSuratPage() {
         </div>
       )}
 
+      {/* Modal Surat Keterangan (Format & Cetak Resmi) */}
+      <SuratKeteranganModal
+        isOpen={isSuratModalOpen}
+        onClose={() => setIsSuratModalOpen(false)}
+        permohonan={selectedSuratForPrint}
+        pengaturan={pengaturanSurat}
+        onPengaturanUpdated={(updated) => setPengaturanSurat(updated)}
+        onSuratDiterbitkan={loadData}
+      />
+
+
     </main>
   );
 }
+

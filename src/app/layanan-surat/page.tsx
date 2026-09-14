@@ -20,6 +20,7 @@ import {
   FolderOpen,
   Loader2,
   ArrowLeft,
+  Printer,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { OpsiSurat, PermohonanSurat, CreatePermohonanInput, defaultOpsiSuratList } from "@/types/surat";
@@ -67,12 +68,25 @@ export default function LayananSuratPage() {
   const [activeTab, setActiveTab] = useState<"form" | "lacak" | "saya">("form");
   const [opsiList, setOpsiList] = useState<OpsiSurat[]>(defaultOpsiSuratList);
 
-  // Form State
+  // Form State - Identitas Pemohon Sesuai KTP (Standar 11 Poin Surat)
   const [selectedOpsiId, setSelectedOpsiId] = useState<string>("");
   const [nik, setNik] = useState("");
   const [namaLengkap, setNamaLengkap] = useState("");
+  const [tempatLahir, setTempatLahir] = useState("Magetan");
+  const [tanggalLahir, setTanggalLahir] = useState("");
+  const [jenisKelamin, setJenisKelamin] = useState("Laki-laki");
+  const [agama, setAgama] = useState("Islam");
+  const [statusPerkawinan, setStatusPerkawinan] = useState("Belum Kawin");
+  const [pekerjaan, setPekerjaan] = useState("");
+  const [dusun, setDusun] = useState("Dusun Krajan");
+  const [rtRw, setRtRw] = useState("RT 01 / RW 01");
+  const [alamatJalan, setAlamatJalan] = useState("");
   const [noWhatsapp, setNoWhatsapp] = useState("");
   const [email, setEmail] = useState("");
+
+  // Rincian Surat & Keperluan
+  const [keperluan, setKeperluan] = useState("");
+  const [keteranganTambahan, setKeteranganTambahan] = useState("");
 
   // Dynamic Form Values
   const [dynamicValues, setDynamicValues] = useState<Record<string, unknown>>({});
@@ -90,13 +104,33 @@ export default function LayananSuratPage() {
   const [myLetters, setMyLetters] = useState<PermohonanSurat[]>([]);
   const [loadingMyLetters, setLoadingMyLetters] = useState(false);
 
-  // Auto-fill user identity when logged in
+  // Auto-fill user identity when logged in or from cache
   useEffect(() => {
     if (user) {
       if (user.nik) setNik(user.nik);
       if (user.name) setNamaLengkap(user.name);
       if (user.phone) setNoWhatsapp(user.phone);
       if (user.email) setEmail(user.email);
+    }
+    try {
+      const cached = localStorage.getItem("warga_identitas_terakhir");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.nik && !user?.nik) setNik(parsed.nik);
+        if (parsed.namaLengkap && !user?.name) setNamaLengkap(parsed.namaLengkap);
+        if (parsed.tempatLahir) setTempatLahir(parsed.tempatLahir);
+        if (parsed.tanggalLahir) setTanggalLahir(parsed.tanggalLahir);
+        if (parsed.jenisKelamin) setJenisKelamin(parsed.jenisKelamin);
+        if (parsed.agama) setAgama(parsed.agama);
+        if (parsed.statusPerkawinan) setStatusPerkawinan(parsed.statusPerkawinan);
+        if (parsed.pekerjaan) setPekerjaan(parsed.pekerjaan);
+        if (parsed.dusun) setDusun(parsed.dusun);
+        if (parsed.rtRw) setRtRw(parsed.rtRw);
+        if (parsed.alamatJalan) setAlamatJalan(parsed.alamatJalan);
+        if (parsed.noWhatsapp && !user?.phone) setNoWhatsapp(parsed.noWhatsapp);
+      }
+    } catch {
+      // ignore
     }
   }, [user]);
 
@@ -146,8 +180,28 @@ export default function LayananSuratPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nik || !namaLengkap || !noWhatsapp || !selectedOpsi) {
-      alert("Mohon lengkapi seluruh kolom wajib yang bertanda bintang (*).");
+    if (!nik || !/^[0-9]{16}$/.test(nik.trim())) {
+      alert("Mohon masukkan NIK KTP yang valid (16 digit angka).");
+      return;
+    }
+    if (!namaLengkap.trim()) {
+      alert("Mohon masukkan Nama Lengkap pemohon sesuai KTP.");
+      return;
+    }
+    if (!tanggalLahir) {
+      alert("Mohon tentukan Tanggal Lahir Anda.");
+      return;
+    }
+    if (!pekerjaan.trim()) {
+      alert("Mohon isi Pekerjaan Anda saat ini.");
+      return;
+    }
+    if (!noWhatsapp.trim() || noWhatsapp.trim().length < 9) {
+      alert("Mohon masukkan Nomor WhatsApp aktif (minimal 9 digit angka).");
+      return;
+    }
+    if (!keperluan.trim()) {
+      alert("Mohon jelaskan Keperluan / Tujuan pengajuan surat.");
       return;
     }
 
@@ -162,15 +216,44 @@ export default function LayananSuratPage() {
     }
 
     setSubmitting(true);
+
+    const formattedTtl = `${tempatLahir.trim() || "Magetan"}, ${formatDateIndonesian(tanggalLahir)}`;
+    const fullAlamat = [
+      alamatJalan ? alamatJalan.trim() : "",
+      rtRw ? rtRw.trim() : "",
+      dusun ? (dusun.toLowerCase().startsWith("dusun") ? dusun.trim() : `Dusun ${dusun.trim()}`) : "",
+      "Desa Bogem, Kec. Kawedanan, Kab. Magetan",
+    ].filter(Boolean).join(", ");
+
+    const combinedDataFormulir: Record<string, unknown> = {
+      ...dynamicValues,
+      tempat_lahir: tempatLahir,
+      tanggal_lahir: tanggalLahir,
+      tempat_tgl_lahir: formattedTtl,
+      tempat_tanggal_lahir: formattedTtl,
+      jenis_kelamin: jenisKelamin,
+      agama: agama,
+      status_perkawinan: statusPerkawinan,
+      pekerjaan: pekerjaan.trim(),
+      dusun: dusun.trim(),
+      rt_rw: rtRw.trim(),
+      alamat_jalan: alamatJalan.trim(),
+      alamat_warga: fullAlamat,
+      alamat_domisili: fullAlamat,
+      alamat_lengkap: fullAlamat,
+      keperluan: keperluan.trim(),
+      keterangan_tambahan: keteranganTambahan.trim(),
+    };
+
     const input: CreatePermohonanInput = {
       user_id: user?.id || undefined,
       opsi_surat_id: selectedOpsi.id,
-      nik,
-      nama_lengkap: namaLengkap,
-      no_whatsapp: noWhatsapp,
-      email: email || undefined,
+      nik: nik.trim(),
+      nama_lengkap: namaLengkap.trim(),
+      no_whatsapp: noWhatsapp.trim(),
+      email: email?.trim() || undefined,
       jenis_surat: selectedOpsi.nama_surat,
-      data_formulir: dynamicValues,
+      data_formulir: combinedDataFormulir,
     };
 
     const res = await createPermohonanSurat(input);
@@ -179,6 +262,31 @@ export default function LayananSuratPage() {
     if (res.success && res.data) {
       setSuccessTicket(res.data);
       setDynamicValues({});
+      setKeperluan("");
+      setKeteranganTambahan("");
+
+      try {
+        localStorage.setItem(
+          "warga_identitas_terakhir",
+          JSON.stringify({
+            nik,
+            namaLengkap,
+            tempatLahir,
+            tanggalLahir,
+            jenisKelamin,
+            agama,
+            statusPerkawinan,
+            pekerjaan,
+            dusun,
+            rtRw,
+            alamatJalan,
+            noWhatsapp,
+          })
+        );
+      } catch {
+        // ignore
+      }
+
       if (user) {
         if (user.id && (!user.nik || user.nik !== nik)) {
           supabase
@@ -187,8 +295,8 @@ export default function LayananSuratPage() {
               {
                 id: user.id,
                 nik: nik.trim(),
-                nama: namaLengkap,
-                no_hp: noWhatsapp,
+                nama: namaLengkap.trim(),
+                no_hp: noWhatsapp.trim(),
                 email: user.email || email,
                 updated_at: new Date().toISOString(),
               },
@@ -197,6 +305,8 @@ export default function LayananSuratPage() {
         }
         loadMyLetters();
       }
+    } else {
+      alert(`Gagal mengajukan surat: ${res.error || "Terjadi kendala saat mengirim permohonan."}`);
     }
   };
 
@@ -507,22 +617,23 @@ export default function LayananSuratPage() {
                       )}
                     </div>
 
-                    {/* Step 2: Data Pemohon Umum */}
+                    {/* Step 2: Identitas Pemohon Sesuai KTP */}
                     <div className="space-y-4">
                       <div className="border-b border-border/60 pb-3 flex items-center justify-between">
                         <h3 className="text-sm sm:text-base font-bold text-foreground flex items-center space-x-2">
                           <span className="size-6 rounded-full bg-[#004329] text-white flex items-center justify-center text-xs font-extrabold">2</span>
-                          <span>Identitas Pemohon (Terisi Otomatis)</span>
+                          <span>Identitas Pemohon (Data Sesuai KTP)</span>
                         </h3>
                         <Badge variant="secondary" className="text-[10px] text-emerald-800 dark:text-emerald-300 font-bold">
-                          ✓ Auto-fill
+                          ✓ Standar 11 Poin Surat Resmi
                         </Badge>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* NIK */}
                         <div className="space-y-1.5">
                           <label className="text-xs font-bold text-foreground block">
-                            NIK KTP <span className="text-rose-500">*</span>
+                            Nomor Induk Kependudukan (NIK KTP) <span className="text-rose-500">*</span>
                           </label>
                           <Input
                             type="text"
@@ -535,6 +646,7 @@ export default function LayananSuratPage() {
                           />
                         </div>
 
+                        {/* Nama Lengkap */}
                         <div className="space-y-1.5">
                           <label className="text-xs font-bold text-foreground block">
                             Nama Lengkap Pemohon <span className="text-rose-500">*</span>
@@ -549,6 +661,145 @@ export default function LayananSuratPage() {
                           />
                         </div>
 
+                        {/* Tempat Lahir */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-foreground block">
+                            Tempat Lahir <span className="text-rose-500">*</span>
+                          </label>
+                          <Input
+                            type="text"
+                            required
+                            placeholder="Contoh: Magetan"
+                            value={tempatLahir}
+                            onChange={(e) => setTempatLahir(e.target.value)}
+                            className="text-xs sm:text-sm"
+                          />
+                        </div>
+
+                        {/* Tanggal Lahir */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-foreground block">
+                            Tanggal Lahir <span className="text-rose-500">*</span>
+                          </label>
+                          <Input
+                            type="date"
+                            required
+                            value={tanggalLahir}
+                            onChange={(e) => setTanggalLahir(e.target.value)}
+                            className="text-xs sm:text-sm font-semibold"
+                          />
+                        </div>
+
+                        {/* Jenis Kelamin */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-foreground block">
+                            Jenis Kelamin <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={jenisKelamin}
+                            onChange={(e) => setJenisKelamin(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl border border-input bg-card text-xs sm:text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          >
+                            <option value="Laki-laki">Laki-laki</option>
+                            <option value="Perempuan">Perempuan</option>
+                          </select>
+                        </div>
+
+                        {/* Agama */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-foreground block">
+                            Agama <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={agama}
+                            onChange={(e) => setAgama(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl border border-input bg-card text-xs sm:text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          >
+                            <option value="Islam">Islam</option>
+                            <option value="Kristen">Kristen</option>
+                            <option value="Katolik">Katolik</option>
+                            <option value="Hindu">Hindu</option>
+                            <option value="Buddha">Buddha</option>
+                            <option value="Khonghucu">Khonghucu</option>
+                          </select>
+                        </div>
+
+                        {/* Status Perkawinan */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-foreground block">
+                            Status Perkawinan <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={statusPerkawinan}
+                            onChange={(e) => setStatusPerkawinan(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl border border-input bg-card text-xs sm:text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          >
+                            <option value="Belum Kawin">Belum Kawin</option>
+                            <option value="Kawin">Kawin</option>
+                            <option value="Cerai Hidup">Cerai Hidup</option>
+                            <option value="Cerai Mati">Cerai Mati</option>
+                          </select>
+                        </div>
+
+                        {/* Pekerjaan */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-foreground block">
+                            Pekerjaan Saat Ini <span className="text-rose-500">*</span>
+                          </label>
+                          <Input
+                            type="text"
+                            required
+                            placeholder="Contoh: Wiraswasta / Petani / Pelajar / Karyawan Swasta"
+                            value={pekerjaan}
+                            onChange={(e) => setPekerjaan(e.target.value)}
+                            className="text-xs sm:text-sm"
+                          />
+                        </div>
+
+                        {/* Alamat: Dusun & RT/RW */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-foreground block">
+                            Dusun / Lingkungan di Bogem <span className="text-rose-500">*</span>
+                          </label>
+                          <Input
+                            type="text"
+                            required
+                            placeholder="Contoh: Dusun Krajan / Dusun Bogem"
+                            value={dusun}
+                            onChange={(e) => setDusun(e.target.value)}
+                            className="text-xs sm:text-sm"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-foreground block">
+                            RT / RW <span className="text-rose-500">*</span>
+                          </label>
+                          <Input
+                            type="text"
+                            required
+                            placeholder="Contoh: RT 02 / RW 01"
+                            value={rtRw}
+                            onChange={(e) => setRtRw(e.target.value)}
+                            className="text-xs sm:text-sm"
+                          />
+                        </div>
+
+                        {/* Jalan / Nomor Rumah */}
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <label className="text-xs font-bold text-foreground block">
+                            Nama Jalan / Gang / No. Rumah (Opsional)
+                          </label>
+                          <Input
+                            type="text"
+                            placeholder="Contoh: Jl. Bhakti Mulya No. 15"
+                            value={alamatJalan}
+                            onChange={(e) => setAlamatJalan(e.target.value)}
+                            className="text-xs sm:text-sm"
+                          />
+                        </div>
+
+                        {/* WhatsApp & Email */}
                         <div className="space-y-1.5">
                           <label className="text-xs font-bold text-foreground block">
                             Nomor WhatsApp Aktif <span className="text-rose-500">*</span>
@@ -561,12 +812,12 @@ export default function LayananSuratPage() {
                             onChange={(e) => setNoWhatsapp(e.target.value)}
                             className="font-bold text-emerald-800 dark:text-emerald-300 text-xs sm:text-sm"
                           />
-                          <span className="text-[10px] text-muted-foreground block">Pemberitahuan surat selesai akan dikirimkan ke nomor ini.</span>
+                          <span className="text-[10px] text-muted-foreground block">Pemberitahuan surat selesai akan dikirim ke nomor ini.</span>
                         </div>
 
                         <div className="space-y-1.5">
                           <label className="text-xs font-bold text-foreground block">
-                            Email
+                            Alamat Email (Opsional)
                           </label>
                           <Input
                             type="email"
@@ -579,72 +830,112 @@ export default function LayananSuratPage() {
                       </div>
                     </div>
 
-                    {/* Step 3: DYNAMIC FORM FIELDS */}
-                    {selectedOpsi && selectedOpsi.custom_fields && selectedOpsi.custom_fields.length > 0 && (
+                    {/* Step 3: Rincian Dokumen & Keperluan Surat */}
+                    <div className="space-y-4">
+                      <div className="border-b border-border/60 pb-3">
+                        <h3 className="text-sm sm:text-base font-bold text-foreground flex items-center space-x-2">
+                          <span className="size-6 rounded-full bg-[#004329] text-white flex items-center justify-center text-xs font-extrabold">3</span>
+                          <span>Rincian Keperluan Surat ({selectedOpsi?.nama_surat || "Surat Keterangan"})</span>
+                        </h3>
+                      </div>
+
                       <div className="space-y-4">
-                        <div className="border-b border-border/60 pb-3">
-                          <h3 className="text-sm sm:text-base font-bold text-foreground flex items-center space-x-2">
-                            <span className="size-6 rounded-full bg-[#004329] text-white flex items-center justify-center text-xs font-extrabold">3</span>
-                            <span>Rincian Data Khusus ({selectedOpsi.nama_surat})</span>
-                          </h3>
+                        {/* Keperluan Surat (Universal & Wajib untuk semua surat) */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-foreground block">
+                            Keperluan / Tujuan Pembuatan Surat <span className="text-rose-500">*</span>
+                          </label>
+                          <Textarea
+                            rows={3}
+                            required
+                            placeholder="Contoh: Persyaratan pengajuan pinjaman KUR Bank BRI / Persyaratan pendaftaran beasiswa / Melamar pekerjaan..."
+                            value={keperluan}
+                            onChange={(e) => setKeperluan(e.target.value)}
+                            className="text-xs sm:text-sm"
+                          />
+                          <span className="text-[11px] text-muted-foreground block">
+                            Tujuan ini akan dicantumkan secara resmi pada poin 11 (Keperluan) di lembar surat desa.
+                          </span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {selectedOpsi.custom_fields.map((field) => {
-                            const isFullWidth = field.tipe === "textarea";
-                            const val = (dynamicValues[field.id] as string) || "";
+                        {/* Custom Fields jika ada (e.g. Nama Usaha pada SKU) */}
+                        {selectedOpsi && selectedOpsi.custom_fields && selectedOpsi.custom_fields.length > 0 && (
+                          <div className="p-4 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
+                            <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300 block uppercase tracking-wider">
+                              Rincian Tambahan Khusus {selectedOpsi.nama_surat}:
+                            </span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {selectedOpsi.custom_fields.map((field) => {
+                                const isFullWidth = field.tipe === "textarea";
+                                const val = (dynamicValues[field.id] as string) || "";
 
-                            return (
-                              <div
-                                key={field.id}
-                                className={`space-y-1.5 ${isFullWidth ? "sm:col-span-2" : ""}`}
-                              >
-                                <label className="text-xs font-bold text-foreground block">
-                                  {field.label} {field.wajib && <span className="text-rose-500">*</span>}
-                                </label>
+                                return (
+                                  <div
+                                    key={field.id}
+                                    className={`space-y-1.5 ${isFullWidth ? "sm:col-span-2" : ""}`}
+                                  >
+                                    <label className="text-xs font-bold text-foreground block">
+                                      {field.label} {field.wajib && <span className="text-rose-500">*</span>}
+                                    </label>
 
-                                {field.tipe === "textarea" ? (
-                                  <Textarea
-                                    rows={3}
-                                    required={field.wajib}
-                                    placeholder={field.placeholder || `Masukkan ${field.label.toLowerCase()}...`}
-                                    value={val}
-                                    onChange={(e) => handleDynamicChange(field.id, e.target.value)}
-                                    className="text-xs sm:text-sm"
-                                  />
-                                ) : field.tipe === "date" ? (
-                                  <Input
-                                    type="date"
-                                    required={field.wajib}
-                                    value={val}
-                                    onChange={(e) => handleDynamicChange(field.id, e.target.value)}
-                                    className="text-xs sm:text-sm font-semibold"
-                                  />
-                                ) : field.tipe === "number" ? (
-                                  <Input
-                                    type="number"
-                                    required={field.wajib}
-                                    placeholder={field.placeholder || "0"}
-                                    value={val}
-                                    onChange={(e) => handleDynamicChange(field.id, e.target.value)}
-                                    className="text-xs sm:text-sm font-mono"
-                                  />
-                                ) : (
-                                  <Input
-                                    type="text"
-                                    required={field.wajib}
-                                    placeholder={field.placeholder || `Masukkan ${field.label.toLowerCase()}...`}
-                                    value={val}
-                                    onChange={(e) => handleDynamicChange(field.id, e.target.value)}
-                                    className="text-xs sm:text-sm"
-                                  />
-                                )}
-                              </div>
-                            );
-                          })}
+                                    {field.tipe === "textarea" ? (
+                                      <Textarea
+                                        rows={2}
+                                        required={field.wajib}
+                                        placeholder={field.placeholder || `Masukkan ${field.label.toLowerCase()}...`}
+                                        value={val}
+                                        onChange={(e) => handleDynamicChange(field.id, e.target.value)}
+                                        className="text-xs sm:text-sm"
+                                      />
+                                    ) : field.tipe === "date" ? (
+                                      <Input
+                                        type="date"
+                                        required={field.wajib}
+                                        value={val}
+                                        onChange={(e) => handleDynamicChange(field.id, e.target.value)}
+                                        className="text-xs sm:text-sm font-semibold"
+                                      />
+                                    ) : field.tipe === "number" ? (
+                                      <Input
+                                        type="number"
+                                        required={field.wajib}
+                                        placeholder={field.placeholder || "0"}
+                                        value={val}
+                                        onChange={(e) => handleDynamicChange(field.id, e.target.value)}
+                                        className="text-xs sm:text-sm font-mono"
+                                      />
+                                    ) : (
+                                      <Input
+                                        type="text"
+                                        required={field.wajib}
+                                        placeholder={field.placeholder || `Masukkan ${field.label.toLowerCase()}...`}
+                                        value={val}
+                                        onChange={(e) => handleDynamicChange(field.id, e.target.value)}
+                                        className="text-xs sm:text-sm"
+                                      />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Catatan Tambahan (Opsional) */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-foreground block">
+                            Keterangan Tambahan / Catatan untuk Petugas Balai Desa (Opsional)
+                          </label>
+                          <Textarea
+                            rows={2}
+                            placeholder="Tuliskan jika ada keterangan pendukung atau catatan khusus lainnya..."
+                            value={keteranganTambahan}
+                            onChange={(e) => setKeteranganTambahan(e.target.value)}
+                            className="text-xs sm:text-sm"
+                          />
                         </div>
                       </div>
-                    )}
+                    </div>
 
                     {/* Submit Button */}
                     <div className="pt-4 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -908,19 +1199,70 @@ function SuratCard({ item }: { item: PermohonanSurat }) {
           </div>
 
           {item.file_surat_selesai ? (
-            <Button
-              asChild
-              size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl gap-2 shadow-xs"
-            >
-              <a
-                href={item.file_surat_selesai}
-                download={item.nama_file_selesai || "Surat_Desa_Bogem.pdf"}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  if (item.file_surat_selesai?.startsWith("data:text/html")) {
+                    const w = window.open();
+                    if (w) {
+                      let cleanHtml = decodeURIComponent(
+                        item.file_surat_selesai.replace("data:text/html;charset=utf-8,", "")
+                      );
+                      if (!cleanHtml.includes("surat-sheet")) {
+                        const fixStyle = `
+                          <style>
+                            html { background-color: #f1f5f9 !important; }
+                            body {
+                              max-width: 210mm !important;
+                              margin: 24px auto !important;
+                              background-color: #ffffff !important;
+                              box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+                              padding: 15mm 20mm !important;
+                              box-sizing: border-box !important;
+                            }
+                            @media print {
+                              html, body {
+                                background-color: #ffffff !important;
+                                margin: 0 !important;
+                                max-width: 100% !important;
+                                box-shadow: none !important;
+                              }
+                            }
+                          </style>
+                        `;
+                        cleanHtml = cleanHtml.replace("</head>", `${fixStyle}</head>`);
+                      }
+                      w.document.open();
+                      w.document.write(cleanHtml);
+                      w.document.close();
+                    }
+                  } else {
+                    window.open(item.file_surat_selesai, "_blank");
+                  }
+                }}
+                className="bg-[#004329] hover:bg-[#003520] text-white font-extrabold text-xs rounded-xl gap-2 shadow-xs"
               >
-                <Download className="size-4" />
-                <span>Unduh Surat Selesai</span>
-              </a>
-            </Button>
+                <Printer className="size-4" />
+                <span>Lihat & Cetak Surat (A4)</span>
+              </Button>
+
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="text-xs font-bold rounded-xl gap-1.5 border-slate-300 dark:border-slate-700"
+              >
+                <a
+                  href={item.file_surat_selesai}
+                  download={item.nama_file_selesai || "Surat_Desa_Bogem.html"}
+                >
+                  <Download className="size-4" />
+                  <span>Unduh Berkas</span>
+                </a>
+              </Button>
+            </div>
           ) : (
             <span className="text-xs text-muted-foreground italic">
               Silakan ambil cetakan fisik surat di Balai Desa Bogem.
