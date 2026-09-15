@@ -13,6 +13,7 @@ import {
   FileImage,
   Search,
   Users,
+  Landmark,
 } from "lucide-react";
 import { PerangkatItem } from "@/types/perangkat";
 import { fetchPerangkatList } from "@/services/perangkatService";
@@ -61,65 +62,116 @@ export default function BaganStrukturDesa({
     };
   }, []);
 
-  // Filter aparatur berdasarkan kategori SOTK - otomatis mendeteksi Sekretaris Desa
-  const sekdes = perangkatList.find((p) => {
-    const j = (p.jabatan || "").toLowerCase();
-    return j.includes("sekretaris") || j.includes("sekdes");
-  });
-
-  const kaurList = perangkatList.filter(
-    (p) =>
-      p.jabatan.toLowerCase().includes("kaur") ||
-      p.jabatan.toLowerCase().includes("urusan")
-  );
-
-  const kasiList = perangkatList.filter(
-    (p) =>
-      p.jabatan.toLowerCase().includes("kasi") ||
-      p.jabatan.toLowerCase().includes("seksi")
-  );
-
-  const kasunList = perangkatList.filter(
-    (p) =>
-      p.jabatan.toLowerCase().includes("kamituwo") ||
-      p.jabatan.toLowerCase().includes("kasun") ||
-      p.jabatan.toLowerCase().includes("dusun")
-  );
-
-  // Fallback data jika belum lengkap di database
-  const displayKaurs = kaurList.length > 0 ? kaurList : [
-    { id: "k-1", nama: "DARNO", jabatan: "Kaur Tata Usaha & Umum", foto: "" },
-    { id: "k-2", nama: "EKO YOYOK HARIANTO", jabatan: "Kaur Keuangan", foto: "" },
-    { id: "k-3", nama: "Dalam Proses Pengisian", jabatan: "Kaur Perencanaan", foto: "" },
-  ];
-
-  const displayKasis = kasiList.length > 0 ? kasiList : [
-    { id: "s-1", nama: "YATENI", jabatan: "Kasi Pemerintahan", foto: "" },
-    { id: "s-2", nama: "HERU PRAMONO", jabatan: "Kasi Kesejahteraan", foto: "" },
-    { id: "s-3", nama: "BUDI UTOMO", jabatan: "Kasi Pelayanan", foto: "" },
-  ];
-
-  const displayKasuns = kasunList.length > 0 ? kasunList : [
-    { id: "d-1", nama: "SUMIRAN", jabatan: "Kamituwo 1", foto: "" },
-    { id: "d-2", nama: "DINNA FITRI N.J", jabatan: "Kamituwo 2", foto: "" },
-  ];
-
-  // Data gabungan untuk direktori aparatur (termasuk Kepala Desa)
-  const kadesItem: PerangkatItem = {
-    id: "kades-main",
-    nama: kadesName,
-    jabatan: "Kepala Desa",
-    foto: kadesFoto,
-    urutan: 0,
-  };
-
-  const hasKadesInList = perangkatList.some(
+  // Filter aparatur berdasarkan kategori SOTK dari data database panel admin
+  const kadesFromList = perangkatList.find(
     (p) =>
       p.jabatan.toLowerCase().includes("kepala desa") &&
       !p.jabatan.toLowerCase().includes("dusun")
   );
 
-  const directoryList = hasKadesInList ? perangkatList : [kadesItem, ...perangkatList];
+  const activeKadesName = kadesFromList?.nama || kadesName || "TUT WARIYANI, S.KM";
+  const activeKadesFoto = kadesFromList?.foto || kadesFoto || "";
+
+  // 1. Sekretaris Desa (Sesuai database panel admin SOTK; jika belum terisi, berstatus 'Dalam Proses Pengisian')
+  const sekdesFromList = perangkatList.find((p) => {
+    const j = (p.jabatan || "").toLowerCase();
+    return j.includes("sekretaris") || j.includes("sekdes");
+  });
+
+  const sekdes: PerangkatItem = sekdesFromList || {
+    id: "sekdes-vacant",
+    nama: "Dalam Proses Pengisian",
+    jabatan: "Sekretaris Desa",
+    foto: "",
+    urutan: 2,
+  };
+
+  // 2. BPD (Mitra Koordinasi: SUWARNO)
+  const bpdItem: PerangkatItem = perangkatList.find((p) => (p.jabatan || "").toLowerCase().includes("bpd")) || {
+    id: "bpd-main",
+    nama: "SUWARNO",
+    jabatan: "Badan Permusyawaratan (BPD)",
+    foto: "",
+    urutan: 0,
+  };
+
+  // 3. Unsur Staf (Lengkap 3 Kaur: Kaur TU, Kaur Keuangan, Kaur Perencanaan)
+  // DARNO murni terdaftar di database sebagai Kaur Tata Usaha & Umum
+  const kaurTu = perangkatList.find((p) => p.jabatan.toLowerCase().includes("tata usaha") || p.jabatan.toLowerCase().includes("tu")) || {
+    id: "k-1",
+    nama: "DARNO",
+    jabatan: "Kaur Tata Usaha & Umum",
+    foto: "",
+  };
+
+  const kaurKeu = perangkatList.find((p) => p.jabatan.toLowerCase().includes("keuangan")) || {
+    id: "k-2",
+    nama: "EKO YOYOK HARIANTO",
+    jabatan: "Kaur Keuangan",
+    foto: "",
+  };
+
+  const kaurRen = perangkatList.find((p) => p.jabatan.toLowerCase().includes("perencanaan")) || {
+    id: "k-3",
+    nama: "Dalam Proses Pengisian",
+    jabatan: "Kaur Perencanaan",
+    foto: "",
+  };
+
+  const displayKaurs: PerangkatItem[] = [kaurTu, kaurKeu, kaurRen];
+
+  // 4. Pelaksana Teknis (Lengkap 3 Kasi: Kasi Pemerintahan, Kasi Kesejahteraan, Kasi Pelayanan)
+  const kasiPem = perangkatList.find((p) => p.jabatan.toLowerCase().includes("pemerintahan")) || {
+    id: "s-1",
+    nama: "YATENI",
+    jabatan: "Kasi Pemerintahan",
+    foto: "",
+  };
+
+  const kasiKesra = perangkatList.find((p) => p.jabatan.toLowerCase().includes("kesejahteraan") || p.jabatan.toLowerCase().includes("kesra")) || {
+    id: "s-2",
+    nama: "HERU PRAMONO",
+    jabatan: "Kasi Kesejahteraan",
+    foto: "",
+  };
+
+  const kasiPel = perangkatList.find((p) => p.jabatan.toLowerCase().includes("pelayanan")) || {
+    id: "s-3",
+    nama: "BUDI UTOMO",
+    jabatan: "Kasi Pelayanan",
+    foto: "",
+  };
+
+  const displayKasis: PerangkatItem[] = [kasiPem, kasiKesra, kasiPel];
+
+  // 5. Pelaksana Kewilayahan (Lengkap 2 Kasun: Kasun 1 / Sumiran, Kasun 2 / Dinna Fitri)
+  const kasun1 = perangkatList.find((p) => (p.jabatan.toLowerCase().includes("dusun") || p.jabatan.toLowerCase().includes("kamituwo") || p.jabatan.toLowerCase().includes("kasun")) && (p.jabatan.includes("1") || p.jabatan.toLowerCase().includes(" i") || p.nama.toUpperCase().includes("SUMIRAN"))) || {
+    id: "d-1",
+    nama: "SUMIRAN",
+    jabatan: "Kamituwo 1 (Dusun I)",
+    foto: "",
+  };
+
+  const kasun2 = perangkatList.find((p) => (p.jabatan.toLowerCase().includes("dusun") || p.jabatan.toLowerCase().includes("kamituwo") || p.jabatan.toLowerCase().includes("kasun")) && (p.jabatan.includes("2") || p.jabatan.toLowerCase().includes(" ii") || p.nama.toUpperCase().includes("DINNA"))) || {
+    id: "d-2",
+    nama: "DINNA FITRI N.J",
+    jabatan: "Kamituwo 2 (Dusun II)",
+    foto: "",
+  };
+
+  const displayKasuns: PerangkatItem[] = [kasun1, kasun2];
+
+  // Data gabungan untuk direktori aparatur (termasuk Kepala Desa)
+  const activeKadesItem: PerangkatItem = {
+    id: "kades-main",
+    nama: activeKadesName,
+    jabatan: "Kepala Desa",
+    foto: activeKadesFoto,
+    urutan: 0,
+  };
+
+  const hasKadesInList = Boolean(kadesFromList);
+  const directoryList = hasKadesInList ? perangkatList : [activeKadesItem, ...perangkatList];
 
   const filteredDirectory = directoryList.filter((item) => {
     const matchSearch =
@@ -210,44 +262,52 @@ export default function BaganStrukturDesa({
         </div>
       </div>
 
-      {/* VIEW 1: ORGANIZATIONAL TREE WITH CONNECTING LINES */}
+      {/* VIEW 1: ORGANIZATIONAL TREE WITH CONNECTING LINES (PERSIS PAPAN SOTK BALAI DESA BOGEM) */}
       {viewMode === "tree" && (
         <div className="space-y-3">
-          <Card className="p-4 sm:p-8 space-y-8 overflow-x-auto touch-pan-x bg-card">
-            <div className="min-w-[920px] max-w-5xl mx-auto py-2">
-              
-              {/* TINGKAT 1: KEPALA DESA & BPD */}
-              <div className="relative flex items-center justify-center min-h-[110px]">
-                {/* Node BPD (Mitra Konsultasi) di sisi kiri */}
-                <div className="absolute left-6 lg:left-10 top-1/2 -translate-y-1/2 z-10">
-                  <div className="bg-muted/60 hover:bg-muted border border-border rounded-2xl p-3.5 shadow-xs w-52 text-left transition-all">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                      Mitra Kemitraan
-                    </span>
-                    <h4 className="text-xs sm:text-sm font-extrabold text-foreground leading-snug">
-                      BPD
-                    </h4>
-                    <p className="text-[11px] text-muted-foreground font-medium">
-                      Badan Permusyawaratan Desa
-                    </p>
+          <Card className="p-4 sm:p-8 overflow-x-auto touch-pan-x bg-card border-border/80 shadow-xs">
+            <div className="min-w-[960px] max-w-5xl mx-auto py-3">
+              {/* Header Papan SOTK Resmi */}
+              <div className="text-center mb-6 space-y-1">
+                <div className="w-12 h-12 mx-auto mb-2 relative flex items-center justify-center">
+                  <Image
+                    src="/images/logo-magetan.png"
+                    alt="Logo Kabupaten Magetan"
+                    width={44}
+                    height={44}
+                    className="object-contain mx-auto"
+                  />
+                </div>
+                <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-wider text-foreground">
+                  Susunan Organisasi Tata Kerja Pemerintah Desa
+                </h3>
+                <p className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-widest">
+                  Desa Bogem Kec. Kawedanan Kab. Magetan
+                </p>
+
+                {/* Legend Garis Hierarki */}
+                <div className="flex items-center justify-center gap-6 pt-2 text-[11px] text-muted-foreground font-semibold">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-0.5 bg-slate-400 dark:bg-slate-600" />
+                    <span>Garis Komando / Instruksi</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 border-t-2 border-dashed border-emerald-600 dark:border-emerald-400" />
+                    <span>Garis Koordinasi (BPD)</span>
                   </div>
                 </div>
+              </div>
 
-                {/* Garis Horizontal Putus-Putus Koordinasi antara Kades dan BPD */}
-                <div className="absolute left-[232px] right-[calc(50%+145px)] top-1/2 -translate-y-1/2 border-t-2 border-dashed border-border flex items-center justify-center">
-                  <span className="bg-card px-1.5 text-[9px] font-bold text-muted-foreground uppercase tracking-wider -translate-y-1/2 whitespace-nowrap">
-                    Koordinasi
-                  </span>
-                </div>
-
-                {/* Node Utama: KEPALA DESA (Pusat Pimpinan) */}
+              {/* TINGKAT 1: KEPALA DESA & BPD */}
+              <div className="relative flex items-center justify-center min-h-[110px]">
+                {/* Node Utama: KEPALA DESA (Pusat Pimpinan di 50%) */}
                 <div className="relative z-10">
                   <div className="bg-gradient-to-br from-[#063321] to-[#0A4D33] text-white rounded-2xl p-4 sm:p-5 shadow-xs border border-emerald-800/60 flex items-center space-x-4 w-72 sm:w-80 hover:shadow-md transition-all">
                     <div className="size-14 rounded-full overflow-hidden bg-emerald-900 border-2 border-emerald-400/50 shrink-0 flex items-center justify-center relative">
-                      {kadesFoto ? (
+                      {activeKadesFoto ? (
                         <Image
-                          src={kadesFoto}
-                          alt={kadesName}
+                          src={activeKadesFoto}
+                          alt={activeKadesName}
                           fill
                           sizes="56px"
                           className="object-cover"
@@ -258,210 +318,288 @@ export default function BaganStrukturDesa({
                     </div>
                     <div className="space-y-0.5 min-w-0">
                       <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">
-                        Kepala Desa
+                        Kepala Desa Bogem
                       </span>
                       <h3 className="text-sm font-extrabold text-white leading-tight truncate">
-                        {kadesName}
+                        {activeKadesName}
                       </h3>
-                      <span className="text-[10px] text-emerald-100/70 block">
+                      <span className="text-[10px] text-emerald-100/70 block truncate">
                         Pimpinan Penyelenggara Desa
                       </span>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* GARIS VERTIKAL DARI KADES KE SEKDES */}
-              <div className="flex flex-col items-center">
-                <div className="w-0.5 h-10 bg-border relative">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
-                    Komando
+                {/* Node BPD (Mitra Koordinasi di sisi kanan) */}
+                <div className="absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 z-10">
+                  <div className="bg-card hover:bg-muted/50 border border-border rounded-2xl p-3.5 shadow-xs w-56 text-left transition-all">
+                    <div className="flex items-center space-x-3">
+                      <div className="size-10 rounded-full overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center relative">
+                        {bpdItem?.foto ? (
+                          <Image
+                            src={bpdItem.foto}
+                            alt={bpdItem.nama}
+                            fill
+                            sizes="40px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <Landmark className="size-5 text-emerald-700 dark:text-emerald-400" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[9px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider block">
+                          Mitra Koordinasi
+                        </span>
+                        <h4 className="text-xs sm:text-sm font-bold text-foreground leading-snug truncate">
+                          {bpdItem?.nama || "BPD"}
+                        </h4>
+                        <p className="text-[10px] text-muted-foreground font-medium truncate">
+                          {bpdItem?.jabatan || "Badan Permusyawaratan Desa"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Garis Horizontal Putus-Putus Koordinasi antara Kades dan BPD */}
+                <div className="absolute left-[calc(50%+160px)] right-[245px] top-1/2 -translate-y-1/2 border-t-2 border-dashed border-emerald-600 dark:border-emerald-400 flex items-center justify-center">
+                  <span className="bg-card px-2 text-[9px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider -translate-y-1/2 whitespace-nowrap shadow-2xs rounded-full border border-emerald-300/60 dark:border-emerald-700/60">
+                    Koordinasi
                   </span>
                 </div>
               </div>
 
-              {/* TINGKAT 2: SEKRETARIS DESA */}
-              <div className="flex justify-center">
-                <div className="bg-card hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 border border-emerald-200/90 dark:border-emerald-800/60 rounded-2xl p-3.5 sm:p-4 shadow-xs flex items-center space-x-3.5 w-72 transition-all">
-                  <div className="size-12 rounded-full overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center relative">
-                    {sekdes?.foto ? (
-                      <Image
-                        src={sekdes.foto}
-                        alt={sekdes.nama}
-                        fill
-                        sizes="48px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <UserCheck className="size-6 text-emerald-700 dark:text-emerald-400" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider block">
-                      Sekretaris Desa
-                    </span>
-                    <h4 className="text-xs sm:text-sm font-bold text-foreground truncate">
-                      {sekdes?.nama || "Sekretariat Desa"}
-                    </h4>
-                    <span className="text-[10px] text-muted-foreground block">
-                      Pimpinan Kesekretariatan
-                    </span>
-                  </div>
+              {/* GARIS VERTIKAL DARI KEPALA DESA KE CROSSBAR KOMANDO */}
+              <div className="flex flex-col items-center">
+                <div className="w-0.5 h-8 bg-slate-400 dark:bg-slate-600 relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+                    Garis Komando
+                  </span>
                 </div>
               </div>
 
-              {/* GARIS VERTIKAL DARI SEKDES KE CROSSBAR */}
-              <div className="flex justify-center">
-                <div className="w-0.5 h-8 bg-border" />
-              </div>
+              {/* TINGKAT 2 & 3: CROSSBAR DISTRIBUSI & 3 PILAR HIERARKI */}
+              <div className="relative">
+                {/* Crossbar Horizontal membentang dari pusat Pilar 1 (16.67%) ke pusat Pilar 3 (83.33%) */}
+                <div className="grid grid-cols-3 gap-6 relative">
+                  <div className="absolute top-0 left-[16.67%] right-[16.67%] border-t-2 border-slate-400 dark:border-slate-600" />
 
-              {/* GARIS HORIZONTAL DISTRIBUSI (CROSSBAR 3 PILAR) */}
-              <div className="relative px-12 sm:px-16">
-                <div className="border-t-2 border-border w-full" />
-                <div className="grid grid-cols-3 gap-6">
+                  {/* Drop line dari crossbar ke Kolom 1 (Sekretariat Desa) dengan panah turun */}
                   <div className="flex justify-center">
-                    <div className="w-0.5 h-6 bg-border" />
+                    <div className="w-0.5 h-6 bg-slate-400 dark:bg-slate-600 relative">
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-t-[5px] border-t-slate-400 dark:border-t-slate-600" />
+                    </div>
                   </div>
+
+                  {/* Drop line dari crossbar ke Kolom 2 (Pelaksana Teknis) */}
                   <div className="flex justify-center">
-                    <div className="w-0.5 h-6 bg-border" />
+                    <div className="w-0.5 h-6 bg-slate-400 dark:bg-slate-600" />
                   </div>
+
+                  {/* Drop line dari crossbar ke Kolom 3 (Pelaksana Kewilayahan) */}
                   <div className="flex justify-center">
-                    <div className="w-0.5 h-6 bg-border" />
+                    <div className="w-0.5 h-6 bg-slate-400 dark:bg-slate-600" />
                   </div>
                 </div>
-              </div>
 
-              {/* TINGKAT 3: 3 PILAR */}
-              <div className="grid grid-cols-3 gap-6 pt-1">
-                {/* PILAR 1: KEPALA URUSAN (KAUR) */}
-                <div className="space-y-3">
-                  <div className="bg-muted text-foreground text-center py-2 px-3 rounded-xl border border-border">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider block">
-                      Unsur Staf (Kaur)
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-medium">
-                      Membantu Sekretaris Desa
-                    </span>
-                  </div>
+                {/* 3 PILAR STRUKTUR HIERARKI */}
+                <div className="grid grid-cols-3 gap-6 pt-0">
+                  
+                  {/* === PILAR 1: SEKRETARIS DESA & UNSUR STAF (KAUR) === */}
+                  <div className="space-y-3">
+                    {/* Kartu Sekretaris Desa (Menyambung langsung ke Unsur Staf di bawahnya) */}
+                    <div className="relative flex flex-col items-center">
+                      <Card className="w-full h-[72px] p-3 sm:p-3.5 hover:shadow-xs transition-all flex items-center space-x-3 bg-card border-emerald-300 dark:border-emerald-700/80 shadow-2xs">
+                        <div className="size-11 rounded-full overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center relative">
+                          {sekdes?.foto ? (
+                            <Image
+                              src={sekdes.foto}
+                              alt={sekdes.nama}
+                              fill
+                              sizes="44px"
+                              className="object-cover"
+                            />
+                          ) : (
+                            <UserCheck className="size-5 text-emerald-700 dark:text-emerald-400" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-[9px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider block">
+                            Sekretaris Desa
+                          </span>
+                          <h4 className="text-xs sm:text-sm font-bold text-foreground truncate">
+                            {sekdes?.nama}
+                          </h4>
+                          <span className="text-[9.5px] text-muted-foreground block truncate">
+                            {sekdesFromList ? sekdes.jabatan : "Pimpinan Kesekretariatan"}
+                          </span>
+                        </div>
+                      </Card>
 
-                  <div className="relative pl-3 space-y-3 border-l-2 border-border ml-4">
-                    {displayKaurs.map((kaur) => (
-                      <div key={kaur.id} className="relative group">
-                        <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-3 h-0.5 bg-border" />
-                        <Card className="p-3 hover:shadow-xs transition-all flex items-center space-x-3 bg-card border-border/80">
-                          <div className="size-10 rounded-full overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center relative">
-                            {kaur.foto ? (
-                              <Image
-                                src={kaur.foto}
-                                alt={kaur.nama}
-                                fill
-                                sizes="40px"
-                                className="object-cover"
-                              />
-                            ) : (
-                              <UserCheck className="size-5 text-muted-foreground/60" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <span className="text-[9px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider block truncate">
-                              {kaur.jabatan}
-                            </span>
-                            <h5 className="text-xs font-bold text-foreground truncate">
-                              {kaur.nama}
-                            </h5>
-                          </div>
-                        </Card>
+                      {/* Garis Vertikal Turun dari Sekdes ke Unsur Staf */}
+                      <div className="w-0.5 h-6 bg-slate-400 dark:bg-slate-600 relative">
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-t-[5px] border-t-slate-400 dark:border-t-slate-600" />
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    </div>
 
-                {/* PILAR 2: KEPALA SEKSI (KASI) */}
-                <div className="space-y-3">
-                  <div className="bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-200 text-center py-2 px-3 rounded-xl border border-emerald-200/80 dark:border-emerald-800/60">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider block">
-                      Pelaksana Teknis (Kasi)
-                    </span>
-                    <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
-                      Operasional Kebijakan Desa
-                    </span>
+                    {/* Header Unsur Staf */}
+                    <div className="bg-muted text-foreground text-center py-2 px-3 rounded-xl border border-border">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider block">
+                        Unsur Staf (Kaur)
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-medium">
+                        Membantu Pelayanan Administrasi Sekretaris Desa
+                      </span>
+                    </div>
+
+                    {/* Daftar 3 Kaur */}
+                    <div className="relative pl-3 space-y-3 border-l-2 border-slate-400 dark:border-slate-600 ml-4">
+                      {displayKaurs.map((kaur) => (
+                        <div key={kaur.id} className="relative group">
+                          <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-3 h-0.5 bg-slate-400 dark:bg-slate-600" />
+                          <Card className="p-3 hover:shadow-xs transition-all flex items-center space-x-3 bg-card border-border/80">
+                            <div className="size-10 rounded-full overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center relative">
+                              {kaur.foto ? (
+                                <Image
+                                  src={kaur.foto}
+                                  alt={kaur.nama}
+                                  fill
+                                  sizes="40px"
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <UserCheck className="size-5 text-muted-foreground/60" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-[9px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider block truncate">
+                                {kaur.jabatan}
+                              </span>
+                              <h5 className="text-xs font-bold text-foreground truncate">
+                                {kaur.nama}
+                              </h5>
+                            </div>
+                          </Card>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="relative pl-3 space-y-3 border-l-2 border-border ml-4">
-                    {displayKasis.map((kasi) => (
-                      <div key={kasi.id} className="relative group">
-                        <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-3 h-0.5 bg-border" />
-                        <Card className="p-3 hover:shadow-xs transition-all flex items-center space-x-3 bg-card border-border/80">
-                          <div className="size-10 rounded-full overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center relative">
-                            {kasi.foto ? (
-                              <Image
-                                src={kasi.foto}
-                                alt={kasi.nama}
-                                fill
-                                sizes="40px"
-                                className="object-cover"
-                              />
-                            ) : (
-                              <UserCheck className="size-5 text-muted-foreground/60" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <span className="text-[9px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider block truncate">
-                              {kasi.jabatan}
-                            </span>
-                            <h5 className="text-xs font-bold text-foreground truncate">
-                              {kasi.nama}
-                            </h5>
-                          </div>
-                        </Card>
+                  {/* === PILAR 2: PELAKSANA TEKNIS (KASI) === */}
+                  <div className="space-y-3">
+                    {/* Garis Komando Langsung dari Kepala Desa ke Pelaksana Teknis (Sejajar dengan tinggi Sekdes) */}
+                    <div className="h-[96px] flex flex-col items-center justify-center relative">
+                      <div className="w-0.5 h-full bg-slate-400 dark:bg-slate-600 relative">
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-t-[5px] border-t-slate-400 dark:border-t-slate-600" />
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      <span className="absolute bg-card px-2 py-0.5 text-[8.5px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider rounded-full border border-emerald-300/70 dark:border-emerald-700/70 shadow-2xs whitespace-nowrap">
+                        Komando Langsung
+                      </span>
+                    </div>
 
-                {/* PILAR 3: PELAKSANA KEWILAYAHAN (KAMITUWO / KASUN) */}
-                <div className="space-y-3">
-                  <div className="bg-muted text-foreground text-center py-2 px-3 rounded-xl border border-border">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider block">
-                      Pelaksana Kewilayahan
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-medium">
-                      Kepala Dusun / Kamituwo
-                    </span>
+                    {/* Header Pelaksana Teknis */}
+                    <div className="bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-200 text-center py-2 px-3 rounded-xl border border-emerald-200/80 dark:border-emerald-800/60">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider block">
+                        Pelaksana Teknis (Kasi)
+                      </span>
+                      <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
+                        Kepala Seksi (Komando Langsung Kades)
+                      </span>
+                    </div>
+
+                    {/* Daftar 3 Kasi */}
+                    <div className="relative pl-3 space-y-3 border-l-2 border-slate-400 dark:border-slate-600 ml-4">
+                      {displayKasis.map((kasi) => (
+                        <div key={kasi.id} className="relative group">
+                          <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-3 h-0.5 bg-slate-400 dark:bg-slate-600" />
+                          <Card className="p-3 hover:shadow-xs transition-all flex items-center space-x-3 bg-card border-border/80">
+                            <div className="size-10 rounded-full overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center relative">
+                              {kasi.foto ? (
+                                <Image
+                                  src={kasi.foto}
+                                  alt={kasi.nama}
+                                  fill
+                                  sizes="40px"
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <UserCheck className="size-5 text-emerald-700 dark:text-emerald-400" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-[9px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider block truncate">
+                                {kasi.jabatan}
+                              </span>
+                              <h5 className="text-xs font-bold text-foreground truncate">
+                                {kasi.nama}
+                              </h5>
+                            </div>
+                          </Card>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="relative pl-3 space-y-3 border-l-2 border-border ml-4">
-                    {displayKasuns.map((kasun) => (
-                      <div key={kasun.id} className="relative group">
-                        <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-3 h-0.5 bg-border" />
-                        <Card className="p-3 hover:shadow-xs transition-all flex items-center space-x-3 bg-card border-border/80">
-                          <div className="size-10 rounded-full overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center relative">
-                            {kasun.foto ? (
-                              <Image
-                                src={kasun.foto}
-                                alt={kasun.nama}
-                                fill
-                                sizes="40px"
-                                className="object-cover"
-                              />
-                            ) : (
-                              <UserCheck className="size-5 text-muted-foreground/60" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <span className="text-[9px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider block truncate">
-                              {kasun.jabatan}
-                            </span>
-                            <h5 className="text-xs font-bold text-foreground truncate">
-                              {kasun.nama}
-                            </h5>
-                          </div>
-                        </Card>
+                  {/* === PILAR 3: PELAKSANA KEWILAYAHAN (KASUN / KAMITUWO) === */}
+                  <div className="space-y-3">
+                    {/* Garis Komando Langsung dari Kepala Desa ke Pelaksana Kewilayahan (Sejajar dengan tinggi Sekdes) */}
+                    <div className="h-[96px] flex flex-col items-center justify-center relative">
+                      <div className="w-0.5 h-full bg-slate-400 dark:bg-slate-600 relative">
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-t-[5px] border-t-slate-400 dark:border-t-slate-600" />
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      <span className="absolute bg-card px-2 py-0.5 text-[8.5px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider rounded-full border border-emerald-300/70 dark:border-emerald-700/70 shadow-2xs whitespace-nowrap">
+                        Komando Langsung
+                      </span>
+                    </div>
 
+                    {/* Header Pelaksana Kewilayahan */}
+                    <div className="bg-muted text-foreground text-center py-2 px-3 rounded-xl border border-border">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider block">
+                        Pelaksana Kewilayahan (Kasun)
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-medium">
+                        Kamituwo / Kepala Dusun (Komando Langsung Kades)
+                      </span>
+                    </div>
+
+                    {/* Daftar Kasun */}
+                    <div className="relative pl-3 space-y-3 border-l-2 border-slate-400 dark:border-slate-600 ml-4">
+                      {displayKasuns.map((kasun, idx) => (
+                        <div key={kasun.id} className="relative group">
+                          <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-3 h-0.5 bg-slate-400 dark:bg-slate-600" />
+                          <Card className="p-3 hover:shadow-xs transition-all flex items-center space-x-3 bg-card border-border/80">
+                            <div className="size-10 rounded-full overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center relative">
+                              {kasun.foto ? (
+                                <Image
+                                  src={kasun.foto}
+                                  alt={kasun.nama}
+                                  fill
+                                  sizes="40px"
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <UserCheck className="size-5 text-emerald-700 dark:text-emerald-400" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-[9px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider block truncate">
+                                {kasun.jabatan || `Kasun ${idx + 1}`}
+                              </span>
+                              <h5 className="text-xs font-bold text-foreground truncate">
+                                {kasun.nama}
+                              </h5>
+                              <span className="text-[9px] text-muted-foreground block truncate">
+                                Wilayah Dusun {idx === 0 ? "I" : "II"}
+                              </span>
+                            </div>
+                          </Card>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
               </div>
 
             </div>
@@ -472,23 +610,39 @@ export default function BaganStrukturDesa({
       {/* VIEW 2: DIRECTORY LIST HIERARCHY (UNTUK MOBILE) */}
       {viewMode === "list" && (
         <Card className="p-5 sm:p-7 space-y-4 bg-card">
-          {/* 1. Pimpinan Tertinggi */}
+          {/* 1. Pimpinan Tertinggi & Mitra Konsultasi */}
           <div className="space-y-2">
             <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-              1. Pimpinan Pemerintah Desa
+              1. Pimpinan Pemerintah Desa & Badan Permusyawaratan
             </span>
-            <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 rounded-2xl p-3.5 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Kades */}
+              <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 rounded-2xl p-3.5 flex items-center space-x-3">
                 <div className="size-11 rounded-full overflow-hidden bg-emerald-100 dark:bg-emerald-900 shrink-0 relative flex items-center justify-center">
-                  {kadesFoto ? (
-                    <Image src={kadesFoto} alt={kadesName} fill sizes="44px" className="object-cover" />
+                  {activeKadesFoto ? (
+                    <Image src={activeKadesFoto} alt={activeKadesName} fill sizes="44px" className="object-cover" />
                   ) : (
                     <UserCheck className="size-6 text-emerald-700 dark:text-emerald-300" />
                   )}
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 uppercase block">Kepala Desa</span>
-                  <h4 className="text-sm font-extrabold text-foreground">{kadesName}</h4>
+                  <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 uppercase block">Kepala Desa Bogem</span>
+                  <h4 className="text-sm font-extrabold text-foreground">{activeKadesName}</h4>
+                </div>
+              </div>
+
+              {/* BPD */}
+              <div className="bg-muted/40 border border-border rounded-2xl p-3.5 flex items-center space-x-3">
+                <div className="size-11 rounded-full overflow-hidden bg-muted border border-border shrink-0 relative flex items-center justify-center">
+                  {bpdItem?.foto ? (
+                    <Image src={bpdItem.foto} alt={bpdItem.nama} fill sizes="44px" className="object-cover" />
+                  ) : (
+                    <Landmark className="size-5 text-emerald-700 dark:text-emerald-400" />
+                  )}
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase block">Mitra Koordinasi (BPD)</span>
+                  <h4 className="text-sm font-extrabold text-foreground">{bpdItem?.nama || "Badan Permusyawaratan Desa (BPD)"}</h4>
                 </div>
               </div>
             </div>
@@ -497,7 +651,7 @@ export default function BaganStrukturDesa({
           {/* 2. Sekretariat Desa */}
           <div className="space-y-2 pt-2">
             <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-              2. Kesekretariatan & Staf Urusan
+              2. Unsur Staf Kesekretariatan (Membantu Sekretaris Desa)
             </span>
             
             <div className="border-l-2 border-border ml-4 pl-4 space-y-2.5">
@@ -511,34 +665,38 @@ export default function BaganStrukturDesa({
                   )}
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase block">Sekretaris Desa</span>
-                  <h5 className="text-xs font-bold text-foreground">{sekdes?.nama || "Sekretariat Desa"}</h5>
+                  <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase block">
+                    {sekdes?.jabatan || "Sekretaris Desa"}
+                  </span>
+                  <h5 className="text-xs font-bold text-foreground">{sekdes?.nama}</h5>
                 </div>
               </div>
 
               {/* Kaurs */}
-              {displayKaurs.map((kaur) => (
-                <div key={kaur.id} className="bg-card border border-border/80 rounded-xl p-2.5 flex items-center space-x-3">
-                  <div className="size-8 rounded-full overflow-hidden bg-muted shrink-0 flex items-center justify-center relative">
-                    {kaur.foto ? (
-                      <Image src={kaur.foto} alt={kaur.nama} fill sizes="32px" className="object-cover" />
-                    ) : (
-                      <UserCheck className="size-4 text-muted-foreground/60" />
-                    )}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {displayKaurs.map((kaur) => (
+                  <div key={kaur.id} className="bg-card border border-border/80 rounded-xl p-2.5 flex items-center space-x-3">
+                    <div className="size-8 rounded-full overflow-hidden bg-muted shrink-0 flex items-center justify-center relative">
+                      {kaur.foto ? (
+                        <Image src={kaur.foto} alt={kaur.nama} fill sizes="32px" className="object-cover" />
+                      ) : (
+                        <UserCheck className="size-4 text-muted-foreground/60" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase block truncate">{kaur.jabatan}</span>
+                      <h5 className="text-xs font-bold text-foreground truncate">{kaur.nama}</h5>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase block">{kaur.jabatan}</span>
-                    <h5 className="text-xs font-bold text-foreground">{kaur.nama}</h5>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
           {/* 3. Pelaksana Teknis */}
           <div className="space-y-2 pt-2">
             <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-              3. Pelaksana Teknis (Kepala Seksi)
+              3. Unsur Pelaksana Teknis (Kepala Seksi - Langsung Di Bawah Kades)
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {displayKasis.map((kasi) => (
@@ -562,7 +720,7 @@ export default function BaganStrukturDesa({
           {/* 4. Pelaksana Kewilayahan */}
           <div className="space-y-2 pt-2">
             <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-              4. Pelaksana Kewilayahan (Kepala Dusun / Kamituwo)
+              4. Unsur Pelaksana Kewilayahan (Kepala Dusun - Langsung Di Bawah Kades)
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {displayKasuns.map((kasun) => (

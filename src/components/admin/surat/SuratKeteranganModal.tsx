@@ -14,6 +14,9 @@ import {
   Maximize2,
   Send,
   Loader2,
+  Smartphone,
+  Eye,
+  PenTool,
 } from "lucide-react";
 import {
   PermohonanSurat,
@@ -453,6 +456,7 @@ export default function SuratKeteranganModal({
   onSuratDiterbitkan,
 }: SuratKeteranganModalProps) {
   const [activeTab, setActiveTab] = useState<"form" | "preview">("form");
+  const [previewScaleMode, setPreviewScaleMode] = useState<"fit" | "a4">("fit");
   const [publishing, setPublishing] = useState(false);
   const [suratData, setSuratData] = useState<DataSuratKeterangan>({
     nomor_surat: "",
@@ -776,64 +780,71 @@ export default function SuratKeteranganModal({
   const cfg = pengaturan || defaultPengaturanSurat;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-1.5 sm:p-4">
       {/* MODAL WRAPPER */}
-      <div className="bg-white w-full max-w-7xl rounded-3xl shadow-2xl border border-slate-200 flex flex-col max-h-[96vh] overflow-hidden">
+      <div className="bg-white w-full max-w-7xl rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col max-h-[96vh] overflow-hidden">
         {/* MODAL HEADER */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-800">
-              <FileText className="w-5 h-5" />
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 bg-slate-50/80">
+          {/* ROW 1: TITLE & TOP ACTIONS */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center space-x-2.5 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-800 flex-shrink-0">
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm sm:text-lg font-bold text-slate-900 flex items-center gap-1.5 truncate">
+                  <span className="truncate">Format & Cetak Surat</span>
+                  {permohonan && (
+                    <span className="text-[10px] sm:text-xs font-mono font-bold bg-emerald-100 text-emerald-800 px-1.5 sm:px-2 py-0.5 rounded-full flex-shrink-0">
+                      {permohonan.id}
+                    </span>
+                  )}
+                </h2>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span>Format & Cetak Surat Keterangan</span>
-                {permohonan && (
-                  <span className="text-xs font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
-                    {permohonan.id}
-                  </span>
-                )}
-              </h2>
+
+            <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0">
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="inline-flex items-center space-x-1 sm:space-x-1.5 bg-[#004329] hover:bg-[#003520] text-white px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold shadow-xs transition active:scale-95"
+              >
+                <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Cetak Dokumen (A4)</span>
+                <span className="sm:hidden text-[11px]">Cetak</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 sm:p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            {/* Tab switch on small screens */}
-            <div className="flex lg:hidden bg-slate-200/70 p-1 rounded-xl">
-              <button
-                type="button"
-                onClick={() => setActiveTab("form")}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
-                  activeTab === "form" ? "bg-white text-emerald-800 shadow-xs" : "text-slate-600"
-                }`}
-              >
-                Form Data
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("preview")}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
-                  activeTab === "preview" ? "bg-white text-emerald-800 shadow-xs" : "text-slate-600"
-                }`}
-              >
-                Pratinjau Surat
-              </button>
-            </div>
-
+          {/* ROW 2: MOBILE TABS (ONLY VISIBLE ON MOBILE / < LG) */}
+          <div className="flex lg:hidden mt-2.5 bg-slate-200/80 p-1 rounded-xl w-full">
             <button
-              onClick={handlePrint}
-              className="inline-flex items-center space-x-1.5 bg-[#004329] hover:bg-[#003520] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition"
+              type="button"
+              onClick={() => setActiveTab("form")}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                activeTab === "form" ? "bg-white text-emerald-800 shadow-xs" : "text-slate-600 hover:text-slate-900"
+              }`}
             >
-              <Printer className="w-4 h-4" />
-              <span className="hidden sm:inline">Cetak Dokumen (A4)</span>
-              <span className="sm:hidden">Cetak</span>
+              <PenTool className="w-3.5 h-3.5" />
+              <span>1. Form Data</span>
             </button>
-
             <button
-              onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition"
+              type="button"
+              onClick={() => setActiveTab("preview")}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                activeTab === "preview" ? "bg-white text-emerald-800 shadow-xs" : "text-slate-600 hover:text-slate-900"
+              }`}
             >
-              <X className="w-5 h-5" />
+              <Eye className="w-3.5 h-3.5" />
+              <span>2. Pratinjau Surat</span>
             </button>
           </div>
         </div>
@@ -842,12 +853,12 @@ export default function SuratKeteranganModal({
         <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-hidden">
           {/* LEFT: FORM DATA (COL 5) */}
           <div
-            className={`lg:col-span-5 p-5 sm:p-6 overflow-y-auto border-r border-slate-100 space-y-6 max-h-[calc(96vh-140px)] ${
+            className={`lg:col-span-5 p-4 sm:p-6 overflow-y-auto border-r border-slate-100 space-y-5 sm:space-y-6 ${
               activeTab === "preview" ? "hidden lg:block" : "block"
             }`}
           >
             {/* Quick Helper */}
-            <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl flex items-start gap-3">
+            <div className="p-3 sm:p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl flex items-start gap-2.5 sm:gap-3">
               <Sparkles className="w-4 h-4 text-emerald-700 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-emerald-900 leading-relaxed">
                 Teks yang Anda ketik pada kolom di bawah akan langsung muncul secara otomatis di lembar pratinjau surat sebelah kanan.
@@ -1010,7 +1021,7 @@ export default function SuratKeteranganModal({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                   <div className="space-y-1">
                     <label className="block text-[11px] font-bold text-slate-700">3. Jenis Kelamin</label>
                     <select
@@ -1036,7 +1047,7 @@ export default function SuratKeteranganModal({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                   <div className="space-y-1">
                     <label className="block text-[11px] font-bold text-slate-700">5. Agama</label>
                     <select
@@ -1133,186 +1144,278 @@ export default function SuratKeteranganModal({
 
           {/* RIGHT: LIVE PREVIEW A4 SHEET (COL 7) */}
           <div
-            className={`lg:col-span-7 bg-slate-200/60 p-4 sm:p-6 overflow-y-auto max-h-[calc(96vh-140px)] flex justify-center items-start ${
+            className={`lg:col-span-7 bg-slate-200/70 p-2 sm:p-5 lg:p-6 overflow-y-auto flex flex-col items-center ${
               activeTab === "form" ? "hidden lg:flex" : "flex"
             }`}
           >
-            {/* PAPER CONTAINER (SURAT RESMI A4) */}
-            <div
-              id="surat-keterangan-print"
-              className="bg-white text-black shadow-xl border border-slate-300 w-full max-w-[210mm] min-h-[297mm] p-[16mm] select-text text-[12pt] leading-[1.35] relative"
-              style={{ fontFamily: "'Times New Roman', Times, serif" }}
-            >
-              {/* KOP SURAT (FONT ARIAL SESUAI SURAT RESMI PEMKAB MAGETAN) */}
-              <div className="w-full">
-                <div className="flex items-center justify-between">
-                  {/* LOGO MAGETAN RESMI (MONOKROM SESUAI TEMPLATE RESMI) */}
-                  <div className="w-[75px] flex-shrink-0 flex items-center justify-center">
-                    <img
-                      src={LOGO_MAGETAN_SURAT_BASE64}
-                      alt="Logo Kabupaten Magetan"
-                      className="w-[68px] h-auto object-contain"
-                    />
-                  </div>
-
-                  {/* KOP TEXT (ARIAL) */}
-                  <div className="text-center flex-1 px-2 font-sans">
-                    <h2 className="text-[13.9pt] font-normal tracking-[0.22em] uppercase leading-tight text-black">
-                      {cfg.nama_instansi || "PEMERINTAH KABUPATEN MAGETAN"}
-                    </h2>
-                    <h3 className="text-[16pt] font-bold tracking-[0.04em] uppercase leading-tight text-black mt-0.5">
-                      {cfg.nama_kecamatan || "KECAMATAN KAWEDANAN"}
-                    </h3>
-                    <h1 className="text-[16pt] font-bold tracking-[0.05em] uppercase leading-tight text-black mt-0.5">
-                      {cfg.nama_desa || "DESA BOGEM"}
-                    </h1>
-                    <p className="text-[11.5pt] font-normal leading-tight text-black mt-1">
-                      {cfg.alamat_kantor || "Jl. Bhakti Mulya No.241"} telp : {cfg.telepon_kantor || "081231400990"}
-                    </p>
-                    <p className="text-[11.5pt] font-normal leading-tight text-black mt-0.5">
-                      Email : <span className="underline">{cfg.email_kantor || "desabogemjaya@gmail.com"}</span> , Kodepos {cfg.kodepos || "63382"}
-                    </p>
-                  </div>
-
-                  {/* SPACER FOR BALANCED CENTER */}
-                  <div className="w-[75px] flex-shrink-0 hidden sm:block" />
-                </div>
-
-                {/* DOUBLE LINE UNDER KOP */}
-                <div className="border-t border-black border-b-[2.2px] border-b-black h-[3px] mt-1 mb-5" />
+            {/* PREVIEW TOOLBAR */}
+            <div className="w-full max-w-[210mm] mb-2.5 sm:mb-3 flex items-center justify-between bg-white/95 backdrop-blur-xs px-3 py-1.5 sm:py-2 rounded-xl border border-slate-200/90 shadow-xs text-xs">
+              <div className="flex items-center gap-1.5 text-slate-600 font-semibold text-[11px] sm:text-xs">
+                <Eye className="w-3.5 h-3.5 text-emerald-700" />
+                <span className="hidden sm:inline">Tampilan Pratinjau:</span>
+                <span className="sm:hidden">Mode:</span>
               </div>
 
-              {/* KONTEN SURAT (TIMES NEW ROMAN 12PT INDENT 12MM / PX-8) */}
-              <div className="px-6 sm:px-8 text-[12pt] text-black leading-[1.35]">
-                {/* JUDUL SURAT */}
-                <div className="text-center my-5">
-                  <h2 className="text-[12pt] font-bold uppercase underline tracking-[0.02em] inline-block">
-                    {suratData.judul_surat || "SURAT KETERANGAN"}
-                  </h2>
-                  <p className="text-[12pt] mt-1 font-normal">
-                    Nomor: {suratData.nomor_surat || "474 / 196 / 403.405.13 / 2026"}
-                  </p>
+              <div className="flex items-center bg-slate-100 p-0.5 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setPreviewScaleMode("fit")}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 ${
+                    previewScaleMode === "fit"
+                      ? "bg-white text-emerald-800 shadow-xs"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                  title="Pas dengan lebar layar HP"
+                >
+                  <Smartphone className="w-3 h-3" />
+                  <span>Pas Layar</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewScaleMode("a4")}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 ${
+                    previewScaleMode === "a4"
+                      ? "bg-white text-emerald-800 shadow-xs"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                  title="Ukuran asli A4 (bisa digeser ke samping)"
+                >
+                  <FileText className="w-3 h-3" />
+                  <span>Ukuran A4</span>
+                </button>
+              </div>
+            </div>
+
+            {/* PREVIEW CONTAINER ACCORDING TO MODE */}
+            <div className={`w-full flex justify-center ${previewScaleMode === "a4" ? "overflow-x-auto pb-4" : ""}`}>
+              {/* PAPER CONTAINER (SURAT RESMI A4) */}
+              <div
+                id="surat-keterangan-print"
+                className={`bg-white text-black shadow-xl border border-slate-300 select-text transition-all duration-200 relative ${
+                  previewScaleMode === "a4"
+                    ? "w-[210mm] min-w-[210mm] min-h-[297mm] p-[16mm] text-[12pt] leading-[1.35]"
+                    : "w-full max-w-[210mm] p-3 sm:p-6 lg:p-[16mm] text-[8.5pt] sm:text-[10.5pt] lg:text-[12pt] leading-[1.35]"
+                }`}
+                style={{ fontFamily: "'Times New Roman', Times, serif" }}
+              >
+                {/* KOP SURAT (FONT ARIAL SESUAI SURAT RESMI PEMKAB MAGETAN) */}
+                <div className="w-full">
+                  <div className="flex items-center justify-between">
+                    {/* LOGO MAGETAN RESMI (MONOKROM SESUAI TEMPLATE RESMI) */}
+                    <div className={previewScaleMode === "a4" ? "w-[75px] flex-shrink-0 flex items-center justify-center" : "w-[38px] sm:w-[54px] lg:w-[75px] flex-shrink-0 flex items-center justify-center"}>
+                      <img
+                        src={LOGO_MAGETAN_SURAT_BASE64}
+                        alt="Logo Kabupaten Magetan"
+                        className={previewScaleMode === "a4" ? "w-[68px] h-auto object-contain" : "w-[34px] sm:w-[48px] lg:w-[68px] h-auto object-contain"}
+                      />
+                    </div>
+
+                    {/* KOP TEXT (ARIAL) */}
+                    <div className="text-center flex-1 px-1 sm:px-2 font-sans">
+                      <h2 className={previewScaleMode === "a4"
+                        ? "text-[13.9pt] font-normal tracking-[0.22em] uppercase leading-tight text-black"
+                        : "text-[8pt] sm:text-[11pt] lg:text-[13.9pt] font-normal tracking-[0.05em] sm:tracking-[0.14em] lg:tracking-[0.22em] uppercase leading-tight text-black"
+                      }>
+                        {cfg.nama_instansi || "PEMERINTAH KABUPATEN MAGETAN"}
+                      </h2>
+                      <h3 className={previewScaleMode === "a4"
+                        ? "text-[16pt] font-bold tracking-[0.04em] uppercase leading-tight text-black mt-0.5"
+                        : "text-[9.5pt] sm:text-[13pt] lg:text-[16pt] font-bold tracking-[0.02em] sm:tracking-[0.03em] lg:tracking-[0.04em] uppercase leading-tight text-black mt-0.5"
+                      }>
+                        {cfg.nama_kecamatan || "KECAMATAN KAWEDANAN"}
+                      </h3>
+                      <h1 className={previewScaleMode === "a4"
+                        ? "text-[16pt] font-bold tracking-[0.05em] uppercase leading-tight text-black mt-0.5"
+                        : "text-[10pt] sm:text-[13.5pt] lg:text-[16pt] font-bold tracking-[0.03em] sm:tracking-[0.04em] lg:tracking-[0.05em] uppercase leading-tight text-black mt-0.5"
+                      }>
+                        {cfg.nama_desa || "DESA BOGEM"}
+                      </h1>
+                      <p className={previewScaleMode === "a4"
+                        ? "text-[11.5pt] font-normal leading-tight text-black mt-1"
+                        : "text-[6.5pt] sm:text-[9.5pt] lg:text-[11.5pt] font-normal leading-tight text-black mt-0.5 sm:mt-1"
+                      }>
+                        {cfg.alamat_kantor || "Jl. Bhakti Mulya No.241"} telp : {cfg.telepon_kantor || "081231400990"}
+                      </p>
+                      <p className={previewScaleMode === "a4"
+                        ? "text-[11.5pt] font-normal leading-tight text-black mt-0.5"
+                        : "text-[6.5pt] sm:text-[9.5pt] lg:text-[11.5pt] font-normal leading-tight text-black mt-0.5"
+                      }>
+                        Email : <span className="underline">{cfg.email_kantor || "desabogemjaya@gmail.com"}</span> , Kodepos {cfg.kodepos || "63382"}
+                      </p>
+                    </div>
+
+                    {/* SPACER FOR BALANCED CENTER - ALWAYS MATCHES LOGO WIDTH */}
+                    <div className={previewScaleMode === "a4" ? "w-[75px] flex-shrink-0" : "w-[38px] sm:w-[54px] lg:w-[75px] flex-shrink-0"} />
+                  </div>
+
+                  {/* DOUBLE LINE UNDER KOP */}
+                  <div className={`border-t border-black border-b-black mt-1 ${
+                    previewScaleMode === "a4"
+                      ? "border-b-[2.2px] h-[3px] mb-5"
+                      : "border-b-[1.5px] sm:border-b-[2.2px] h-[2px] sm:h-[3px] mb-2.5 sm:mb-5"
+                  }`} />
                 </div>
 
-                {/* PEMBUKA PEJABAT */}
-                <div className="mb-1 text-[12pt]">
-                  <p>Yang bertanda tangan di bawah ini :</p>
-                </div>
-                <div className="pl-9 space-y-0.5 mb-4 text-[12pt]">
-                  <div className="grid grid-cols-[70px_15px_1fr]">
-                    <span>Nama</span>
-                    <span className="text-center">:</span>
-                    <span>{suratData.nama_pejabat || cfg.nama_pejabat}</span>
-                  </div>
-                  <div className="grid grid-cols-[70px_15px_1fr]">
-                    <span>Jabatan</span>
-                    <span className="text-center">:</span>
-                    <span>{suratData.jabatan_pejabat || cfg.jabatan_pejabat}</span>
-                  </div>
-                  <div className="grid grid-cols-[70px_15px_1fr]">
-                    <span>Alamat</span>
-                    <span className="text-center">:</span>
-                    <span>{suratData.alamat_pejabat || cfg.alamat_pejabat}</span>
-                  </div>
-                </div>
-
-                {/* DENGAN INI MENERANGKAN */}
-                <div className="mb-1.5 text-[12pt]">
-                  <p>Dengan ini menerangkan dengan sesungguhnya bahwa :</p>
-                </div>
-
-                {/* 11 POIN TABEL */}
-                <div className="space-y-[3px] mb-5 text-[12pt]">
-                  <div className="grid grid-cols-[28px_175px_15px_1fr] py-[1px]">
-                    <span className="pl-2.5">1</span>
-                    <span>Nama</span>
-                    <span className="text-center">:</span>
-                    <span>{suratData.nama_warga || ""}</span>
-                  </div>
-                  <div className="grid grid-cols-[28px_175px_15px_1fr] py-[1px]">
-                    <span className="pl-2.5">2</span>
-                    <span>Tempat, tanggal lahir</span>
-                    <span className="text-center">:</span>
-                    <span>{suratData.tempat_tanggal_lahir || ""}</span>
-                  </div>
-                  <div className="grid grid-cols-[28px_175px_15px_1fr] py-[1px]">
-                    <span className="pl-2.5">3</span>
-                    <span>Jenis kelamin</span>
-                    <span className="text-center">:</span>
-                    <span>{suratData.jenis_kelamin || ""}</span>
-                  </div>
-                  <div className="grid grid-cols-[28px_175px_15px_1fr] py-[1px]">
-                    <span className="pl-2.5">4</span>
-                    <span>Kebangsaan</span>
-                    <span className="text-center">:</span>
-                    <span>{suratData.kebangsaan || "Indonesia"}</span>
-                  </div>
-                  <div className="grid grid-cols-[28px_175px_15px_1fr] py-[1px]">
-                    <span className="pl-2.5">5</span>
-                    <span>Agama</span>
-                    <span className="text-center">:</span>
-                    <span>{suratData.agama || ""}</span>
-                  </div>
-                  <div className="grid grid-cols-[28px_175px_15px_1fr] py-[1px]">
-                    <span className="pl-2.5">6</span>
-                    <span>Status Perkawinan</span>
-                    <span className="text-center">:</span>
-                    <span>{suratData.status_perkawinan || ""}</span>
-                  </div>
-                  <div className="grid grid-cols-[28px_175px_15px_1fr] py-[1px]">
-                    <span className="pl-2.5">7</span>
-                    <span>Pekerjaan</span>
-                    <span className="text-center">:</span>
-                    <span>{suratData.pekerjaan || ""}</span>
-                  </div>
-                  <div className="grid grid-cols-[28px_175px_15px_1fr] py-[1px]">
-                    <span className="pl-2.5">8</span>
-                    <span>Nomor KTP</span>
-                    <span className="text-center">:</span>
-                    <span>{suratData.nomor_ktp || ""}</span>
-                  </div>
-                  <div className="grid grid-cols-[28px_175px_15px_1fr] py-[1px]">
-                    <span className="pl-2.5">9</span>
-                    <span>Alamat Desa/Kelurahan</span>
-                    <span className="text-center">:</span>
-                    <span>{suratData.alamat_warga || ""}</span>
-                  </div>
-                  <div className="grid grid-cols-[28px_175px_15px_1fr] py-[1px]">
-                    <span className="pl-2.5">10</span>
-                    <span>Keterangan</span>
-                    <span className="text-center">:</span>
-                    <span className="text-justify">{suratData.keterangan || ""}</span>
-                  </div>
-                  <div className="grid grid-cols-[28px_175px_15px_1fr] py-[1px]">
-                    <span className="pl-2.5">11</span>
-                    <span>Keperluan</span>
-                    <span className="text-center">:</span>
-                    <span className="text-justify">{suratData.keperluan || ""}</span>
-                  </div>
-                </div>
-
-                {/* PENUTUP */}
-                <div className="my-5 text-[12pt] text-justify leading-[1.45] indent-10">
-                  <p>
-                    Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya
-                  </p>
-                </div>
-
-                {/* TANDA TANGAN (BOTTOM RIGHT) */}
-                <div className="flex justify-end text-[12pt]">
-                  <div className="w-[250px] text-center space-y-0.5 leading-[1.35]">
-                    <p>{suratData.tanggal_surat || "Bogem, 28 Agustus 2026"}</p>
-                    <p>{suratData.jabatan_pejabat || cfg.jabatan_pejabat}</p>
-                    
-                    {/* RUANG TANDA TANGAN */}
-                    <div className="h-[75px]" />
-
-                    <p className="font-bold underline">
-                      {suratData.nama_pejabat || cfg.nama_pejabat}
+                {/* KONTEN SURAT (TIMES NEW ROMAN) */}
+                <div className={previewScaleMode === "a4" ? "px-8 text-[12pt] text-black leading-[1.35]" : "px-0 sm:px-4 lg:px-8 text-[8.5pt] sm:text-[10.5pt] lg:text-[12pt] text-black leading-[1.35]"}>
+                  {/* JUDUL SURAT */}
+                  <div className={`text-center ${previewScaleMode === "a4" ? "my-5" : "my-2.5 sm:my-4 lg:my-5"}`}>
+                    <h2 className={`font-bold uppercase underline tracking-[0.02em] inline-block ${
+                      previewScaleMode === "a4" ? "text-[12pt]" : "text-[9pt] sm:text-[11pt] lg:text-[12pt]"
+                    }`}>
+                      {suratData.judul_surat || "SURAT KETERANGAN"}
+                    </h2>
+                    <p className={`font-normal ${
+                      previewScaleMode === "a4" ? "text-[12pt] mt-1" : "text-[8.5pt] sm:text-[10.5pt] lg:text-[12pt] mt-0.5 sm:mt-1"
+                    }`}>
+                      Nomor: {suratData.nomor_surat || "474 / 196 / 403.405.13 / 2026"}
                     </p>
-                    {suratData.nip_pejabat ? (
-                      <p className="text-[12pt] mt-0.5">NIP.{suratData.nip_pejabat}</p>
-                    ) : null}
+                  </div>
+
+                  {/* PEMBUKA PEJABAT */}
+                  <div className="mb-1">
+                    <p>Yang bertanda tangan di bawah ini :</p>
+                  </div>
+                  <div className={`space-y-0.5 ${
+                    previewScaleMode === "a4"
+                      ? "pl-9 mb-4"
+                      : "pl-1 sm:pl-5 lg:pl-9 mb-2.5 sm:mb-4"
+                  }`}>
+                    <div className={previewScaleMode === "a4" ? "grid grid-cols-[70px_15px_1fr]" : "grid grid-cols-[46px_10px_1fr] sm:grid-cols-[60px_12px_1fr] lg:grid-cols-[70px_15px_1fr]"}>
+                      <span>Nama</span>
+                      <span className="text-center">:</span>
+                      <span className="break-words">{suratData.nama_pejabat || cfg.nama_pejabat}</span>
+                    </div>
+                    <div className={previewScaleMode === "a4" ? "grid grid-cols-[70px_15px_1fr]" : "grid grid-cols-[46px_10px_1fr] sm:grid-cols-[60px_12px_1fr] lg:grid-cols-[70px_15px_1fr]"}>
+                      <span>Jabatan</span>
+                      <span className="text-center">:</span>
+                      <span className="break-words">{suratData.jabatan_pejabat || cfg.jabatan_pejabat}</span>
+                    </div>
+                    <div className={previewScaleMode === "a4" ? "grid grid-cols-[70px_15px_1fr]" : "grid grid-cols-[46px_10px_1fr] sm:grid-cols-[60px_12px_1fr] lg:grid-cols-[70px_15px_1fr]"}>
+                      <span>Alamat</span>
+                      <span className="text-center">:</span>
+                      <span className="break-words">{suratData.alamat_pejabat || cfg.alamat_pejabat}</span>
+                    </div>
+                  </div>
+
+                  {/* DENGAN INI MENERANGKAN */}
+                  <div className="mb-1 sm:mb-1.5">
+                    <p>Dengan ini menerangkan dengan sesungguhnya bahwa :</p>
+                  </div>
+
+                  {/* 11 POIN TABEL */}
+                  <div className={`space-y-[1.5px] sm:space-y-[3px] ${previewScaleMode === "a4" ? "mb-5" : "mb-3 sm:mb-5"}`}>
+                    <div className={previewScaleMode === "a4" ? "grid grid-cols-[28px_175px_15px_1fr] py-[1px]" : "grid grid-cols-[16px_96px_10px_1fr] sm:grid-cols-[22px_140px_12px_1fr] lg:grid-cols-[28px_175px_15px_1fr] py-[0.5px] sm:py-[1px]"}>
+                      <span className="pl-0 sm:pl-2.5">1</span>
+                      <span>Nama</span>
+                      <span className="text-center">:</span>
+                      <span className="break-words font-semibold">{suratData.nama_warga || ""}</span>
+                    </div>
+                    <div className={previewScaleMode === "a4" ? "grid grid-cols-[28px_175px_15px_1fr] py-[1px]" : "grid grid-cols-[16px_96px_10px_1fr] sm:grid-cols-[22px_140px_12px_1fr] lg:grid-cols-[28px_175px_15px_1fr] py-[0.5px] sm:py-[1px]"}>
+                      <span className="pl-0 sm:pl-2.5">2</span>
+                      <span>
+                        <span className="hidden sm:inline">Tempat, tanggal lahir</span>
+                        <span className="sm:hidden">Tempat, tgl lahir</span>
+                      </span>
+                      <span className="text-center">:</span>
+                      <span className="break-words">{suratData.tempat_tanggal_lahir || ""}</span>
+                    </div>
+                    <div className={previewScaleMode === "a4" ? "grid grid-cols-[28px_175px_15px_1fr] py-[1px]" : "grid grid-cols-[16px_96px_10px_1fr] sm:grid-cols-[22px_140px_12px_1fr] lg:grid-cols-[28px_175px_15px_1fr] py-[0.5px] sm:py-[1px]"}>
+                      <span className="pl-0 sm:pl-2.5">3</span>
+                      <span>Jenis kelamin</span>
+                      <span className="text-center">:</span>
+                      <span className="break-words">{suratData.jenis_kelamin || ""}</span>
+                    </div>
+                    <div className={previewScaleMode === "a4" ? "grid grid-cols-[28px_175px_15px_1fr] py-[1px]" : "grid grid-cols-[16px_96px_10px_1fr] sm:grid-cols-[22px_140px_12px_1fr] lg:grid-cols-[28px_175px_15px_1fr] py-[0.5px] sm:py-[1px]"}>
+                      <span className="pl-0 sm:pl-2.5">4</span>
+                      <span>Kebangsaan</span>
+                      <span className="text-center">:</span>
+                      <span className="break-words">{suratData.kebangsaan || "Indonesia"}</span>
+                    </div>
+                    <div className={previewScaleMode === "a4" ? "grid grid-cols-[28px_175px_15px_1fr] py-[1px]" : "grid grid-cols-[16px_96px_10px_1fr] sm:grid-cols-[22px_140px_12px_1fr] lg:grid-cols-[28px_175px_15px_1fr] py-[0.5px] sm:py-[1px]"}>
+                      <span className="pl-0 sm:pl-2.5">5</span>
+                      <span>Agama</span>
+                      <span className="text-center">:</span>
+                      <span className="break-words">{suratData.agama || ""}</span>
+                    </div>
+                    <div className={previewScaleMode === "a4" ? "grid grid-cols-[28px_175px_15px_1fr] py-[1px]" : "grid grid-cols-[16px_96px_10px_1fr] sm:grid-cols-[22px_140px_12px_1fr] lg:grid-cols-[28px_175px_15px_1fr] py-[0.5px] sm:py-[1px]"}>
+                      <span className="pl-0 sm:pl-2.5">6</span>
+                      <span>Status Perkawinan</span>
+                      <span className="text-center">:</span>
+                      <span className="break-words">{suratData.status_perkawinan || ""}</span>
+                    </div>
+                    <div className={previewScaleMode === "a4" ? "grid grid-cols-[28px_175px_15px_1fr] py-[1px]" : "grid grid-cols-[16px_96px_10px_1fr] sm:grid-cols-[22px_140px_12px_1fr] lg:grid-cols-[28px_175px_15px_1fr] py-[0.5px] sm:py-[1px]"}>
+                      <span className="pl-0 sm:pl-2.5">7</span>
+                      <span>Pekerjaan</span>
+                      <span className="text-center">:</span>
+                      <span className="break-words">{suratData.pekerjaan || ""}</span>
+                    </div>
+                    <div className={previewScaleMode === "a4" ? "grid grid-cols-[28px_175px_15px_1fr] py-[1px]" : "grid grid-cols-[16px_96px_10px_1fr] sm:grid-cols-[22px_140px_12px_1fr] lg:grid-cols-[28px_175px_15px_1fr] py-[0.5px] sm:py-[1px]"}>
+                      <span className="pl-0 sm:pl-2.5">8</span>
+                      <span>Nomor KTP</span>
+                      <span className="text-center">:</span>
+                      <span className="break-words font-mono">{suratData.nomor_ktp || ""}</span>
+                    </div>
+                    <div className={previewScaleMode === "a4" ? "grid grid-cols-[28px_175px_15px_1fr] py-[1px]" : "grid grid-cols-[16px_96px_10px_1fr] sm:grid-cols-[22px_140px_12px_1fr] lg:grid-cols-[28px_175px_15px_1fr] py-[0.5px] sm:py-[1px]"}>
+                      <span className="pl-0 sm:pl-2.5">9</span>
+                      <span>
+                        <span className="hidden sm:inline">Alamat Desa/Kelurahan</span>
+                        <span className="sm:hidden">Alamat Desa/Kel.</span>
+                      </span>
+                      <span className="text-center">:</span>
+                      <span className="break-words">{suratData.alamat_warga || ""}</span>
+                    </div>
+                    <div className={previewScaleMode === "a4" ? "grid grid-cols-[28px_175px_15px_1fr] py-[1px]" : "grid grid-cols-[16px_96px_10px_1fr] sm:grid-cols-[22px_140px_12px_1fr] lg:grid-cols-[28px_175px_15px_1fr] py-[0.5px] sm:py-[1px]"}>
+                      <span className="pl-0 sm:pl-2.5">10</span>
+                      <span>Keterangan</span>
+                      <span className="text-center">:</span>
+                      <span className="break-words text-left sm:text-justify">{suratData.keterangan || ""}</span>
+                    </div>
+                    <div className={previewScaleMode === "a4" ? "grid grid-cols-[28px_175px_15px_1fr] py-[1px]" : "grid grid-cols-[16px_96px_10px_1fr] sm:grid-cols-[22px_140px_12px_1fr] lg:grid-cols-[28px_175px_15px_1fr] py-[0.5px] sm:py-[1px]"}>
+                      <span className="pl-0 sm:pl-2.5">11</span>
+                      <span>Keperluan</span>
+                      <span className="text-center">:</span>
+                      <span className="break-words text-left sm:text-justify">{suratData.keperluan || ""}</span>
+                    </div>
+                  </div>
+
+                  {/* PENUTUP */}
+                  <div className={`text-left sm:text-justify ${
+                    previewScaleMode === "a4"
+                      ? "my-5 leading-[1.45] indent-10"
+                      : "my-2.5 sm:my-4 lg:my-5 leading-[1.4] sm:leading-[1.45] indent-4 sm:indent-8 lg:indent-10"
+                  }`}>
+                    <p>
+                      Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya
+                    </p>
+                  </div>
+
+                  {/* TANDA TANGAN (BOTTOM RIGHT) */}
+                  <div className="flex justify-end">
+                    <div className={`text-center space-y-0.5 leading-[1.3] ${
+                      previewScaleMode === "a4"
+                        ? "w-[250px]"
+                        : "w-[155px] sm:w-[200px] lg:w-[250px]"
+                    }`}>
+                      <p>{suratData.tanggal_surat || "Bogem, 28 Agustus 2026"}</p>
+                      <p>{suratData.jabatan_pejabat || cfg.jabatan_pejabat}</p>
+                      
+                      {/* RUANG TANDA TANGAN */}
+                      <div className={
+                        previewScaleMode === "a4"
+                          ? "h-[75px]"
+                          : "h-[45px] sm:h-[60px] lg:h-[75px]"
+                      } />
+
+                      <p className="font-bold underline">
+                        {suratData.nama_pejabat || cfg.nama_pejabat}
+                      </p>
+                      {suratData.nip_pejabat ? (
+                        <p className={previewScaleMode === "a4" ? "text-[12pt] mt-0.5" : "text-[8.5pt] sm:text-[10.5pt] lg:text-[12pt] mt-0.5"}>
+                          NIP.{suratData.nip_pejabat}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1321,43 +1424,43 @@ export default function SuratKeteranganModal({
         </div>
 
         {/* MODAL FOOTER */}
-        <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50 flex items-center justify-between flex-wrap gap-2">
-          <div className="text-xs text-slate-500 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Format kedinasan resmi A4 Pemerintah Desa Bogem.</span>
+        <div className="px-4 sm:px-6 py-3 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-2">
+          <div className="text-xs text-slate-500 flex items-center gap-1.5 self-start sm:self-center">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+            <span className="text-[11px] sm:text-xs">Format kedinasan resmi A4 Pemerintah Desa Bogem.</span>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+              className="flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 transition text-center"
             >
               Tutup
             </button>
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-4 py-2 rounded-xl text-xs font-bold transition"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition"
             >
-              <Printer className="w-4 h-4 text-slate-700" />
-              <span>🖨️ Cetak / Preview</span>
+              <Printer className="w-3.5 h-3.5 text-slate-700" />
+              <span>🖨️ Cetak</span>
             </button>
             <button
               type="button"
               disabled={publishing}
               onClick={handleTerbitkanDanKirim}
-              className="inline-flex items-center space-x-1.5 bg-[#004329] hover:bg-[#003520] text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md transition disabled:opacity-50 active:scale-95"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center space-x-1.5 bg-[#004329] hover:bg-[#003520] text-white px-4 sm:px-5 py-2 rounded-xl text-xs font-bold shadow-md transition disabled:opacity-50 active:scale-95"
             >
               {publishing ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Menerbitkan Surat...</span>
+                  <span>Menerbitkan...</span>
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4" />
-                  <span>{permohonan ? "🚀 Terbitkan & Kirim ke Warga" : "💾 Simpan ke Arsip & Terbitkan"}</span>
+                  <span className="truncate">{permohonan ? "🚀 Terbitkan" : "💾 Simpan & Terbitkan"}</span>
                 </>
               )}
             </button>

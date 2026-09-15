@@ -501,7 +501,7 @@ export default function AdminKelolaSuratPage() {
                     setSelectedSuratForPrint(null);
                     setIsSuratModalOpen(true);
                   }}
-                  className="inline-flex items-center space-x-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-3.5 py-2 rounded-xl shadow-xs transition whitespace-nowrap active:scale-95"
+                  className="w-full sm:w-auto inline-flex items-center justify-center space-x-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-3.5 py-2 rounded-xl shadow-xs transition whitespace-nowrap active:scale-95"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Buat Surat (Walk-in)</span>
@@ -663,14 +663,14 @@ export default function AdminKelolaSuratPage() {
                           )}
                         </div>
 
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto">
                           <button
                             type="button"
                             onClick={() => {
                               setSelectedSuratForPrint(item);
                               setIsSuratModalOpen(true);
                             }}
-                            className="inline-flex items-center space-x-1.5 text-xs font-bold text-emerald-900 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 px-3.5 py-2 rounded-xl transition shadow-xs active:scale-95"
+                            className="flex-1 sm:flex-none inline-flex items-center justify-center space-x-1.5 text-xs font-bold text-emerald-900 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 px-3.5 py-2 rounded-xl transition shadow-xs active:scale-95"
                           >
                             <Printer className="w-3.5 h-3.5 text-emerald-800" />
                             <span>Format & Cetak Surat</span>
@@ -678,7 +678,7 @@ export default function AdminKelolaSuratPage() {
 
                           <button
                             onClick={() => openProcessModal(item)}
-                            className="inline-flex items-center space-x-1.5 text-xs font-bold text-white bg-[#004329] hover:bg-[#00321F] px-4 py-2 rounded-xl transition shadow active:scale-95"
+                            className="flex-1 sm:flex-none inline-flex items-center justify-center space-x-1.5 text-xs font-bold text-white bg-[#004329] hover:bg-[#00321F] px-4 py-2 rounded-xl transition shadow active:scale-95"
                           >
                             <Upload className="w-3.5 h-3.5" />
                             <span>Proses & Upload File</span>
