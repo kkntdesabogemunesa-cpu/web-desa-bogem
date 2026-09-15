@@ -24,6 +24,7 @@ import PendudukCards from "@/components/home/PendudukCards";
 import { useCountUp } from "@/hooks";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import CreativeHeader from "@/components/common/CreativeHeader";
 
 function DemografiSection({ demografi }: { demografi: InfografisData["demografi"] }) {
   const totalWarga = demografi.total_penduduk || (demografi.pria + demografi.wanita) || 1;
@@ -553,45 +554,15 @@ function InfografisContent() {
   return (
     <main className="min-h-screen bg-background pb-28 pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
-        {/* Banner Section */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#063321] via-[#083E28] to-[#0A4D33] border border-emerald-800/40 shadow-xs p-6 sm:p-8 lg:p-10 text-white">
-          <div className="absolute -top-20 -right-20 w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Subtle Grid Dot Texture */}
-          <div 
-            className="absolute inset-0 opacity-[0.03] pointer-events-none"
-            style={{
-              backgroundImage: "radial-gradient(circle, #ffffff 1px, transparent 1px)",
-              backgroundSize: "24px 24px"
-            }}
-          />
-
-          <div className="relative z-10 space-y-3 sm:space-y-4 max-w-3xl">
-            {/* Clean Breadcrumb */}
-            <div className="flex items-center space-x-2 text-xs text-emerald-200/80 font-medium">
-              <Link
-                href="/"
-                className="hover:text-white transition-colors flex items-center gap-1.5 group"
-              >
-                <ArrowLeft className="size-3.5 group-hover:-translate-x-1 transition-transform" />
-                <span>Beranda</span>
-              </Link>
-              <span className="text-emerald-500/60">/</span>
-              <span className="text-white font-medium">Infografis & Data Desa</span>
-            </div>
-
-            {/* Title & Description */}
-            <div className="space-y-2">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight">
-                Infografis Desa Bogem
-              </h1>
-              <p className="text-emerald-100/80 text-xs sm:text-sm lg:text-base leading-relaxed max-w-2xl">
-                Transparansi data kependudukan, tata kelola kelembagaan masyarakat, serta akuntabilitas anggaran APBDes Pemerintah Desa Bogem.
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* Banner Section with Subtle White Wave */}
+        <CreativeHeader
+          title="Infografis Desa Bogem"
+          subtitle="Transparansi data kependudukan, tata kelola kelembagaan masyarakat, serta akuntabilitas anggaran APBDes Pemerintah Desa Bogem."
+          breadcrumbs={[
+            { label: "Beranda", href: "/" },
+            { label: "Infografis & Data Desa" },
+          ]}
+        />
 
         {/* Mobile Navigation Tabs */}
         <div

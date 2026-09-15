@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
 import PageTransitionBar from "@/components/PageTransitionBar";
 import { AuthProvider } from "@/context/AuthContext";
+import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvider";
 import { cn } from "@/lib/utils";
 import {
   getSiteUrl,
@@ -127,15 +128,17 @@ export default function RootLayout({
         className={`${plusJakartaSans.className} bg-background text-foreground min-h-screen flex flex-col antialiased`}
       >
         <AuthProvider>
-          <Suspense fallback={null}>
-            <PageTransitionBar />
-          </Suspense>
-          <Navbar />
-          <div className="flex-grow animate-in fade-in duration-200">
-            {children}
-          </div>
-          <Footer />
-          <MobileNav />
+          <SmoothScrollProvider>
+            <Suspense fallback={null}>
+              <PageTransitionBar />
+            </Suspense>
+            <Navbar />
+            <div className="flex-grow animate-in fade-in duration-200">
+              {children}
+            </div>
+            <Footer />
+            <MobileNav />
+          </SmoothScrollProvider>
         </AuthProvider>
       </body>
     </html>

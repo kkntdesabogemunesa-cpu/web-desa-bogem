@@ -23,6 +23,7 @@ import {
 import ImageWithSkeleton from "@/components/ImageWithSkeleton";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import CreativeHeader from "@/components/common/CreativeHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -148,56 +149,27 @@ function PotensiContent() {
   return (
     <main className="min-h-screen bg-background pb-28 pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
-        {/* Hero Header Section */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#063321] via-[#083E28] to-[#0A4D33] border border-emerald-800/40 shadow-xs p-6 sm:p-8 lg:p-10 text-white">
-          <div className="absolute -top-20 -right-20 w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Subtle Grid Dot Texture */}
-          <div 
-            className="absolute inset-0 opacity-[0.03] pointer-events-none"
-            style={{
-              backgroundImage: "radial-gradient(circle, #ffffff 1px, transparent 1px)",
-              backgroundSize: "24px 24px"
-            }}
-          />
-
-          <div className="relative z-10 max-w-3xl space-y-3 sm:space-y-4">
-            {/* Clean Breadcrumb */}
-            <div className="flex items-center space-x-2 text-xs text-emerald-200/80 font-medium">
-              <Link
-                href="/"
-                className="hover:text-white transition-colors flex items-center gap-1.5 group"
-              >
-                <ArrowLeft className="size-3.5 group-hover:-translate-x-1 transition-transform" />
-                <span>Beranda</span>
-              </Link>
-              <span className="text-emerald-500/60">/</span>
-              <span className="text-white font-medium">Potensi & Belanja</span>
-            </div>
-
-            <div className="space-y-2">
-              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
-                Potensi & Belanja Desa
-              </h1>
-              <p className="text-emerald-100/80 text-xs sm:text-sm lg:text-base leading-relaxed max-w-2xl">
-                Etalase promosi produk UMKM dan komoditas unggulan masyarakat Desa Bogem untuk mendorong perekonomian mandiri secara berkelanjutan.
-              </p>
-            </div>
-
-            {/* Clean Stats Pill */}
-            <div className="flex flex-wrap gap-2.5 pt-1">
-              <Badge variant="outline" className="bg-white/10 backdrop-blur-md border-white/15 px-3 py-1 rounded-xl text-xs font-medium text-emerald-100 gap-1.5">
-                <Store className="size-3.5 text-emerald-300" />
-                <span>{dataUMKM.length} Usaha Terdaftar</span>
-              </Badge>
-              <Badge variant="outline" className="bg-white/10 backdrop-blur-md border-white/15 px-3 py-1 rounded-xl text-xs font-medium text-emerald-100 gap-1.5">
-                <Tag className="size-3.5 text-emerald-300" />
-                <span>Pesan Langsung via WhatsApp</span>
-              </Badge>
-            </div>
+        {/* Banner Section with Subtle White Wave */}
+        <CreativeHeader
+          title="Potensi & Belanja Desa"
+          subtitle="Etalase promosi produk UMKM dan komoditas unggulan masyarakat Desa Bogem untuk mendorong perekonomian mandiri secara berkelanjutan."
+          breadcrumbs={[
+            { label: "Beranda", href: "/" },
+            { label: "Potensi & Belanja" },
+          ]}
+        >
+          {/* Stats Pills */}
+          <div className="flex flex-wrap gap-2.5 pt-1">
+            <Badge variant="outline" className="bg-white/10 backdrop-blur-md border-white/15 px-3 py-1 rounded-xl text-xs font-medium text-emerald-100 gap-1.5">
+              <Store className="size-3.5 text-emerald-300" />
+              <span>{dataUMKM.length} Usaha Terdaftar</span>
+            </Badge>
+            <Badge variant="outline" className="bg-white/10 backdrop-blur-md border-white/15 px-3 py-1 rounded-xl text-xs font-medium text-emerald-100 gap-1.5">
+              <Tag className="size-3.5 text-emerald-300" />
+              <span>Pesan Langsung via WhatsApp</span>
+            </Badge>
           </div>
-        </div>
+        </CreativeHeader>
 
         {/* Search & Category Filter Section */}
         <div className="space-y-3">

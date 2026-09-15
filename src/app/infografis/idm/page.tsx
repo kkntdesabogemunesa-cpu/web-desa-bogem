@@ -7,6 +7,7 @@ import { defaultInfografisData, fetchInfografisData } from "@/services/infografi
 import { StatIDM } from "@/types/infografis";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import CreativeHeader from "@/components/common/CreativeHeader";
 
 export default function IDMPage() {
   const [idmData, setIdmData] = useState<StatIDM>(defaultInfografisData.idm);
@@ -28,61 +29,29 @@ export default function IDMPage() {
   return (
     <main className="min-h-screen bg-background pb-28 pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
-        {/* Hero IDM Banner */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#063321] via-[#083E28] to-[#0A4D33] border border-emerald-800/40 shadow-xs p-6 sm:p-8 lg:p-10 text-white flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-8">
-          <div className="absolute -top-20 -right-20 w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Subtle Grid Dot Texture */}
-          <div 
-            className="absolute inset-0 opacity-[0.03] pointer-events-none"
-            style={{
-              backgroundImage: "radial-gradient(circle, #ffffff 1px, transparent 1px)",
-              backgroundSize: "24px 24px"
-            }}
-          />
-
-          <div className="relative z-10 space-y-3 sm:space-y-4 max-w-2xl text-center md:text-left">
-            {/* Clean Breadcrumb */}
-            <div className="flex items-center space-x-2 text-xs text-emerald-200/80 font-medium justify-center md:justify-start">
-              <Link
-                href="/"
-                className="hover:text-white transition-colors flex items-center gap-1.5 group"
-              >
-                <ArrowLeft className="size-3.5 group-hover:-translate-x-1 transition-transform" />
-                <span>Beranda</span>
-              </Link>
-              <span className="text-emerald-500/60">/</span>
-              <Link href="/infografis" className="hover:text-white transition-colors">
-                Infografis
-              </Link>
-              <span className="text-emerald-500/60">/</span>
-              <span className="text-white font-medium">Status IDM</span>
+        {/* Banner Section with Subtle White Wave */}
+        <CreativeHeader
+          title="Indeks Desa Membangun"
+          subtitle="Tolak ukur kemandirian Desa Bogem berdasarkan ketahanan sosial (IKS), ketahanan ekonomi (IKE), dan ketahanan lingkungan hidup (IKL)."
+          breadcrumbs={[
+            { label: "Beranda", href: "/" },
+            { label: "Infografis", href: "/infografis" },
+            { label: "Status IDM" },
+          ]}
+          rightContent={
+            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl sm:rounded-3xl p-5 sm:p-7 text-center w-full sm:w-auto min-w-[240px] sm:min-w-[260px] shadow-xs space-y-2.5">
+              <Badge className="bg-emerald-400 text-[#063321] font-extrabold text-xs uppercase tracking-wider shadow-xs border-0 px-3 py-1">
+                {idmData.status}
+              </Badge>
+              <div className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight tabular-nums">
+                {Number(idmData.skorTotal || 0).toFixed(4)}
+              </div>
+              <div className="text-xs text-emerald-200/90 font-medium">
+                Skor IDM Tahun {idmData.tahun}
+              </div>
             </div>
-
-            <div className="space-y-2">
-              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
-                Indeks Desa Membangun
-              </h1>
-              <p className="text-emerald-100/80 text-xs sm:text-sm lg:text-base leading-relaxed max-w-xl">
-                Tolak ukur kemandirian Desa Bogem berdasarkan ketahanan sosial (IKS), ketahanan ekonomi (IKE), dan ketahanan lingkungan hidup (IKL).
-              </p>
-            </div>
-          </div>
-
-          {/* Minimalist Glassmorphic IDM Score Box */}
-          <div className="relative z-10 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl sm:rounded-3xl p-5 sm:p-7 text-center w-full sm:w-auto min-w-[240px] sm:min-w-[260px] shadow-xs space-y-2.5 shrink-0">
-            <Badge className="bg-emerald-400 text-[#063321] font-extrabold text-xs uppercase tracking-wider shadow-xs border-0 px-3 py-1">
-              {idmData.status}
-            </Badge>
-            <div className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight tabular-nums">
-              {Number(idmData.skorTotal || 0).toFixed(4)}
-            </div>
-            <div className="text-xs text-emerald-200/90 font-medium">
-              Skor IDM Tahun {idmData.tahun}
-            </div>
-          </div>
-        </div>
+          }
+        />
 
         {/* 3 Constituent Sub-Index Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">

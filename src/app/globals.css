@@ -8,12 +8,57 @@ html {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   scrollbar-gutter: stable;
+  overscroll-behavior-y: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   overflow-x: hidden;
   min-height: 100vh;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  overscroll-behavior-y: none;
+}
+
+/* Lenis Smooth Scroll Rules */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+/* GPU compositing isolation to eliminate scroll jank & heavy repaints */
+.transform-gpu {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Optimize off-screen rendering for long pages */
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 600px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Hide scrollbar for clean horizontal tab navigation on mobile */
